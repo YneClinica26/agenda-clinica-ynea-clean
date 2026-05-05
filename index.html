@@ -697,7 +697,7 @@ header{position:sticky;}
 
 
   
-  <button id="yneaTopLogoutBackup" class="secondary" type="button" onclick="yneaSalirConCopia()">Salir y copia</button>
+  <button id="yneaTopLogoutBackup" class="secondary" type="button" onclick="yneaSalirConCopia()">Cerrar</button>
 
   <div class="tabs">
     <button class="tab active" onclick="setView('semana', this)">Calendario semanal</button>
@@ -4366,5 +4366,88 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   };
 })();
 </script>
+
+
+<!-- ===== YNEA CALENDARIO PRO TOTAL + COLORES PASTEL 2026-05-05 ===== -->
+<style id="ynea-calendar-pro-total-css">
+:root{
+  --ynea-pastel-1:#fde2e4; --ynea-pastel-2:#e2f0cb; --ynea-pastel-3:#cde7f0; --ynea-pastel-4:#fff1b8;
+  --ynea-pastel-5:#e7d8ff; --ynea-pastel-6:#ffd6e8; --ynea-pastel-7:#d8f3dc; --ynea-pastel-8:#fce7c8;
+}
+#yneaTopLogoutBackup{
+  position:absolute!important; top:14px!important; right:18px!important; z-index:20!important;
+  background:#fff!important; color:#be185d!important; border:1px solid #f3cfe0!important;
+  box-shadow:0 8px 22px rgba(15,23,42,.10)!important; min-width:92px!important;
+}
+header{position:sticky!important; padding-right:132px!important;}
+.weekbar.ynea-probar{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;margin-bottom:10px!important}
+.ynea-cal-row{display:grid;gap:8px;align-items:end}
+.ynea-cal-row.top{grid-template-columns:minmax(140px,180px) minmax(140px,1fr) minmax(140px,1fr)}
+.ynea-cal-row.actions{grid-template-columns:repeat(3,minmax(90px,1fr));max-width:520px}
+.ynea-cal-row label{font-size:12px;color:#64748b;margin:0 0 4px!important;letter-spacing:.02em;text-transform:uppercase}.ynea-cal-row input,.ynea-cal-row select{min-height:38px!important}
+.ynea-cal-row button{height:38px!important;padding:8px 10px!important;background:#fce7f3!important;color:#be185d!important;border:1px solid #f9c6dc!important}.ynea-cal-row button:hover{background:#fbcfe8!important}
+#weekTitle,#monthTitle{font-size:13px!important;color:#64748b!important;margin:4px 0 8px!important}.ynea-calendar-help{display:none!important}
+.appt.ynea-pastel-card,.month-mini-item.ynea-pastel-card,.monthCita.ynea-pastel-card{border:1px solid rgba(15,23,42,.08)!important;box-shadow:0 5px 15px rgba(15,23,42,.05)!important;color:#334155!important}
+.appt.ynea-pastel-card strong{color:#1f2937!important}.appt .ynea-cita-line{display:block;font-size:11px;opacity:.88}.appt .ynea-consulta-pill{display:inline-block;margin-top:3px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.65);font-size:10px;font-weight:700;color:#475569}
+#weekTable th{background:#fff7fb!important;color:#be185d!important;font-weight:800!important;text-align:center!important}#weekTable .time{background:#fff!important;color:#64748b!important;font-weight:800!important;text-align:center!important}.slot[onclick]{background:#fcfcfd!important}.slot[onclick]:hover{background:#fff1f7!important}
+.month-day{position:relative!important;border-radius:12px!important;transition:.15s ease!important}.month-day.has-citas{box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)!important}.month-day:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(15,23,42,.10)!important}.day-count{display:inline-block!important;margin-top:6px!important;padding:3px 7px!important;border-radius:999px!important;background:rgba(255,255,255,.72)!important;font-size:11px!important;font-weight:800!important;color:#475569!important}.day-num{font-weight:900!important;color:#334155!important}.day-empty{display:block;margin-top:8px;color:#94a3b8;font-size:12px}.month-mini-list{margin-top:6px}.month-mini-item{border-radius:10px;margin:4px 0;padding:4px 6px;font-size:11px;line-height:1.15}
+@media(max-width:900px){
+  body{overflow-x:hidden!important;width:100%!important} header{padding:8px 72px 8px 10px!important;min-height:54px!important} #yneaTopLogoutBackup{top:10px!important;right:8px!important;min-width:56px!important;padding:7px 8px!important;font-size:11px!important;border-radius:10px!important}
+  .weekbar.ynea-probar{gap:5px!important;margin-bottom:6px!important}.ynea-cal-row{gap:5px!important}.ynea-cal-row.top{grid-template-columns:.75fr 1fr 1fr!important}.ynea-cal-row.actions{grid-template-columns:repeat(3,1fr)!important;max-width:none!important}.ynea-cal-row label{font-size:9px!important;margin-bottom:2px!important}.ynea-cal-row input,.ynea-cal-row select{min-height:30px!important;font-size:11px!important;padding:4px 6px!important;border-radius:9px!important}.ynea-cal-row button{height:30px!important;min-height:30px!important;font-size:11px!important;padding:4px 5px!important;border-radius:9px!important}
+  #semanaView .card,#mensualView .card{padding:8px!important}.tableWrap{width:100%!important;max-width:100vw!important;overflow:auto!important}#weekTable{min-width:560px!important}#monthTable{min-width:520px!important}#weekTable td,#weekTable th{font-size:9px!important;padding:2px!important}.appt.ynea-pastel-card{font-size:9px!important;padding:3px!important;border-radius:8px!important}.appt .ynea-cita-line{font-size:9px!important}.appt .ynea-consulta-pill{font-size:8px!important;padding:1px 4px!important}.slot{min-width:76px!important}.time{min-width:38px!important}.month-day{min-width:82px!important;height:58px!important;padding:5px!important}.day-count{font-size:9px!important;padding:2px 5px!important}.day-empty{font-size:9px!important;margin-top:5px!important}
+}
+</style>
+<script id="ynea-calendar-pro-total-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
+  const palette=['#fde2e4','#e2f0cb','#cde7f0','#fff1b8','#e7d8ff','#ffd6e8','#d8f3dc','#fce7c8','#d7f9f1','#ffe5d9'];
+  function hash(s){let h=0; String(s||'').split('').forEach(ch=>h=(h*31+ch.charCodeAt(0))>>>0); return h;}
+  window.yneaConsultaColor=function(consulta){return palette[hash(consulta||'Todas')%palette.length];};
+  window.yneaConsultaStyle=function(consulta){const bg=window.yneaConsultaColor(consulta);return `background:${bg}!important;border-color:rgba(15,23,42,.10)!important`;};
+  function fillSelectSafe(id,arr,first){const el=$(id); if(!el) return; const cur=el.value; el.innerHTML=(first||'')+(arr||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); if([...el.options].some(o=>o.value===cur)) el.value=cur;}
+  function ensureProBars(){
+    const weekBar=document.querySelector('#semanaView .weekbar');
+    if(weekBar && !weekBar.classList.contains('ynea-probar')){
+      weekBar.className='weekbar ynea-probar';
+      weekBar.innerHTML=`<div class="ynea-cal-row top"><div><label>Semana</label><input type="date" id="weekPicker" onchange="setWeekFromDate(this.value)"></div><div><label>Profesional</label><select id="weekProf" onchange="renderAll()"><option value="">Todos</option></select></div><div><label>Consulta</label><select id="weekConsulta" onchange="renderAll()"><option value="">Todas</option></select></div></div><div class="ynea-cal-row actions"><button class="secondary" onclick="moveWeek(-1)">Anterior</button><button class="secondary" onclick="goThisWeek()">Actual</button><button class="secondary" onclick="moveWeek(1)">Siguiente</button></div>`;
+    }
+    const monthBar=document.querySelector('#mensualView .weekbar');
+    if(monthBar && !monthBar.classList.contains('ynea-probar')){
+      monthBar.className='weekbar ynea-probar';
+      monthBar.innerHTML=`<div class="ynea-cal-row top"><div><label>Mes</label><input type="month" id="monthPicker" onchange="renderAll()"></div><div><label>Profesional</label><select id="monthProf" onchange="renderAll()"><option value="">Todos</option></select></div><div><label>Consulta</label><select id="monthConsulta" onchange="renderAll()"><option value="">Todas</option></select></div></div><div class="ynea-cal-row actions"><button class="secondary" onclick="moveMonth(-1)">Anterior</button><button class="secondary" onclick="goThisMonth()">Actual</button><button class="secondary" onclick="moveMonth(1)">Siguiente</button></div>`;
+    }
+    document.querySelectorAll('#semanaView .small').forEach((p,i)=>{ if(i>0) p.classList.add('ynea-calendar-help'); });
+    const topBtn=$('yneaTopLogoutBackup'); if(topBtn) topBtn.textContent='Cerrar';
+  }
+  const oldRefresh=window.refreshAllSelects;
+  window.refreshAllSelects=function(){try{oldRefresh&&oldRefresh();}catch(e){} try{ensureProBars(); const d=window.data||{}; fillSelectSafe('weekProf',d.profesionales||[],'<option value="">Todos</option>'); fillSelectSafe('monthProf',d.profesionales||[],'<option value="">Todos</option>'); fillSelectSafe('weekConsulta',d.consultas||[],'<option value="">Todas</option>'); fillSelectSafe('monthConsulta',d.consultas||[],'<option value="">Todas</option>');}catch(e){console.warn(e)}};
+  window.renderWeek=function(){
+    ensureProBars();
+    const profFilter=$('weekProf')?.value||''; const consultaSeleccionada=$('weekConsulta')?.value||'';
+    const days=[0,1,2,3,4].map(n=>addDays(weekStart,n));
+    if($('weekTitle')) $('weekTitle').textContent=(consultaSeleccionada?consultaSeleccionada:'Todas las consultas')+' · '+days[0].toLocaleDateString('es-ES')+' - '+days[4].toLocaleDateString('es-ES');
+    const skip={}; let html='<thead><tr><th>Hora</th>'+days.map(d=>`<th>${fmt(d)}</th>`).join('')+'</tr></thead><tbody>';
+    horas.forEach(h=>{html+=`<tr><td class="time">${h}</td>`; days.forEach(d=>{const date=iso(d), key=date+'_'+h; if(skip[key]) return; const citasInicio=(data.citas||[]).filter(c=>c.fecha===date&&citaEsInicio(c,h)&&(!consultaSeleccionada||c.consulta===consultaSeleccionada)&&(!profFilter||c.profesional===profFilter)); const citasOcupando=(data.citas||[]).filter(c=>c.fecha===date&&citaOcupaHora(c,h)&&!citaEsInicio(c,h)&&(!consultaSeleccionada||c.consulta===consultaSeleccionada)&&(!profFilter||c.profesional===profFilter)); if(citasInicio.length){const c=citasInicio[0]; const p=paciente(c.pacienteId); const bloques=Math.max(1,Math.ceil(Number(c.duracion||10)/10)); for(let i=1;i<bloques;i++){const hh=horas[horas.indexOf(h)+i]; if(hh) skip[date+'_'+hh]=true;} html+=`<td class="slot" rowspan="${bloques}"><div class="appt ynea-pastel-card" onclick="event.stopPropagation(); abrirEditorCita(${Number(c.id)})" title="${esc(c.obs||'')}" style="${window.yneaConsultaStyle(c.consulta)};height:100%;min-height:${Math.max(46,bloques*44)}px;display:flex;flex-direction:column;justify-content:center"><strong>${esc(p.nombre||'Paciente')}</strong><span class="ynea-cita-line">${esc(c.profesional||'')}</span><span class="ynea-cita-line">${esc(c.tipo||'')} · ${esc(c.duracion||'')} min</span><span class="ynea-consulta-pill">${esc(c.consulta||'Consulta')}</span></div></td>`;} else if(citasOcupando.length){ } else {html+=`<td class="slot" onclick="quickNewCitaConsulta('${date}','${h}','${esc(consultaSeleccionada)}')" style="cursor:pointer;color:#cbd5e1;text-align:center;vertical-align:middle">+</td>`;} }); html+='</tr>';});
+    html+='</tbody>'; if($('weekTable')) $('weekTable').innerHTML=html;
+  };
+  window.renderMonthView=function(){
+    ensureProBars();
+    const table=$('monthTable'); if(!table) return;
+    const dta=window.data||{}; const monthValue=$('monthPicker')?.value||new Date().toISOString().slice(0,7); const prof=$('monthProf')?.value||''; const consulta=$('monthConsulta')?.value||'';
+    const [yy,mmRaw]=monthValue.split('-').map(Number); const mm=mmRaw-1; const first=new Date(yy,mm,1); const last=new Date(yy,mm+1,0); let cur=(typeof monday==='function')?monday(first):first;
+    if($('monthTitle')) $('monthTitle').textContent=(consulta?consulta:'Todas las consultas')+' · '+(prof?prof:'Todos los profesionales')+' · '+first.toLocaleDateString('es-ES',{month:'long',year:'numeric'});
+    let out='<thead><tr><th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th></tr></thead><tbody>';
+    for(let w=0; w<6; w++){out+='<tr>'; for(let i=0;i<5;i++){const dd=addDays(cur,i); const fecha=iso(dd); const inMonth=dd.getMonth()===mm; const citas=(dta.citas||[]).filter(c=>c.fecha===fecha&&(!prof||c.profesional===prof)&&(!consulta||c.consulta===consulta)).sort((a,b)=>String(a.hora).localeCompare(String(b.hora))); const color=citas.length?window.yneaConsultaColor(citas[0].consulta||consulta):'#fff'; const mini=citas.slice(0,3).map(c=>{const pac=(dta.pacientes||[]).find(p=>String(p.id)===String(c.pacienteId))||{}; return `<div class="month-mini-item ynea-pastel-card" style="${window.yneaConsultaStyle(c.consulta)}">${esc(c.hora||'')} ${esc(pac.nombre||'Cita')}</div>`;}).join(''); out+=`<td class="month-day ${inMonth?'':'out'} ${citas.length?'has-citas':''}" onclick="abrirDiaMensualYnea('${fecha}')" style="background:${inMonth?(citas.length?color:'#fff'):'#f8fafc'}!important"><span class="day-num">${dd.getDate()}</span>${citas.length?`<span class="day-count">${citas.length}</span><div class="month-mini-list">${mini}</div>`:'<span class="day-empty">Añadir</span>'}</td>`;} out+='</tr>'; cur=addDays(cur,7); if(cur>last && cur.getMonth()!==mm) break;}
+    out+='</tbody>'; table.innerHTML=out;
+  };
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){try{ensureProBars();}catch(e){} try{oldRenderAll&&oldRenderAll();}catch(e){console.warn(e)} try{window.refreshAllSelects();}catch(e){} try{window.renderWeek();}catch(e){console.warn(e)} try{window.renderMonthView();}catch(e){console.warn(e)}};
+  function init(){ensureProBars(); try{window.refreshAllSelects();}catch(e){} try{window.renderAll();}catch(e){}}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
+
 </body>
 </html>
