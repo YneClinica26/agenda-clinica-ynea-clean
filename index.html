@@ -4160,7 +4160,7 @@ button[onclick*="setView('anual'"], button[onclick*='setView("anual"']{display:n
 <script id="ynea-iphone-cache-fix-2026-05-05">
 (function(){
   try{
-    var VERSION='login-obligatorio-2026-05-05-1';
+    var VERSION='login-pro-clinica-2026-05-05-1';
     var old=sessionStorage.getItem('yneaAppVersion');
     if(old!==VERSION){
       sessionStorage.setItem('yneaAppVersion', VERSION);
@@ -4196,7 +4196,7 @@ html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;poi
 html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important}
 .ynea-login-overlay{position:fixed;inset:0;background:radial-gradient(circle at top left,rgba(236,72,153,.18),transparent 34%),linear-gradient(135deg,#fff7fb 0%,#f8fafc 48%,#f1f5f9 100%);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px}
 .ynea-login-card{width:min(440px,100%);background:rgba(255,255,255,.96);border:1px solid #f3cfe0;border-radius:28px;box-shadow:0 28px 90px rgba(15,23,42,.20);padding:28px;backdrop-filter:blur(10px)}
-.ynea-login-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}.ynea-login-logo{width:46px;height:46px;border-radius:16px;object-fit:cover;box-shadow:0 10px 24px rgba(219,39,119,.18)}.ynea-login-title{margin:0;color:#be185d;font-size:25px;line-height:1.1}.ynea-login-subtitle{margin:4px 0 0;color:#64748b;font-size:14px}.ynea-login-card label{display:block;margin:12px 0 6px;color:#334155;font-weight:700;font-size:13px}.ynea-login-card select,.ynea-login-card input{width:100%;margin-bottom:8px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px 13px;font-size:15px;min-height:46px}.ynea-login-card select:focus,.ynea-login-card input:focus{outline:none;border-color:#db2777;box-shadow:0 0 0 4px rgba(219,39,119,.10)}.ynea-login-button{width:100%;margin-top:14px;border:0;border-radius:16px;padding:13px 16px;min-height:48px;background:linear-gradient(135deg,#db2777,#be185d);color:#fff;font-weight:800;letter-spacing:.01em;box-shadow:0 14px 30px rgba(219,39,119,.25)}.ynea-login-button:hover{filter:brightness(.98);transform:translateY(-1px)}.ynea-login-foot{margin-top:14px;text-align:center;color:#94a3b8;font-size:12px}.ynea-login-error{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:12px;padding:10px;margin:10px 0}.ynea-login-tools{margin-top:12px;border:1px solid #f3cfe0;border-radius:14px;padding:12px;background:#fff7fb}.ynea-login-tools summary{cursor:pointer;font-weight:700;color:#9f244f}
+.ynea-login-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}.ynea-login-logo{width:46px;height:46px;border-radius:16px;object-fit:cover;box-shadow:0 10px 24px rgba(219,39,119,.18)}.ynea-login-title{margin:0;color:#be185d;font-size:25px;line-height:1.1}.ynea-login-subtitle{margin:4px 0 0;color:#64748b;font-size:14px}.ynea-login-card label{display:block;margin:12px 0 6px;color:#334155;font-weight:700;font-size:13px}.ynea-login-card select,.ynea-login-card input{width:100%;margin-bottom:8px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px 13px;font-size:15px;min-height:46px}.ynea-login-card select:focus,.ynea-login-card input:focus{outline:none;border-color:#db2777;box-shadow:0 0 0 4px rgba(219,39,119,.10)}.ynea-login-button{width:100%;margin-top:14px;border:0;border-radius:16px;padding:13px 16px;min-height:48px;background:linear-gradient(135deg,#db2777,#be185d);color:#fff;font-weight:800;letter-spacing:.01em;box-shadow:0 14px 30px rgba(219,39,119,.25)}.ynea-login-button:hover{filter:brightness(.98);transform:translateY(-1px)}.ynea-login-foot{margin-top:14px;text-align:center;color:#94a3b8;font-size:12px}.ynea-login-error{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:12px;padding:10px;margin:10px 0}.ynea-login-tools{margin-top:12px;border:1px solid #f3cfe0;border-radius:14px;padding:12px;background:#fff7fb}.ynea-login-tools summary{cursor:pointer;font-weight:700;color:#9f244f}.ynea-login-remember{display:flex!important;align-items:center;gap:9px;margin:10px 0 2px;color:#475569;font-size:13px;font-weight:600}.ynea-login-remember input{width:auto!important;min-height:auto!important;margin:0!important;accent-color:#be185d}.ynea-login-mini{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}.ynea-login-link{border:0!important;background:transparent!important;color:#9f244f!important;padding:0!important;min-height:auto!important;font-size:12px!important;text-decoration:underline;box-shadow:none!important}.ynea-login-hint{color:#64748b;font-size:12px;line-height:1.35;margin-top:6px}
 #yneaAccessPanelStable .accessRow{display:grid;grid-template-columns:1fr 150px 190px;gap:8px;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:8px;margin-top:8px;background:#fff}
 #yneaAccessPanelStable input,#yneaAccessPanelStable select{margin:0}.appt{padding:2px 4px!important;line-height:1.05!important;font-size:11px!important;min-height:0!important}.appt strong{font-size:11px!important}.slot{min-height:22px!important}#weekTable td,#weekTable th{padding:3px!important}
 #pacientesTable{width:100%!important;min-width:680px!important;border-collapse:collapse!important}#pacientesTable thead{display:table-header-group!important}#pacientesTable tbody{display:table-row-group!important}#pacientesTable tr{display:table-row!important;background:#fff!important;border:0!important;box-shadow:none!important;margin:0!important;padding:0!important}#pacientesTable th,#pacientesTable td{display:table-cell!important;border:1px solid #e5e7eb!important;padding:6px 8px!important;font-size:12px!important;vertical-align:top!important}#pacientesTable tbody tr{cursor:pointer!important}#pacientesTable tbody tr:hover{background:#fff1f7!important}#pacientesSearchWrap{display:flex!important;gap:8px;align-items:center;margin:0 0 10px 0}#buscadorPacientes{width:100%;max-width:520px;padding:9px 12px;border:1px solid #dbe3ee;border-radius:12px}
@@ -4320,8 +4320,80 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   window.cargarCatalogosSupabaseYnea=async function(){try{await loadCatalogs(true);}catch(e){setStatus(e.message||String(e),true); alert('Error cargando catálogos: '+(e.message||e));}};
   function renderAccessPanel(){const d=dataObj(); const cfg=$('configView'); if(!d||!cfg) return; let panel=$('yneaAccessPanelStable'); if(!panel){panel=document.createElement('div'); panel.id='yneaAccessPanelStable'; panel.className='card'; const sup=$('supabaseConfigCard'); cfg.insertBefore(panel,sup?sup.nextSibling:cfg.firstChild);} const a=ensureAccess(); panel.style.display=currentRole()==='admin'||!currentRole()?'block':'none'; panel.innerHTML='<h2>Accesos de profesionales</h2><p class="small">Cada profesional usa su propio acceso. Usuario profesional: solo su calendario. Recepción y administrador: todos los calendarios.</p><div id="accessRowsStable"></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="secondary" onclick="yneaLogout()">Cerrar sesión</button></div>'; const rows=$('accessRowsStable'); rows.innerHTML=d.profesionales.length?d.profesionales.map(p=>{const r=a[p]||{}; return `<div class="accessRow"><b>${esc(p)}</b><input type="text" value="${esc(r.codigo||'')}" placeholder="Código" data-access-prof="${esc(p)}" data-access-field="codigo"><select data-access-prof="${esc(p)}" data-access-field="rol"><option value="usuario" ${r.rol==='usuario'?'selected':''}>Usuario profesional</option><option value="recepcion" ${r.rol==='recepcion'?'selected':''}>Recepción</option><option value="admin" ${r.rol==='admin'?'selected':''}>Administrador</option></select></div>`}).join(''):'<p class="small">No hay profesionales cargados.</p>'; }
   document.addEventListener('change',e=>{const el=e.target; if(!el.matches('[data-access-prof][data-access-field]')) return; const d=dataObj(), prof=el.dataset.accessProf, field=el.dataset.accessField; ensureAccess(); d.accesosProfesionales[prof][field]=String(el.value||'').trim(); sessionStorage.setItem(ACCESS_FLAG,'1'); if(!Object.values(d.accesosProfesionales).some(x=>x.rol==='admin')) d.accesosProfesionales[prof].rol='admin'; saveObj(); renderLoginSelect(); syncLater(syncProfesionalToSupabase(prof));},true);
+  const REMEMBER_KEY='yneaLoginRecordadoV1';
+  function getRememberedLogin(){try{return JSON.parse(localStorage.getItem(REMEMBER_KEY)||'null')||{};}catch(e){return {};}}
+  function setRememberedLogin(prof,code){try{localStorage.setItem(REMEMBER_KEY,JSON.stringify({profesional:String(prof||''),codigo:String(code||''),fecha:new Date().toISOString()}));}catch(e){}}
+  function clearRememberedLogin(){try{localStorage.removeItem(REMEMBER_KEY);}catch(e){}}
+  function applyRememberedLogin(){
+    const saved=getRememberedLogin();
+    const sel=$('yneaLoginUser'), code=$('yneaLoginCode'), chk=$('yneaRememberLogin');
+    if(chk) chk.checked=true;
+    if(!sel||!saved.profesional) return;
+    const has=[...sel.options].some(o=>o.value===saved.profesional);
+    if(has) sel.value=saved.profesional;
+    if(code && saved.codigo) code.value=saved.codigo;
+  }
+  window.yneaOlvidarLogin=function(){clearRememberedLogin(); const c=$('yneaLoginCode'); if(c)c.value=''; const chk=$('yneaRememberLogin'); if(chk) chk.checked=false; const e=$('yneaLoginError'); if(e){e.textContent='Datos recordados eliminados de este dispositivo.'; e.style.display='block';}};
   function renderLoginSelect(){const sel=$('yneaLoginUser'), d=dataObj(); if(!sel||!d) return; ensureAccess(); const old=sel.value; sel.innerHTML=(d.profesionales||[]).map(p=>`<option value="${esc(p)}">${esc(p)} · ${esc(ROLE_LABELS[d.accesosProfesionales[p]?.rol||'usuario'])}</option>`).join(''); if([...sel.options].some(o=>o.value===old)) sel.value=old;}
-  async function makeLogin(){document.querySelectorAll('#yneaLoginOverlay').forEach(x=>x.remove()); const div=document.createElement('div'); div.id='yneaLoginOverlay'; div.className='ynea-login-overlay'; div.innerHTML='<div class="ynea-login-card"><div class="ynea-login-brand"><img class="ynea-login-logo" src="icon-180-ynea.png" alt="Ynea"><div><h2 class="ynea-login-title">Acceso profesional</h2><p class="ynea-login-subtitle">Agenda clínica Ynea</p></div></div><label>Profesional</label><select id="yneaLoginUser" disabled><option value="">Cargando profesionales...</option></select><label>Código de acceso</label><input id="yneaLoginCode" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Introduce tu código"><div id="yneaLoginError" class="ynea-login-error"></div><button type="button" class="ynea-login-button" id="yneaLoginBtn" disabled>Entrar en la agenda</button><div class="ynea-login-foot">Acceso privado para profesionales autorizados</div></div>'; document.body.appendChild(div); const err=$('yneaLoginError'); if(err){err.textContent=''; err.style.display='none';} try{await loadCatalogs(false);}catch(e){console.warn('Carga inicial Supabase',e); if(err){err.textContent='No se pudieron cargar los profesionales desde Supabase. Detalle técnico: '+(e.message||e)+''; err.style.display='block';}} ensureAccess(); renderLoginSelect(); const sel=$('yneaLoginUser'), btn=$('yneaLoginBtn'); if(sel&&sel.options.length){sel.disabled=false; if(btn) btn.disabled=false; if(err){err.textContent=''; err.style.display='none';}}else{if(sel) sel.innerHTML='<option value="">No hay profesionales disponibles</option>'; if(btn) btn.disabled=true;} const enter=()=>{const prof=$('yneaLoginUser').value, code=String($('yneaLoginCode').value||'').trim(); const a=ensureAccess(); if(!prof||String(a[prof]?.codigo||'')!==code){$('yneaLoginError').textContent='Profesional o código incorrecto.'; $('yneaLoginError').style.display='block'; return;} sessionStorage.setItem('yneaCurrentUser',JSON.stringify({nombre:prof,rol:a[prof].rol||'usuario'})); document.documentElement.classList.remove('ynea-locked'); div.remove(); applyRole(); refreshSelects(); try{if(typeof setView==='function') setView('semana');}catch(e){} }; $('yneaLoginBtn').onclick=enter; $('yneaLoginCode').addEventListener('keydown',e=>{if(e.key==='Enter') enter();});}
+  async function makeLogin(){
+    document.querySelectorAll('#yneaLoginOverlay').forEach(x=>x.remove());
+    const div=document.createElement('div');
+    div.id='yneaLoginOverlay';
+    div.className='ynea-login-overlay';
+    div.innerHTML=`<div class="ynea-login-card">
+      <div class="ynea-login-brand"><img class="ynea-login-logo" src="icon-180-ynea.png" alt="Ynea"><div><h2 class="ynea-login-title">Acceso profesional</h2><p class="ynea-login-subtitle">Agenda clínica Ynea</p></div></div>
+      <label>Profesional</label>
+      <select id="yneaLoginUser" disabled><option value="">Cargando profesionales...</option></select>
+      <label>Código de acceso</label>
+      <input id="yneaLoginCode" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Código de acceso">
+      <label class="ynea-login-remember"><input id="yneaRememberLogin" type="checkbox" checked> Recordar profesional y código en este dispositivo</label>
+      <div class="ynea-login-hint">Al abrir la app quedarán preparados estos datos y solo habrá que pulsar Entrar.</div>
+      <div id="yneaLoginError" class="ynea-login-error"></div>
+      <button type="button" class="ynea-login-button" id="yneaLoginBtn" disabled>Entrar</button>
+      <div class="ynea-login-mini"><span class="ynea-login-foot">Acceso privado para profesionales autorizados</span><button type="button" class="ynea-login-link" onclick="yneaOlvidarLogin()">Olvidar este dispositivo</button></div>
+    </div>`;
+    document.body.appendChild(div);
+    const err=$('yneaLoginError');
+    if(err){err.textContent=''; err.style.display='none';}
+    try{await loadCatalogs(false);}catch(e){console.warn('Carga inicial Supabase',e); if(err){err.textContent='No se pudieron cargar los profesionales desde Supabase. Detalle técnico: '+(e.message||e)+''; err.style.display='block';}}
+    ensureAccess();
+    renderLoginSelect();
+    applyRememberedLogin();
+    const sel=$('yneaLoginUser'), btn=$('yneaLoginBtn'), codeInput=$('yneaLoginCode');
+    if(sel&&sel.options.length){
+      sel.disabled=false;
+      if(btn) btn.disabled=false;
+      if(err && err.textContent.startsWith('No se pudieron cargar')){err.textContent=''; err.style.display='none';}
+    }else{
+      if(sel) sel.innerHTML='<option value="">No hay profesionales disponibles</option>';
+      if(btn) btn.disabled=true;
+    }
+    if(sel){sel.addEventListener('change',()=>{
+      const saved=getRememberedLogin();
+      if(saved.profesional===sel.value && codeInput && saved.codigo) codeInput.value=saved.codigo;
+      else if(codeInput && !$('yneaRememberLogin')?.checked) codeInput.value='';
+    });}
+    const enter=()=>{
+      const prof=$('yneaLoginUser').value;
+      const code=String($('yneaLoginCode').value||'').trim();
+      const remember=!!$('yneaRememberLogin')?.checked;
+      const a=ensureAccess();
+      if(!prof||String(a[prof]?.codigo||'')!==code){
+        $('yneaLoginError').textContent='Profesional o código incorrecto.';
+        $('yneaLoginError').style.display='block';
+        return;
+      }
+      if(remember) setRememberedLogin(prof,code); else clearRememberedLogin();
+      sessionStorage.setItem('yneaCurrentUser',JSON.stringify({nombre:prof,rol:a[prof].rol||'usuario'}));
+      document.documentElement.classList.remove('ynea-locked');
+      div.remove();
+      applyRole();
+      refreshSelects();
+      try{if(typeof setView==='function') setView('semana');}catch(e){}
+    };
+    $('yneaLoginBtn').onclick=enter;
+    $('yneaLoginCode').addEventListener('keydown',e=>{if(e.key==='Enter') enter();});
+  }
   function applyRole(){const r=currentRole(), allowed=ROLE_ALLOWED[r]||ROLE_ALLOWED.admin; document.querySelectorAll('.tabs .tab').forEach(btn=>{const oc=btn.getAttribute('onclick')||''; const m=oc.match(/setView\('([^']+)'/); if(!m) return; const v=m[1]; btn.style.display=(v==='anual'||(r&&!allowed.includes(v)))?'none':'';}); if(r==='usuario') document.querySelectorAll('button[onclick*="setView(\'config\'"]').forEach(b=>b.style.display='none'); const panel=$('yneaAccessPanelStable'); if(panel) panel.style.display=(r==='admin'||!r)?'block':'none';}
   const originalSetView=window.setView; window.setView=function(view,btn){const r=currentRole(); const allowed=ROLE_ALLOWED[r]||ROLE_ALLOWED.admin; if(view==='anual') view='semana'; if(r&&!allowed.includes(view)) view=allowed[0]||'semana'; const out=originalSetView?originalSetView(view,btn):undefined; applyRole(); refreshSelects(); return out;};
   window.yneaLogout=function(){sessionStorage.removeItem('yneaCurrentUser'); try{document.documentElement.classList.add('ynea-locked');}catch(e){} location.reload();};
