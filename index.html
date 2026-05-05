@@ -4451,3 +4451,127 @@ header{position:sticky!important; padding-right:132px!important;}
 
 </body>
 </html>
+<style id="ynea-mobile-calendar-header-fix-css">
+@media(max-width:900px){
+  #semanaView .weekbar.ynea-probar,
+  #mensualView .weekbar.ynea-probar{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    margin:0 0 6px 0!important;
+  }
+  #semanaView .ynea-cal-row.top,
+  #mensualView .ynea-cal-row.top{
+    display:grid!important;
+    grid-template-columns:1.05fr 1fr 1fr!important;
+    gap:4px!important;
+    width:100%!important;
+    align-items:end!important;
+  }
+  #semanaView .ynea-cal-row.actions,
+  #mensualView .ynea-cal-row.actions{
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:5px!important;
+    width:100%!important;
+    margin-top:5px!important;
+  }
+  #semanaView .ynea-cal-row.actions button:nth-child(1),
+  #mensualView .ynea-cal-row.actions button:nth-child(1){order:1!important;}
+  #semanaView .ynea-cal-row.actions button:nth-child(2),
+  #mensualView .ynea-cal-row.actions button:nth-child(2){order:2!important;}
+  #semanaView .ynea-cal-row.actions button:nth-child(3),
+  #mensualView .ynea-cal-row.actions button:nth-child(3){order:3!important;}
+  .ynea-field-compact{min-width:0!important;width:100%!important;overflow:hidden!important;}
+  .ynea-field-compact label{
+    display:block!important;
+    font-size:9px!important;
+    line-height:1!important;
+    margin:0 0 2px 1px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .ynea-field-compact select,
+  .ynea-picker-display{
+    width:100%!important;
+    height:31px!important;
+    min-height:31px!important;
+    max-height:31px!important;
+    box-sizing:border-box!important;
+    border:1px solid #f3cfe0!important;
+    border-radius:9px!important;
+    background:#fff!important;
+    color:#334155!important;
+    font-size:10px!important;
+    line-height:1.05!important;
+    padding:3px 5px!important;
+    text-align:left!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  .ynea-picker-display{
+    font-weight:800!important;
+    display:block!important;
+  }
+  .ynea-hidden-picker{
+    position:absolute!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    width:1px!important;
+    height:1px!important;
+  }
+  .ynea-cal-row.actions button{
+    width:100%!important;
+    white-space:nowrap!important;
+    text-align:center!important;
+    justify-content:center!important;
+    font-size:11px!important;
+    padding:4px 2px!important;
+  }
+}
+</style>
+<script id="ynea-mobile-calendar-header-fix-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
+  function openPicker(id){const el=$(id); if(!el) return; try{ if(el.showPicker) el.showPicker(); else el.click(); }catch(e){ try{el.click();}catch(_){} }}
+  window.yneaOpenPicker=openPicker;
+  function fmtWeek(v){ if(!v) return 'Semana'; const d=new Date(v+'T12:00:00'); if(isNaN(d)) return v; const end=new Date(d); end.setDate(d.getDate()+4); return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})+'-'+end.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}); }
+  function fmtMonth(v){ if(!v) return 'Mes'; const [y,m]=String(v).split('-'); if(!y||!m) return v; const d=new Date(Number(y),Number(m)-1,1); return d.toLocaleDateString('es-ES',{month:'short',year:'numeric'}).replace('.', ''); }
+  function options(arr,first){return (first||'')+(arr||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');}
+  function keepValue(id, html){const el=$(id); if(!el) return; const old=el.value; el.innerHTML=html; if([...el.options].some(o=>o.value===old)) el.value=old;}
+  function rebuildBars(){
+    const d=window.data||{};
+    const weekBar=document.querySelector('#semanaView .weekbar');
+    if(weekBar){
+      const wv=$('weekPicker')?.value || (typeof iso==='function'&&window.weekStart?iso(window.weekStart):new Date().toISOString().slice(0,10));
+      const wp=$('weekProf')?.value||''; const wc=$('weekConsulta')?.value||'';
+      weekBar.className='weekbar ynea-probar ynea-fixedbar';
+      weekBar.innerHTML=`<div class="ynea-cal-row top"><div class="ynea-field-compact"><label>Semana</label><input class="ynea-hidden-picker" type="date" id="weekPicker" value="${esc(wv)}" onchange="setWeekFromDate(this.value); yneaRefreshCalendarHeader();"><button type="button" class="ynea-picker-display" onclick="yneaOpenPicker('weekPicker')" id="weekPickerDisplay">${esc(fmtWeek(wv))}</button></div><div class="ynea-field-compact"><label>Profesional</label><select id="weekProf" onchange="renderAll()">${options(d.profesionales||[],'<option value="">Todos</option>')}</select></div><div class="ynea-field-compact"><label>Consulta</label><select id="weekConsulta" onchange="renderAll()">${options(d.consultas||[],'<option value="">Todas</option>')}</select></div></div><div class="ynea-cal-row actions"><button class="secondary" onclick="moveWeek(-1); yneaRefreshCalendarHeader();">Anterior</button><button class="secondary" onclick="goThisWeek(); yneaRefreshCalendarHeader();">Actual</button><button class="secondary" onclick="moveWeek(1); yneaRefreshCalendarHeader();">Siguiente</button></div>`;
+      if($('weekProf')) $('weekProf').value=wp; if($('weekConsulta')) $('weekConsulta').value=wc;
+    }
+    const monthBar=document.querySelector('#mensualView .weekbar');
+    if(monthBar){
+      const mv=$('monthPicker')?.value || new Date().toISOString().slice(0,7);
+      const mp=$('monthProf')?.value||''; const mc=$('monthConsulta')?.value||'';
+      monthBar.className='weekbar ynea-probar ynea-fixedbar';
+      monthBar.innerHTML=`<div class="ynea-cal-row top"><div class="ynea-field-compact"><label>Mes</label><input class="ynea-hidden-picker" type="month" id="monthPicker" value="${esc(mv)}" onchange="renderAll(); yneaRefreshCalendarHeader();"><button type="button" class="ynea-picker-display" onclick="yneaOpenPicker('monthPicker')" id="monthPickerDisplay">${esc(fmtMonth(mv))}</button></div><div class="ynea-field-compact"><label>Profesional</label><select id="monthProf" onchange="renderAll()">${options(d.profesionales||[],'<option value="">Todos</option>')}</select></div><div class="ynea-field-compact"><label>Consulta</label><select id="monthConsulta" onchange="renderAll()">${options(d.consultas||[],'<option value="">Todas</option>')}</select></div></div><div class="ynea-cal-row actions"><button class="secondary" onclick="moveMonth(-1); yneaRefreshCalendarHeader();">Anterior</button><button class="secondary" onclick="goThisMonth(); yneaRefreshCalendarHeader();">Actual</button><button class="secondary" onclick="moveMonth(1); yneaRefreshCalendarHeader();">Siguiente</button></div>`;
+      if($('monthProf')) $('monthProf').value=mp; if($('monthConsulta')) $('monthConsulta').value=mc;
+    }
+  }
+  window.yneaRefreshCalendarHeader=function(){
+    const wd=$('weekPickerDisplay'), w=$('weekPicker'); if(wd&&w) wd.textContent=fmtWeek(w.value);
+    const md=$('monthPickerDisplay'), m=$('monthPicker'); if(md&&m) md.textContent=fmtMonth(m.value);
+  };
+  const oldRefresh=window.refreshAllSelects;
+  window.refreshAllSelects=function(){ try{oldRefresh&&oldRefresh();}catch(e){} rebuildBars(); window.yneaRefreshCalendarHeader(); };
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){ rebuildBars(); try{oldRenderAll&&oldRenderAll();}catch(e){console.warn(e)} window.yneaRefreshCalendarHeader(); };
+  function init(){ rebuildBars(); window.yneaRefreshCalendarHeader(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else setTimeout(init,0);
+})();
+</script>
