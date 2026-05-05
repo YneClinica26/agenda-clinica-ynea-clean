@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda Clínica Ynea</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<style>
+body { font-family: Arial; padding:20px; }
+input, select, button { margin:5px; padding:8px; }
+</style>
+
+</head>
+
+<body>
+
+<h2>Acceso</h2>
+
+<select id="selectProfesional"></select> <input type="password" id="codigo" placeholder="Código"> <button onclick="login()">Entrar</button>
+
+<p id="error" style="color:red;"></p>
+
+<script>
+const SUPABASE_URL = "https://vadovhwjoxghubceffpn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY";
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function cargarProfesionales() {
+  const { data, error } = await supabase.from('profesionales').select('*');
+
+  const select = document.getElementById("selectProfesional");
+  select.innerHTML = "";
+
+  data.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.nombre;
+    select.appendChild(opt);
+  });
+}
+
+async function login() {
+  const id = document.getElementById("selectProfesional").value;
+  const codigo = document.getElementById("codigo").value;
+
+  const { data } = await supabase
+    .from('accesos')
+    .select('*')
+    .eq('profesional_id', id)
+    .eq('codigo', codigo);
+
+  if (data.length > 0) {
+    alert("Acceso correcto");
+  } else {
+    document.getElementById("error").textContent = "Código incorrecto";
+  }
+}
+
+cargarProfesionales();
+</script>
+
+</body>
+</html>
