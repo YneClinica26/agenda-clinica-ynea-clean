@@ -4752,6 +4752,111 @@ header{position:sticky!important; padding-right:132px!important;}
 })();
 </script>
 
+
+<!-- ===== YNEA FIX SELECTORES PROFESIONAL/CONSULTA/TIPOS 2026-05-05 ===== -->
+<style id="ynea-fix-selectores-calendario-css">
+@media(max-width:700px){
+  .weekbar.ynea-probar,.weekbar{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;align-items:stretch!important;}
+  .ynea-cal-row.top{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;align-items:end!important;}
+  .ynea-cal-row.top > div{min-width:0!important;}
+  .ynea-cal-row.top > div:first-child{grid-column:1/2!important;}
+  .ynea-cal-row.top > div:nth-child(2){grid-column:2/3!important;}
+  .ynea-cal-row.top > div:nth-child(3){grid-column:1/3!important;}
+  .ynea-cal-row.actions{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important;max-width:none!important;width:100%!important;}
+  .ynea-cal-row.actions button{width:100%!important;min-width:0!important;font-size:11px!important;padding:6px 4px!important;}
+  #weekProf,#monthProf,#weekConsulta,#consultaCita,#profesionalCita,#tipoCita{pointer-events:auto!important;opacity:1!important;}
+}
+</style>
+<script id="ynea-fix-selectores-calendario-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function unique(a){return [...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];}
+  function ensureCatalogos(){
+    if(!window.data) return;
+    data.profesionales=unique(data.profesionales||[]);
+    data.consultas=unique(data.consultas||[]);
+    data.tipos=unique(data.tipos||[]);
+    if(!data.profesionales.length){data.profesionales=['Administrador Ynea'];}
+    if(!data.consultas.length){data.consultas=['Consulta 1','Consulta 2','Sala de tratamientos'];}
+    if(!data.tipos.length){data.tipos=['Primera visita','Revisión','Tratamiento','Urgencia','Control'];}
+    data.tiposPorProfesional=data.tiposPorProfesional||{};
+    data.duracionesTipo=data.duracionesTipo||{};
+    data.tipos.forEach(t=>{if(!data.duracionesTipo[t]) data.duracionesTipo[t]='10';});
+  }
+  function fill(id,arr,first){
+    const el=$(id); if(!el) return;
+    const old=el.value;
+    el.disabled=false;
+    el.style.pointerEvents='auto';
+    el.style.opacity='1';
+    el.innerHTML=(first||'')+(arr||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    if([...el.options].some(o=>o.value===old)) el.value=old;
+    else if(el.options.length && !first) el.selectedIndex=0;
+  }
+  function refreshCatalogSelects(){
+    ensureCatalogos(); if(!window.data) return;
+    fill('profesionalCita',data.profesionales);
+    fill('editCitaProfesional',data.profesionales);
+    fill('enlaceProfesional',data.profesionales);
+    fill('enlazadaProfesional',data.profesionales);
+    fill('weekProf',data.profesionales,'<option value="">Todos</option>');
+    fill('monthProf',data.profesionales,'<option value="">Todos</option>');
+    fill('yearProf',data.profesionales,'<option value="">Todos</option>');
+    fill('filtroProf',data.profesionales,'<option value="">Todos</option>');
+    fill('avisosProfesional',data.profesionales,'<option value="">Todos</option>');
+    fill('consultaCita',data.consultas);
+    fill('weekConsulta',data.consultas,'<option value="">Todas</option>');
+    fill('tipoCita',data.tipos);
+    fill('filtroTipo',data.tipos,'<option value="">Todos</option>');
+  }
+  function fixCalendarBars(){
+    const weekBar=document.querySelector('#semanaView .weekbar');
+    if(weekBar && !weekBar.classList.contains('ynea-fixed-selector-bar')){
+      weekBar.classList.add('ynea-probar','ynea-fixed-selector-bar');
+      const anterior=weekBar.querySelector('button[onclick*="moveWeek(-1)"]');
+      const actual=weekBar.querySelector('button[onclick*="goThisWeek"]');
+      const siguiente=weekBar.querySelector('button[onclick*="moveWeek(1)"]');
+      const semana=weekBar.querySelector('#weekPicker')?.parentElement;
+      const prof=weekBar.querySelector('#weekProf')?.parentElement;
+      const consulta=weekBar.querySelector('#weekConsulta')?.parentElement;
+      weekBar.innerHTML='';
+      const top=document.createElement('div'); top.className='ynea-cal-row top';
+      const actions=document.createElement('div'); actions.className='ynea-cal-row actions';
+      [semana,prof,consulta].forEach(el=>{if(el) top.appendChild(el);});
+      [anterior,actual,siguiente].forEach(el=>{if(el) actions.appendChild(el);});
+      weekBar.appendChild(top); weekBar.appendChild(actions);
+      if(anterior) anterior.textContent='Anterior'; if(actual) actual.textContent='Actual'; if(siguiente) siguiente.textContent='Siguiente';
+    }
+    const monthBar=document.querySelector('#mensualView .weekbar');
+    if(monthBar && !monthBar.classList.contains('ynea-fixed-selector-bar')){
+      monthBar.classList.add('ynea-probar','ynea-fixed-selector-bar');
+      const anterior=monthBar.querySelector('button[onclick*="moveMonth(-1)"]');
+      const actual=monthBar.querySelector('button[onclick*="goThisMonth"]');
+      const siguiente=monthBar.querySelector('button[onclick*="moveMonth(1)"]');
+      const mes=monthBar.querySelector('#monthPicker')?.parentElement;
+      const prof=monthBar.querySelector('#monthProf')?.parentElement;
+      monthBar.innerHTML='';
+      const top=document.createElement('div'); top.className='ynea-cal-row top';
+      const actions=document.createElement('div'); actions.className='ynea-cal-row actions';
+      [mes,prof].forEach(el=>{if(el) top.appendChild(el);});
+      [anterior,actual,siguiente].forEach(el=>{if(el) actions.appendChild(el);});
+      monthBar.appendChild(top); monthBar.appendChild(actions);
+      if(anterior) anterior.textContent='Anterior'; if(actual) actual.textContent='Actual'; if(siguiente) siguiente.textContent='Siguiente';
+    }
+  }
+  const prevRefresh=window.refreshAllSelects;
+  window.refreshAllSelects=function(){try{prevRefresh&&prevRefresh.apply(this,arguments);}catch(e){console.warn('refresh anterior',e);} refreshCatalogSelects();};
+  const prevRenderAll=window.renderAll;
+  window.renderAll=function(){fixCalendarBars(); refreshCatalogSelects(); try{prevRenderAll&&prevRenderAll.apply(this,arguments);}catch(e){console.warn('render anterior',e);} fixCalendarBars(); refreshCatalogSelects();};
+  const prevTipos=window.tiposPermitidosParaProfesional;
+  window.tiposPermitidosParaProfesional=function(prof){ensureCatalogos(); const todos=data.tipos||[]; try{const r=prevTipos?prevTipos.apply(this,arguments):todos; return (Array.isArray(r)&&r.length)?r:todos;}catch(e){return todos;}};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){ensureCatalogos(); refreshCatalogSelects(); fixCalendarBars(); try{if(typeof save==='function') save();}catch(e){} try{if(prevRenderAll||window.renderAll) window.renderAll();}catch(e){}},500);});
+  setInterval(function(){fixCalendarBars(); refreshCatalogSelects();},2000);
+})();
+</script>
+
 </body>
 </html>
 <style id="ynea-mobile-calendar-header-fix-css">
@@ -5104,6 +5209,111 @@ header{position:sticky!important; padding-right:132px!important;}
   }
   document.addEventListener('DOMContentLoaded',function(){setTimeout(reparar,200);setTimeout(reparar,1000);});
   setTimeout(reparar,500);
+})();
+</script>
+
+
+<!-- ===== YNEA FIX SELECTORES PROFESIONAL/CONSULTA/TIPOS 2026-05-05 ===== -->
+<style id="ynea-fix-selectores-calendario-css">
+@media(max-width:700px){
+  .weekbar.ynea-probar,.weekbar{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;align-items:stretch!important;}
+  .ynea-cal-row.top{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;align-items:end!important;}
+  .ynea-cal-row.top > div{min-width:0!important;}
+  .ynea-cal-row.top > div:first-child{grid-column:1/2!important;}
+  .ynea-cal-row.top > div:nth-child(2){grid-column:2/3!important;}
+  .ynea-cal-row.top > div:nth-child(3){grid-column:1/3!important;}
+  .ynea-cal-row.actions{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important;max-width:none!important;width:100%!important;}
+  .ynea-cal-row.actions button{width:100%!important;min-width:0!important;font-size:11px!important;padding:6px 4px!important;}
+  #weekProf,#monthProf,#weekConsulta,#consultaCita,#profesionalCita,#tipoCita{pointer-events:auto!important;opacity:1!important;}
+}
+</style>
+<script id="ynea-fix-selectores-calendario-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function unique(a){return [...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];}
+  function ensureCatalogos(){
+    if(!window.data) return;
+    data.profesionales=unique(data.profesionales||[]);
+    data.consultas=unique(data.consultas||[]);
+    data.tipos=unique(data.tipos||[]);
+    if(!data.profesionales.length){data.profesionales=['Administrador Ynea'];}
+    if(!data.consultas.length){data.consultas=['Consulta 1','Consulta 2','Sala de tratamientos'];}
+    if(!data.tipos.length){data.tipos=['Primera visita','Revisión','Tratamiento','Urgencia','Control'];}
+    data.tiposPorProfesional=data.tiposPorProfesional||{};
+    data.duracionesTipo=data.duracionesTipo||{};
+    data.tipos.forEach(t=>{if(!data.duracionesTipo[t]) data.duracionesTipo[t]='10';});
+  }
+  function fill(id,arr,first){
+    const el=$(id); if(!el) return;
+    const old=el.value;
+    el.disabled=false;
+    el.style.pointerEvents='auto';
+    el.style.opacity='1';
+    el.innerHTML=(first||'')+(arr||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    if([...el.options].some(o=>o.value===old)) el.value=old;
+    else if(el.options.length && !first) el.selectedIndex=0;
+  }
+  function refreshCatalogSelects(){
+    ensureCatalogos(); if(!window.data) return;
+    fill('profesionalCita',data.profesionales);
+    fill('editCitaProfesional',data.profesionales);
+    fill('enlaceProfesional',data.profesionales);
+    fill('enlazadaProfesional',data.profesionales);
+    fill('weekProf',data.profesionales,'<option value="">Todos</option>');
+    fill('monthProf',data.profesionales,'<option value="">Todos</option>');
+    fill('yearProf',data.profesionales,'<option value="">Todos</option>');
+    fill('filtroProf',data.profesionales,'<option value="">Todos</option>');
+    fill('avisosProfesional',data.profesionales,'<option value="">Todos</option>');
+    fill('consultaCita',data.consultas);
+    fill('weekConsulta',data.consultas,'<option value="">Todas</option>');
+    fill('tipoCita',data.tipos);
+    fill('filtroTipo',data.tipos,'<option value="">Todos</option>');
+  }
+  function fixCalendarBars(){
+    const weekBar=document.querySelector('#semanaView .weekbar');
+    if(weekBar && !weekBar.classList.contains('ynea-fixed-selector-bar')){
+      weekBar.classList.add('ynea-probar','ynea-fixed-selector-bar');
+      const anterior=weekBar.querySelector('button[onclick*="moveWeek(-1)"]');
+      const actual=weekBar.querySelector('button[onclick*="goThisWeek"]');
+      const siguiente=weekBar.querySelector('button[onclick*="moveWeek(1)"]');
+      const semana=weekBar.querySelector('#weekPicker')?.parentElement;
+      const prof=weekBar.querySelector('#weekProf')?.parentElement;
+      const consulta=weekBar.querySelector('#weekConsulta')?.parentElement;
+      weekBar.innerHTML='';
+      const top=document.createElement('div'); top.className='ynea-cal-row top';
+      const actions=document.createElement('div'); actions.className='ynea-cal-row actions';
+      [semana,prof,consulta].forEach(el=>{if(el) top.appendChild(el);});
+      [anterior,actual,siguiente].forEach(el=>{if(el) actions.appendChild(el);});
+      weekBar.appendChild(top); weekBar.appendChild(actions);
+      if(anterior) anterior.textContent='Anterior'; if(actual) actual.textContent='Actual'; if(siguiente) siguiente.textContent='Siguiente';
+    }
+    const monthBar=document.querySelector('#mensualView .weekbar');
+    if(monthBar && !monthBar.classList.contains('ynea-fixed-selector-bar')){
+      monthBar.classList.add('ynea-probar','ynea-fixed-selector-bar');
+      const anterior=monthBar.querySelector('button[onclick*="moveMonth(-1)"]');
+      const actual=monthBar.querySelector('button[onclick*="goThisMonth"]');
+      const siguiente=monthBar.querySelector('button[onclick*="moveMonth(1)"]');
+      const mes=monthBar.querySelector('#monthPicker')?.parentElement;
+      const prof=monthBar.querySelector('#monthProf')?.parentElement;
+      monthBar.innerHTML='';
+      const top=document.createElement('div'); top.className='ynea-cal-row top';
+      const actions=document.createElement('div'); actions.className='ynea-cal-row actions';
+      [mes,prof].forEach(el=>{if(el) top.appendChild(el);});
+      [anterior,actual,siguiente].forEach(el=>{if(el) actions.appendChild(el);});
+      monthBar.appendChild(top); monthBar.appendChild(actions);
+      if(anterior) anterior.textContent='Anterior'; if(actual) actual.textContent='Actual'; if(siguiente) siguiente.textContent='Siguiente';
+    }
+  }
+  const prevRefresh=window.refreshAllSelects;
+  window.refreshAllSelects=function(){try{prevRefresh&&prevRefresh.apply(this,arguments);}catch(e){console.warn('refresh anterior',e);} refreshCatalogSelects();};
+  const prevRenderAll=window.renderAll;
+  window.renderAll=function(){fixCalendarBars(); refreshCatalogSelects(); try{prevRenderAll&&prevRenderAll.apply(this,arguments);}catch(e){console.warn('render anterior',e);} fixCalendarBars(); refreshCatalogSelects();};
+  const prevTipos=window.tiposPermitidosParaProfesional;
+  window.tiposPermitidosParaProfesional=function(prof){ensureCatalogos(); const todos=data.tipos||[]; try{const r=prevTipos?prevTipos.apply(this,arguments):todos; return (Array.isArray(r)&&r.length)?r:todos;}catch(e){return todos;}};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){ensureCatalogos(); refreshCatalogSelects(); fixCalendarBars(); try{if(typeof save==='function') save();}catch(e){} try{if(prevRenderAll||window.renderAll) window.renderAll();}catch(e){}},500);});
+  setInterval(function(){fixCalendarBars(); refreshCatalogSelects();},2000);
 })();
 </script>
 
