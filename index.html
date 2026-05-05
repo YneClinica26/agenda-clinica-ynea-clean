@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Agenda Clínica Semanal</title>
@@ -2356,19 +2359,8 @@ function guardarNuevoPacienteModal(){
     }catch(e){}
   }, 30000);
 
-  // Aviso de copia diaria al abrir la app.
-  setTimeout(function(){
-    try{
-      const hoy = fechaHoy();
-      const ultimo = localStorage.getItem(BACKUP_DAY_KEY);
-      if(ultimo !== hoy){
-        const hacer = confirm("Todavía no has hecho copia de seguridad hoy. ¿Quieres descargarla ahora?");
-        if(hacer){
-          exportBackupNow();
-        }
-      }
-    }catch(e){}
-  }, 1200);
+  // Aviso diario de copia desactivado para móvil y escritorio.
+  // La copia manual sigue disponible en la pestaña Copias de seguridad.
 })();
 </script>
 
@@ -4113,6 +4105,27 @@ button[onclick*="setView('anual'"], button[onclick*='setView("anual"']{display:n
 
 
 
+<script id="ynea-iphone-cache-fix-2026-05-05">
+(function(){
+  try{
+    var VERSION='supabase-real-iphone-2026-05-05-2';
+    var old=sessionStorage.getItem('yneaAppVersion');
+    if(old!==VERSION){
+      sessionStorage.setItem('yneaAppVersion', VERSION);
+      sessionStorage.removeItem('yneaCurrentUser');
+      sessionStorage.removeItem('yneaAccessConfigured');
+      localStorage.removeItem('yneaSupabaseUrl');
+      localStorage.removeItem('yneaSupabaseAnonKey');
+    }
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.getRegistrations().then(function(regs){ regs.forEach(function(r){ r.unregister(); }); }).catch(function(){});
+    }
+    if(window.caches){
+      caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); }).catch(function(){});
+    }
+  }catch(e){}
+})();
+</script>
 <!-- ===== YNEA STABLE ACCESS + SUPABASE PATCH 2026-05-05 ===== -->
 <style id="ynea-stable-access-css">
 .notice,#anualView,.autosaveBar,.appFab{display:none!important}
@@ -4150,7 +4163,7 @@ button[onclick*="setView('anual'"]{display:none!important}
   function pickRole(row){return String(row?.rol??row?.role??row?.tipo_acceso??row?.perfil??'usuario').trim().toLowerCase();}
   function isActive(row){return !(row?.activo===false||row?.active===false||String(row?.estado||'').toLowerCase()==='inactivo');}
   function unique(a){return [...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];}
-  async function fetchTable(table){const {url,key}=creds(); if(!url||!key) throw new Error('Faltan URL o clave de Supabase.'); const r=await fetch(url+'/rest/v1/'+encodeURIComponent(table)+'?select=*',{headers:{apikey:key,Authorization:'Bearer '+key,Accept:'application/json'},cache:'no-store'}); if(!r.ok) throw new Error(table+': HTTP '+r.status+' '+(await r.text()).slice(0,180)); return await r.json();}
+  async function fetchTable(table){const {url,key}=creds(); if(!url||!key) throw new Error('Faltan URL o clave de Supabase.'); const sep='?'; const endpoint=url+'/rest/v1/'+encodeURIComponent(table)+sep+'select=*&_ynea_ts='+Date.now(); const r=await fetch(endpoint,{headers:{apikey:key,Authorization:'Bearer '+key,Accept:'application/json','Cache-Control':'no-cache, no-store, max-age=0','Pragma':'no-cache'},cache:'no-store',mode:'cors'}); if(!r.ok) throw new Error(table+': HTTP '+r.status+' '+(await r.text()).slice(0,180)); return await r.json();}
   async function loadCatalogs(showAlert){const d=dataObj(); if(!d) return false; const settled=await Promise.allSettled([fetchTable('profesionales'),fetchTable('tipos_cita'),fetchTable('consultas')]); if(settled[0].status!=='fulfilled') throw settled[0].reason; const profs=settled[0].value||[]; const tipos=settled[1].status==='fulfilled'?(settled[1].value||[]):[]; const consultas=settled[2].status==='fulfilled'?(settled[2].value||[]):[]; const p=unique(profs.filter(isActive).map(pickName)); const t=unique(tipos.filter(isActive).map(pickName)); const c=unique(consultas.filter(isActive).map(pickName)); if(p.length) d.profesionales=p; if(t.length) d.tipos=t; if(c.length) d.consultas=c; d.accesosProfesionales={}; profs.filter(isActive).forEach(row=>{const n=pickName(row); if(!n) return; const rol=pickRole(row); d.accesosProfesionales[n]={codigo:pickCode(row),rol:['admin','recepcion','usuario'].includes(rol)?rol:'usuario'};}); d.duracionesTipo=d.duracionesTipo||{}; tipos.forEach(row=>{const n=pickName(row); if(n) d.duracionesTipo[n]=String(row?.duracion??row?.duracion_minutos??row?.duration??row?.minutos??d.duracionesTipo[n]??'10');}); ensureAccess(); saveObj(); refreshSelects(); renderAccessPanel(); renderLoginSelect(); try{if(typeof renderAll==='function') renderAll();}catch(e){} if(showAlert) alert('Catálogos cargados desde Supabase: '+p.length+' profesionales.'); return true;}
   function ensureAccess(){const d=dataObj(); if(!d) return {}; d.profesionales=unique(d.profesionales||[]); if(!d.accesosProfesionales||typeof d.accesosProfesionales!=='object') d.accesosProfesionales={}; const a=d.accesosProfesionales; d.profesionales.forEach(p=>{if(!a[p]) a[p]={codigo:'',rol:'usuario'}; if(!a[p].rol) a[p].rol='usuario';}); Object.keys(a).forEach(p=>{if(!d.profesionales.includes(p)) delete a[p];}); const configured=sessionStorage.getItem(ACCESS_FLAG)==='1'; if(configured){Object.values(a).forEach(x=>{if(String(x.codigo||'')==='1234') x.codigo='';});} if(!d.profesionales.some(p=>a[p]?.rol==='admin') && d.profesionales[0]) a[d.profesionales[0]].rol='admin'; if(!configured && d.profesionales[0] && !d.profesionales.some(p=>String(a[p]?.codigo||'').trim())) a[d.profesionales[0]].codigo='1234'; return a;}
   function current(){try{return JSON.parse(sessionStorage.getItem('yneaCurrentUser')||'null')}catch(e){return null}}
