@@ -677,6 +677,95 @@ header{position:sticky;}
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180-ynea.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192-ynea.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512-ynea.png">
+
+
+<style id="ynea-mobile-5dias-final-fix">
+/* Ajuste final móvil: siempre mostrar los 5 días completos en semanal y mensual */
+@media(max-width:900px){
+  #semanaView .tableWrap,#mensualView .tableWrap{
+    overflow-x:hidden !important;
+    width:100% !important;
+    max-width:100% !important;
+  }
+  #weekTable,#monthTable{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    table-layout:fixed !important;
+    border-collapse:collapse !important;
+  }
+  #weekTable th,#weekTable td,#monthTable th,#monthTable td{
+    min-width:0 !important;
+    max-width:none !important;
+    box-sizing:border-box !important;
+    overflow:hidden !important;
+    padding:1px !important;
+    font-size:8px !important;
+    line-height:1.1 !important;
+    word-break:normal !important;
+  }
+  #weekTable th:first-child,#weekTable td.time{
+    width:28px !important;
+    max-width:28px !important;
+    min-width:28px !important;
+    font-size:7.5px !important;
+    padding:1px !important;
+  }
+  #weekTable th:not(:first-child),#weekTable td.slot{
+    width:calc((100% - 28px) / 5) !important;
+  }
+  #weekTable .slot{
+    min-height:26px !important;
+    height:auto !important;
+  }
+  #weekTable .appt{
+    font-size:7.5px !important;
+    line-height:1.05 !important;
+    padding:1px !important;
+    margin:1px 0 !important;
+    border-radius:4px !important;
+  }
+  #weekTable .appt strong{font-size:7.5px !important;}
+  #weekTable .appt span:nth-of-type(2),
+  #weekTable .appt .badge{display:none !important;}
+
+  #monthTable th,#monthTable td{
+    width:20% !important;
+    min-width:0 !important;
+    max-width:20% !important;
+  }
+  #monthTable td.slot{
+    min-width:0 !important;
+    background:#fff !important;
+  }
+  #monthTable .slot[style]{min-width:0 !important;}
+  #monthTable .appt{
+    display:block !important;
+    margin-top:1px !important;
+    padding:1px !important;
+    font-size:6.8px !important;
+    line-height:1 !important;
+    border-radius:4px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  #monthTable .appt span,
+  #monthTable .appt br{display:none !important;}
+  #monthTable td.slot > strong{
+    display:block !important;
+    font-size:9px !important;
+    line-height:1 !important;
+  }
+  #monthTable .small{font-size:7px !important;margin:1px 0 !important;}
+}
+@media(max-width:380px){
+  #weekTable th,#weekTable td,#monthTable th,#monthTable td{font-size:7.2px !important;}
+  #weekTable th:first-child,#weekTable td.time{width:24px !important;max-width:24px !important;min-width:24px !important;font-size:7px !important;}
+  #weekTable th:not(:first-child),#weekTable td.slot{width:calc((100% - 24px) / 5) !important;}
+}
+</style>
+
 </head>
 <body>
 <header>
@@ -4521,6 +4610,118 @@ header{position:sticky!important; padding-right:132px!important;}
 })();
 </script>
 
+
+<script id="ynea-mobile-short-week-headers">
+(function(){
+  const oldRenderWeek = window.renderWeek;
+  if (typeof oldRenderWeek === 'function') {
+    window.renderWeek = function(){
+      oldRenderWeek();
+      if (window.innerWidth <= 900) {
+        const ths = document.querySelectorAll('#weekTable thead th');
+        ths.forEach((th, i) => {
+          if (i === 0) return;
+          const txt = th.textContent || '';
+          const parts = txt.split('/');
+          if (parts.length >= 2) th.textContent = parts[0] + '/' + parts[1];
+        });
+      }
+    };
+  }
+})();
+</script>
+
+
+
+<!-- ===== YNEA FIX SELECTORES MÓVIL ESTABLES 2026-05-05 ===== -->
+<style id="ynea-mobile-selectors-stable-css">
+@media(max-width:900px){
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar{
+    overflow:visible!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.top,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.top{
+    display:grid!important;
+    grid-template-columns:0.92fr 1.04fr 1.04fr!important;
+    gap:4px!important;
+    overflow:visible!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-field-compact,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-field-compact{
+    overflow:visible!important;
+    min-width:0!important;
+    position:relative!important;
+    z-index:50!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar select,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar select{
+    pointer-events:auto!important;
+    position:relative!important;
+    z-index:60!important;
+    opacity:1!important;
+    display:block!important;
+    appearance:auto!important;
+    -webkit-appearance:menulist!important;
+    touch-action:auto!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions{
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:5px!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(1),
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(1){grid-column:1!important;order:1!important;}
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(2),
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(2){grid-column:2!important;order:2!important;}
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(3),
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(3){grid-column:3!important;order:3!important;}
+
+  /* 5 días visibles sin bloquear los selectores */
+  #semanaView .tableWrap,#mensualView .tableWrap{overflow-x:hidden!important;width:100%!important;max-width:100%!important;}
+  #weekTable,#monthTable{width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important;}
+  #weekTable th,#weekTable td,#monthTable th,#monthTable td{box-sizing:border-box!important;min-width:0!important;overflow:hidden!important;}
+  #weekTable th:first-child,#weekTable td.time{width:28px!important;min-width:28px!important;max-width:28px!important;}
+  #weekTable th:not(:first-child),#weekTable td.slot{width:calc((100% - 28px)/5)!important;min-width:0!important;}
+  #monthTable th,#monthTable td{width:20%!important;min-width:0!important;max-width:20%!important;}
+}
+</style>
+<script id="ynea-mobile-selectors-stable-js">
+(function(){
+  'use strict';
+  function byId(id){return document.getElementById(id);}
+  function esc(v){return String(v??'').replace(/[&<>\"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]||m;});}
+  function setOptionsKeep(id, arr, first){
+    var el=byId(id); if(!el) return;
+    var val=el.value;
+    var html=(first||'')+(arr||[]).map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('');
+    if(el.getAttribute('data-ynea-html')!==html){ el.innerHTML=html; el.setAttribute('data-ynea-html',html); }
+    if(Array.prototype.some.call(el.options,function(o){return o.value===val;})) el.value=val;
+  }
+  window.yneaSyncCalendarSelectors=function(){
+    var d=window.data||{};
+    setOptionsKeep('weekProf', d.profesionales||[], '<option value="">Todos</option>');
+    setOptionsKeep('monthProf', d.profesionales||[], '<option value="">Todos</option>');
+    setOptionsKeep('weekConsulta', d.consultas||[], '<option value="">Todas</option>');
+    setOptionsKeep('monthConsulta', d.consultas||[], '<option value="">Todas</option>');
+  };
+  document.addEventListener('change', function(e){
+    if(e.target && /^(weekProf|weekConsulta|monthProf|monthConsulta)$/.test(e.target.id)){
+      try{ setTimeout(function(){ if(typeof window.renderAll==='function') window.renderAll(); },0); }catch(_){}
+    }
+  }, true);
+  var oldRenderAll=window.renderAll;
+  window.renderAll=function(){
+    try{ window.yneaSyncCalendarSelectors(); }catch(_){}
+    try{ return oldRenderAll&&oldRenderAll.apply(this,arguments); }catch(e){ console.warn(e); }
+    try{ window.yneaSyncCalendarSelectors(); }catch(_){}
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(window.yneaSyncCalendarSelectors,200);});
+  else setTimeout(window.yneaSyncCalendarSelectors,200);
+})();
+</script>
+
 </body>
 </html>
 <style id="ynea-mobile-calendar-header-fix-css">
@@ -4640,9 +4841,9 @@ header{position:sticky!important; padding-right:132px!important;}
     const md=$('monthPickerDisplay'), m=$('monthPicker'); if(md&&m) md.textContent=fmtMonth(m.value);
   };
   const oldRefresh=window.refreshAllSelects;
-  window.refreshAllSelects=function(){ try{oldRefresh&&oldRefresh();}catch(e){} rebuildBars(); window.yneaRefreshCalendarHeader(); };
+  window.refreshAllSelects=function(){ try{oldRefresh&&oldRefresh();}catch(e){} window.yneaRefreshCalendarHeader(); };
   const oldRenderAll=window.renderAll;
-  window.renderAll=function(){ rebuildBars(); try{oldRenderAll&&oldRenderAll();}catch(e){console.warn(e)} window.yneaRefreshCalendarHeader(); };
+  window.renderAll=function(){ try{oldRenderAll&&oldRenderAll();}catch(e){console.warn(e)} window.yneaRefreshCalendarHeader(); };
   function init(){ rebuildBars(); window.yneaRefreshCalendarHeader(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else setTimeout(init,0);
 })();
@@ -4778,3 +4979,78 @@ header{position:sticky!important; padding-right:132px!important;}
   setInterval(fixHeader,1500);
 })();
 </script>
+<script id="ynea-final-tipos-profesional-mobile-fix">
+(function(){
+  'use strict';
+  const $ = (id)=>document.getElementById(id);
+  const esc = (s)=>String(s ?? '').replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+  function dataObj(){ return window.data || {}; }
+
+  function tiposParaProfesional(prof){
+    const d = dataObj();
+    const todos = Array.isArray(d.tipos) ? d.tipos.slice() : [];
+    if(!prof) return todos;
+    const mapa = d.tiposPorProfesional || {};
+    if(Object.prototype.hasOwnProperty.call(mapa, prof)){
+      return Array.isArray(mapa[prof]) ? mapa[prof].slice() : [];
+    }
+    return todos;
+  }
+
+  function fillTiposNuevaCita(){
+    const profSel = $('profesionalCita');
+    const tipoSel = $('tipoCita');
+    if(!profSel || !tipoSel) return;
+    const anterior = tipoSel.value;
+    const tipos = tiposParaProfesional(profSel.value);
+    tipoSel.innerHTML = tipos.length
+      ? tipos.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')
+      : '<option value="">Sin tipos para este profesional</option>';
+    if(anterior && tipos.includes(anterior)) tipoSel.value = anterior;
+    else if(tipos.length) tipoSel.value = tipos[0];
+    try{ if(typeof window.applyTipoDuration === 'function') window.applyTipoDuration(); }catch(e){}
+  }
+
+  window.actualizarTiposNuevaCita = fillTiposNuevaCita;
+  window.tiposPermitidosParaNuevaCita = tiposParaProfesional;
+
+  const oldRefresh = window.refreshAllSelects;
+  if(typeof oldRefresh === 'function' && !oldRefresh.__yneaTiposMobileFinal){
+    window.refreshAllSelects = function(){
+      const profAntes = $('profesionalCita') ? $('profesionalCita').value : '';
+      const tipoAntes = $('tipoCita') ? $('tipoCita').value : '';
+      const res = oldRefresh.apply(this, arguments);
+      if($('profesionalCita') && profAntes) $('profesionalCita').value = profAntes;
+      fillTiposNuevaCita();
+      if($('tipoCita') && tipoAntes && tiposParaProfesional($('profesionalCita')?.value || '').includes(tipoAntes)) $('tipoCita').value = tipoAntes;
+      return res;
+    };
+    window.refreshAllSelects.__yneaTiposMobileFinal = true;
+  }
+
+  const oldQuick = window.quickNewCitaConsulta;
+  if(typeof oldQuick === 'function' && !oldQuick.__yneaTiposMobileFinal){
+    window.quickNewCitaConsulta = function(fecha,hora,consulta){
+      const r = oldQuick.apply(this, arguments);
+      setTimeout(fillTiposNuevaCita, 0);
+      setTimeout(fillTiposNuevaCita, 80);
+      return r;
+    };
+    window.quickNewCitaConsulta.__yneaTiposMobileFinal = true;
+  }
+
+  document.addEventListener('change', function(ev){
+    if(ev.target && ev.target.id === 'profesionalCita') fillTiposNuevaCita();
+    if(ev.target && ev.target.id === 'mapProfesional' && typeof window.renderMapTipos === 'function') setTimeout(window.renderMapTipos,0);
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(fillTiposNuevaCita, 100);
+    setTimeout(fillTiposNuevaCita, 600);
+  });
+  setTimeout(fillTiposNuevaCita, 300);
+})();
+</script>
+</body>
+</html>
