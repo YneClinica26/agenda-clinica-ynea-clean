@@ -1271,10 +1271,16 @@ function addCita(){
 }
 
 function tiposPermitidosParaProfesional(prof){
- const lista = data.tiposPorProfesional && Object.prototype.hasOwnProperty.call(data.tiposPorProfesional, prof)
-   ? data.tiposPorProfesional[prof]
-   : data.tipos;
- return lista || [];
+ const todos = Array.isArray(data.tipos) ? data.tipos : [];
+ const mapa = data.tiposPorProfesional || {};
+ if(!prof) return todos;
+ if(Object.prototype.hasOwnProperty.call(mapa, prof)){
+   const lista = Array.isArray(mapa[prof]) ? mapa[prof] : [];
+   // Si un profesional quedó guardado sin tipos por error, no bloqueamos la agenda:
+   // mostramos todos los tipos disponibles para poder seguir trabajando.
+   return lista.length ? lista : todos;
+ }
+ return todos;
 }
 function applyTipoDuration(){
  const tipo=$("tipoCita").value;
@@ -4722,6 +4728,30 @@ header{position:sticky!important; padding-right:132px!important;}
 })();
 </script>
 
+
+<script id="ynea-reparar-tipos-vacios">
+(function(){
+  'use strict';
+  function reparar(){
+    try{
+      if(!window.data || !window.data.tiposPorProfesional || !Array.isArray(window.data.tipos)) return;
+      let changed=false;
+      Object.keys(window.data.tiposPorProfesional).forEach(function(prof){
+        const lista=window.data.tiposPorProfesional[prof];
+        if(!Array.isArray(lista) || lista.length===0){
+          window.data.tiposPorProfesional[prof]=window.data.tipos.slice();
+          changed=true;
+        }
+      });
+      if(changed && typeof window.save==='function') window.save();
+      if(changed && typeof window.refreshAllSelects==='function') window.refreshAllSelects();
+    }catch(e){}
+  }
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(reparar,200);setTimeout(reparar,1000);});
+  setTimeout(reparar,500);
+})();
+</script>
+
 </body>
 </html>
 <style id="ynea-mobile-calendar-header-fix-css">
@@ -4993,7 +5023,8 @@ header{position:sticky!important; padding-right:132px!important;}
     if(!prof) return todos;
     const mapa = d.tiposPorProfesional || {};
     if(Object.prototype.hasOwnProperty.call(mapa, prof)){
-      return Array.isArray(mapa[prof]) ? mapa[prof].slice() : [];
+      const lista = Array.isArray(mapa[prof]) ? mapa[prof].slice() : [];
+      return lista.length ? lista : todos;
     }
     return todos;
   }
@@ -5052,5 +5083,29 @@ header{position:sticky!important; padding-right:132px!important;}
   setTimeout(fillTiposNuevaCita, 300);
 })();
 </script>
+
+<script id="ynea-reparar-tipos-vacios">
+(function(){
+  'use strict';
+  function reparar(){
+    try{
+      if(!window.data || !window.data.tiposPorProfesional || !Array.isArray(window.data.tipos)) return;
+      let changed=false;
+      Object.keys(window.data.tiposPorProfesional).forEach(function(prof){
+        const lista=window.data.tiposPorProfesional[prof];
+        if(!Array.isArray(lista) || lista.length===0){
+          window.data.tiposPorProfesional[prof]=window.data.tipos.slice();
+          changed=true;
+        }
+      });
+      if(changed && typeof window.save==='function') window.save();
+      if(changed && typeof window.refreshAllSelects==='function') window.refreshAllSelects();
+    }catch(e){}
+  }
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(reparar,200);setTimeout(reparar,1000);});
+  setTimeout(reparar,500);
+})();
+</script>
+
 </body>
 </html>
