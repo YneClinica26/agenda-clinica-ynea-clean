@@ -4575,3 +4575,134 @@ header{position:sticky!important; padding-right:132px!important;}
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else setTimeout(init,0);
 })();
 </script>
+
+<!-- ===== YNEA FIX FINAL MOVIL: CABECERA LIMPIA + CERRAR SIN COPIA EN TELEFONO ===== -->
+<style id="ynea-final-phone-calendar-closure-css">
+@media(max-width:900px){
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:visible!important;
+    margin:0 0 6px 0!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.top,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.top{
+    display:grid!important;
+    grid-template-columns:1.05fr 1fr 1fr!important;
+    gap:4px!important;
+    align-items:end!important;
+    width:100%!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions{
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:5px!important;
+    width:100%!important;
+    max-width:none!important;
+    margin-top:5px!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button{
+    position:static!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-width:0!important;
+    height:31px!important;
+    min-height:31px!important;
+    padding:4px 2px!important;
+    margin:0!important;
+    font-size:11px!important;
+    white-space:nowrap!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(1),
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(1){grid-column:1!important;order:1!important;}
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(2),
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(2){grid-column:2!important;order:2!important;}
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(3),
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-cal-row.actions button:nth-child(3){grid-column:3!important;order:3!important;}
+
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar .ynea-picker-display,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar .ynea-picker-display{
+    background:#fff!important;
+    background-color:#fff!important;
+    color:#334155!important;
+    border:1px solid #f3cfe0!important;
+    box-shadow:none!important;
+    font-weight:800!important;
+    text-align:left!important;
+    justify-content:flex-start!important;
+    height:31px!important;
+    min-height:31px!important;
+    max-height:31px!important;
+    padding:3px 5px!important;
+    font-size:10px!important;
+    border-radius:9px!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  #semanaView .weekbar.ynea-probar.ynea-fixedbar select,
+  #mensualView .weekbar.ynea-probar.ynea-fixedbar select{
+    background:#fff!important;
+    background-color:#fff!important;
+    color:#334155!important;
+    border:1px solid #f3cfe0!important;
+    box-shadow:none!important;
+  }
+}
+</style>
+<script id="ynea-final-phone-calendar-closure-js">
+(function(){
+  'use strict';
+  const isPhone=function(){return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;};
+  const oldSalir=window.yneaSalirConCopia;
+  window.yneaSalirConCopia=function(){
+    try{ if(typeof save==='function') save(); }catch(e){}
+    if(isPhone()){
+      try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){}
+      try{document.documentElement.classList.add('ynea-locked');}catch(e){}
+      location.reload();
+      return;
+    }
+    if(typeof oldSalir==='function') return oldSalir.apply(this,arguments);
+    try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){}
+    location.reload();
+  };
+  function fmtWeek(v){
+    if(!v) return 'Semana';
+    const d=new Date(v+'T12:00:00');
+    if(isNaN(d)) return String(v);
+    const end=new Date(d); end.setDate(d.getDate()+4);
+    return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})+'-'+end.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
+  }
+  function fmtMonth(v){
+    if(!v) return 'Mes';
+    const parts=String(v).split('-');
+    if(parts.length<2) return String(v);
+    const d=new Date(Number(parts[0]),Number(parts[1])-1,1);
+    if(isNaN(d)) return String(v);
+    return d.toLocaleDateString('es-ES',{month:'short',year:'numeric'}).replace('.','');
+  }
+  function fixHeader(){
+    const w=document.getElementById('weekPicker');
+    const wd=document.getElementById('weekPickerDisplay');
+    if(wd) wd.textContent=fmtWeek(w && w.value ? w.value : (new Date()).toISOString().slice(0,10));
+    const m=document.getElementById('monthPicker');
+    const md=document.getElementById('monthPickerDisplay');
+    if(md) md.textContent=fmtMonth(m && m.value ? m.value : (new Date()).toISOString().slice(0,7));
+    document.querySelectorAll('#semanaView .ynea-cal-row.actions,#mensualView .ynea-cal-row.actions').forEach(row=>{
+      const labels=['Anterior','Actual','Siguiente'];
+      [...row.querySelectorAll('button')].forEach((b,i)=>{b.textContent=labels[i]||b.textContent;b.style.order=String(i+1);b.style.gridColumn=String(i+1);});
+    });
+  }
+  const oldRefresh=window.yneaRefreshCalendarHeader;
+  window.yneaRefreshCalendarHeader=function(){try{oldRefresh&&oldRefresh();}catch(e){} fixHeader();};
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(fixHeader,50);setTimeout(fixHeader,500);});
+  setInterval(fixHeader,1500);
+})();
+</script>
