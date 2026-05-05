@@ -4108,7 +4108,7 @@ button[onclick*="setView('anual'"], button[onclick*='setView("anual"']{display:n
 <script id="ynea-iphone-cache-fix-2026-05-05">
 (function(){
   try{
-    var VERSION='login-obligatorio-2026-05-05-1';
+    var VERSION='supabase-real-iphone-2026-05-05-3-mobile-profesionales';
     var old=sessionStorage.getItem('yneaAppVersion');
     if(old!==VERSION){
       sessionStorage.setItem('yneaAppVersion', VERSION);
@@ -4224,7 +4224,7 @@ button[onclick*="setView('anual'"]{display:none!important}
   document.addEventListener('click',e=>{const row=e.target.closest('#pacientesTable tbody tr'); if(row){e.preventDefault(); window.editarPacienteYnea(row.dataset.pacienteId);}},true);
   const originalRenderConfig=window.renderConfig; window.renderConfig=function(){try{originalRenderConfig&&originalRenderConfig();}catch(e){console.warn(e)} addSupabasePanel(); renderAccessPanel(); refreshSelects();};
   const originalRenderAll=window.renderAll; window.renderAll=function(){try{originalRenderAll&&originalRenderAll();}catch(e){console.warn(e)} try{refreshSelects(); renderAccessPanel(); applyRole();}catch(e){console.warn(e)} document.querySelectorAll('.notice,.autosaveBar,.appFab').forEach(el=>el.style.display='none');};
-  document.addEventListener('DOMContentLoaded',async()=>{sessionStorage.removeItem('yneaCurrentUser'); addSupabasePanel(); ensureAccess(); refreshSelects(); try{renderAccessPanel();}catch(e){} const c=creds(); if(c.key){try{await loadCatalogs(false);}catch(e){console.warn('Supabase auto',e);}} await makeLogin(); try{if(typeof renderAll==='function') renderAll();}catch(e){} });
+  document.addEventListener('DOMContentLoaded',async()=>{addSupabasePanel(); ensureAccess(); refreshSelects(); try{renderAccessPanel();}catch(e){} const c=creds(); if(c.key){try{await loadCatalogs(false);}catch(e){console.warn('Supabase auto',e);}} if(!current()) await makeLogin(); else {applyRole(); refreshSelects();} try{if(typeof renderAll==='function') renderAll();}catch(e){} });
 })();
 </script>
 
