@@ -1,0 +1,14 @@
+{
+  "name": "Agenda Clínica Ynea",
+  "short_name": "Ynea",
+  "start_url": "./index.html?v=ynea-icon-mobile-5dias",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8fb",
+  "theme_color": "#ec4899",
+  "icons": [
+    { "src": "icon-192-ynea.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-ynea.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-ynea.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
