@@ -5319,3 +5319,187 @@ header{position:sticky!important; padding-right:132px!important;}
 
 </body>
 </html>
+
+<!-- ===== YNEA FINAL ESTABLE: SELECTORES, TIPOS, EDICIÓN MÓVIL Y COPIA ===== -->
+<style id="ynea-final-estable-css">
+@media(max-width:900px){
+  html,body{max-width:100%!important;overflow-x:hidden!important;touch-action:manipulation!important;}
+  #semanaView .weekbar,#mensualView .weekbar{display:block!important;width:100%!important;max-width:100%!important;overflow:visible!important;margin-bottom:6px!important;}
+  .ynea-final-top{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:4px!important;align-items:end!important;width:100%!important;}
+  .ynea-final-actions{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:5px!important;width:100%!important;margin-top:5px!important;}
+  .ynea-final-field{min-width:0!important;position:relative!important;z-index:80!important;}
+  .ynea-final-field label{display:block!important;font-size:9px!important;line-height:1!important;margin:0 0 2px 1px!important;color:#64748b!important;font-weight:800!important;white-space:nowrap!important;}
+  .ynea-final-field input,.ynea-final-field select{display:block!important;width:100%!important;min-width:0!important;height:32px!important;min-height:32px!important;max-height:32px!important;box-sizing:border-box!important;border-radius:9px!important;border:1px solid #f3cfe0!important;background:#fff!important;color:#334155!important;font-size:10px!important;padding:3px 5px!important;opacity:1!important;pointer-events:auto!important;appearance:auto!important;-webkit-appearance:menulist!important;position:relative!important;z-index:90!important;}
+  .ynea-final-field input[type="date"],.ynea-final-field input[type="month"]{-webkit-appearance:none!important;appearance:none!important;font-weight:800!important;}
+  .ynea-final-actions button{height:32px!important;min-height:32px!important;width:100%!important;padding:4px 2px!important;margin:0!important;font-size:11px!important;display:flex!important;align-items:center!important;justify-content:center!important;position:static!important;}
+  #semanaView .tableWrap,#mensualView .tableWrap{overflow-x:hidden!important;width:100%!important;max-width:100%!important;}
+  #weekTable,#monthTable{width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important;}
+  #weekTable th:first-child,#weekTable td.time{width:28px!important;min-width:28px!important;max-width:28px!important;font-size:9px!important;padding:1px!important;}
+  #weekTable th:not(:first-child),#weekTable td.slot{width:calc((100% - 28px)/5)!important;min-width:0!important;max-width:calc((100% - 28px)/5)!important;}
+  #weekTable th,#weekTable td,#monthTable th,#monthTable td{box-sizing:border-box!important;overflow:hidden!important;font-size:9px!important;padding:2px!important;}
+  #monthTable th,#monthTable td{width:20%!important;min-width:0!important;max-width:20%!important;}
+  .appt,.ynea-pastel-card,.month-day{pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important;}
+  .appt{font-size:9px!important;padding:3px!important;border-radius:8px!important;}
+  .month-day{height:58px!important;min-height:58px!important;padding:4px!important;background:#fff!important;}
+}
+</style>
+<script id="ynea-final-estable-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const unique=a=>[...new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))];
+  const state=window.__yneaFinalState||(window.__yneaFinalState={weekProf:'',weekConsulta:'',monthProf:'',monthConsulta:''});
+  const palette=['#fde2e4','#e2f0cb','#cde7f0','#fff1b8','#e7d8ff','#ffd6e8','#d8f3dc','#fce7c8','#d7f9f1','#ffe5d9'];
+  function hash(s){let h=0; String(s||'').split('').forEach(ch=>h=(h*31+ch.charCodeAt(0))>>>0); return h;}
+  function color(c){return palette[hash(c||'Consulta')%palette.length];}
+  function opts(arr,first,selected){return (first||'')+unique(arr).map(x=>`<option value="${esc(x)}" ${x===selected?'selected':''}>${esc(x)}</option>`).join('');}
+  function ensureData(){
+    if(!window.data) return {profesionales:[],consultas:[],tipos:[],citas:[],pacientes:[]};
+    data.profesionales=unique(data.profesionales||[]);
+    data.consultas=unique(data.consultas||[]);
+    data.tipos=unique(data.tipos||[]);
+    if(!data.consultas.length) data.consultas=['Consulta 1'];
+    if(!data.tipos.length) data.tipos=['Primera visita','Revisión','Tratamiento','Urgencia','Control'];
+    data.tiposPorProfesional=data.tiposPorProfesional||{};
+    data.duracionesTipo=data.duracionesTipo||{};
+    data.tipos.forEach(t=>{ if(!data.duracionesTipo[t]) data.duracionesTipo[t]='10'; });
+    return data;
+  }
+  function currentWeekDate(){try{return $('weekPicker')?.value || (typeof iso==='function' && window.weekStart ? iso(window.weekStart) : new Date().toISOString().slice(0,10));}catch(e){return new Date().toISOString().slice(0,10);}}
+  function currentMonth(){return $('monthPicker')?.value || new Date().toISOString().slice(0,7);}
+  function storeFromDom(){
+    if($('weekProf')) state.weekProf=$('weekProf').value;
+    if($('weekConsulta')) state.weekConsulta=$('weekConsulta').value;
+    if($('monthProf')) state.monthProf=$('monthProf').value;
+    if($('monthConsulta')) state.monthConsulta=$('monthConsulta').value;
+  }
+  function buildBars(){
+    const d=ensureData();
+    const weekBar=document.querySelector('#semanaView .weekbar');
+    if(weekBar){
+      const wv=currentWeekDate();
+      weekBar.className='weekbar ynea-finalbar';
+      weekBar.innerHTML=`<div class="ynea-final-top"><div class="ynea-final-field"><label>Semana</label><input type="date" id="weekPicker" value="${esc(wv)}"></div><div class="ynea-final-field"><label>Profesional</label><select id="weekProf">${opts(d.profesionales,'<option value="">Todos</option>',state.weekProf)}</select></div><div class="ynea-final-field"><label>Consulta</label><select id="weekConsulta">${opts(d.consultas,'<option value="">Todas</option>',state.weekConsulta)}</select></div></div><div class="ynea-final-actions"><button class="secondary" type="button" id="yneaWeekPrev">Anterior</button><button class="secondary" type="button" id="yneaWeekToday">Actual</button><button class="secondary" type="button" id="yneaWeekNext">Siguiente</button></div>`;
+    }
+    const monthBar=document.querySelector('#mensualView .weekbar');
+    if(monthBar){
+      const mv=currentMonth();
+      monthBar.className='weekbar ynea-finalbar';
+      monthBar.innerHTML=`<div class="ynea-final-top"><div class="ynea-final-field"><label>Mes</label><input type="month" id="monthPicker" value="${esc(mv)}"></div><div class="ynea-final-field"><label>Profesional</label><select id="monthProf">${opts(d.profesionales,'<option value="">Todos</option>',state.monthProf)}</select></div><div class="ynea-final-field"><label>Consulta</label><select id="monthConsulta">${opts(d.consultas,'<option value="">Todas</option>',state.monthConsulta)}</select></div></div><div class="ynea-final-actions"><button class="secondary" type="button" id="yneaMonthPrev">Anterior</button><button class="secondary" type="button" id="yneaMonthToday">Actual</button><button class="secondary" type="button" id="yneaMonthNext">Siguiente</button></div>`;
+    }
+    bindBars();
+  }
+  function bindBars(){
+    ['weekProf','weekConsulta','monthProf','monthConsulta'].forEach(id=>{const el=$(id); if(el) el.onchange=()=>{storeFromDom(); renderStable();};});
+    const wp=$('weekPicker'); if(wp) wp.onchange=()=>{try{ if(typeof setWeekFromDate==='function') setWeekFromDate(wp.value); else window.weekStart=new Date(wp.value+'T12:00:00'); }catch(e){} renderStable();};
+    const mp=$('monthPicker'); if(mp) mp.onchange=()=>{renderStable();};
+    const b=(id,fn)=>{const el=$(id); if(el) el.onclick=()=>{try{fn();}catch(e){} renderStable();};};
+    b('yneaWeekPrev',()=>typeof moveWeek==='function'?moveWeek(-1):null);
+    b('yneaWeekToday',()=>typeof goThisWeek==='function'?goThisWeek():null);
+    b('yneaWeekNext',()=>typeof moveWeek==='function'?moveWeek(1):null);
+    b('yneaMonthPrev',()=>typeof moveMonth==='function'?moveMonth(-1):null);
+    b('yneaMonthToday',()=>typeof goThisMonth==='function'?goThisMonth():null);
+    b('yneaMonthNext',()=>typeof moveMonth==='function'?moveMonth(1):null);
+  }
+  function pacName(id){const d=ensureData(); const p=(d.pacientes||[]).find(x=>String(x.id)===String(id))||{}; return p.nombre||'Paciente';}
+  window.tiposPermitidosParaProfesional=function(){const d=ensureData(); return d.tipos.slice();};
+  window.actualizarTiposNuevaCita=function(){
+    const d=ensureData(), sel=$('tipoCita'); if(!sel) return;
+    const old=sel.value; sel.innerHTML=d.tipos.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    if(d.tipos.includes(old)) sel.value=old; else if(d.tipos.length) sel.value=d.tipos[0];
+    try{if(typeof applyTipoDuration==='function') applyTipoDuration();}catch(e){}
+  };
+  function fillMainSelects(){
+    const d=ensureData();
+    const fill=(id,arr,first)=>{const el=$(id); if(!el) return; const old=el.value; el.disabled=false; el.style.pointerEvents='auto'; el.innerHTML=opts(arr,first,old); if([...el.options].some(o=>o.value===old)) el.value=old;};
+    ['profesionalCita','editCitaProfesional','enlaceProfesional','enlazadaProfesional','bloqProfesionalNuevo'].forEach(id=>fill(id,d.profesionales,''));
+    fill('consultaCita',d.consultas,''); fill('tipoCita',d.tipos,'');
+    window.actualizarTiposNuevaCita();
+  }
+  window.renderWeek=function(){
+    const d=ensureData(); storeFromDom(); buildBars();
+    const table=$('weekTable'); if(!table) return;
+    const prof=state.weekProf||''; const consulta=state.weekConsulta||'';
+    let start=window.weekStart;
+    try{ if($('weekPicker')?.value) start=(typeof monday==='function')?monday(new Date($('weekPicker').value+'T12:00:00')):new Date($('weekPicker').value+'T12:00:00'); }catch(e){}
+    if(!start || isNaN(start)) start=new Date();
+    window.weekStart=start;
+    const days=[0,1,2,3,4].map(n=>typeof addDays==='function'?addDays(start,n):new Date(start.getTime()+86400000*n));
+    if($('weekTitle')) $('weekTitle').textContent=(consulta||'Todas las consultas')+' · '+days[0].toLocaleDateString('es-ES')+' - '+days[4].toLocaleDateString('es-ES');
+    const horasList=Array.isArray(window.horas)?window.horas:(typeof horas!=='undefined'?horas:['09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00']);
+    let html='<thead><tr><th>Hora</th>'+days.map(dy=>`<th>${esc((typeof fmt==='function'?fmt(dy):dy.toLocaleDateString('es-ES',{weekday:'short',day:'2-digit'})))}</th>`).join('')+'</tr></thead><tbody>';
+    horasList.forEach(h=>{
+      html+=`<tr><td class="time">${esc(h)}</td>`;
+      days.forEach(dy=>{
+        const fecha=typeof iso==='function'?iso(dy):dy.toISOString().slice(0,10);
+        const citas=(d.citas||[]).filter(c=>String(c.fecha)===fecha && String(c.hora)===String(h) && (!prof||c.profesional===prof) && (!consulta||c.consulta===consulta));
+        if(citas.length){const c=citas[0]; html+=`<td class="slot"><div class="appt ynea-pastel-card" data-cita-id="${esc(c.id)}" style="background:${color(c.consulta)}!important;border-color:rgba(15,23,42,.12)!important"><strong>${esc(pacName(c.pacienteId))}</strong><br><span>${esc(c.profesional||'')}</span><br><span>${esc(c.tipo||'')} · ${esc(c.consulta||'')}</span></div></td>`;}
+        else html+=`<td class="slot" data-fecha="${esc(fecha)}" data-hora="${esc(h)}" style="cursor:pointer;color:#cbd5e1;text-align:center">+</td>`;
+      });
+      html+='</tr>';
+    });
+    html+='</tbody>'; table.innerHTML=html;
+  };
+  window.renderMonthView=function(){
+    const d=ensureData(); storeFromDom(); buildBars();
+    const table=$('monthTable'); if(!table) return;
+    const prof=state.monthProf||''; const consulta=state.monthConsulta||''; const mv=$('monthPicker')?.value||currentMonth();
+    const [yy,mmRaw]=mv.split('-').map(Number); const mm=(mmRaw||1)-1; const first=new Date(yy||new Date().getFullYear(),mm,1); const last=new Date(first.getFullYear(),first.getMonth()+1,0);
+    if($('monthTitle')) $('monthTitle').textContent=(consulta||'Todas las consultas')+' · '+(prof||'Todos los profesionales')+' · '+first.toLocaleDateString('es-ES',{month:'long',year:'numeric'});
+    let cur=(typeof monday==='function')?monday(first):new Date(first);
+    let html='<thead><tr><th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th></tr></thead><tbody>';
+    for(let w=0;w<6;w++){
+      html+='<tr>';
+      for(let i=0;i<5;i++){
+        const dy=typeof addDays==='function'?addDays(cur,i):new Date(cur.getTime()+86400000*i); const fecha=typeof iso==='function'?iso(dy):dy.toISOString().slice(0,10); const inMonth=dy.getMonth()===first.getMonth();
+        const citas=(d.citas||[]).filter(c=>c.fecha===fecha && (!prof||c.profesional===prof) && (!consulta||c.consulta===consulta));
+        const mini=citas.slice(0,2).map(c=>`<div class="month-mini-item" data-cita-id="${esc(c.id)}" style="background:${color(c.consulta)}!important">${esc(c.hora||'')} ${esc(pacName(c.pacienteId))}</div>`).join('');
+        html+=`<td class="month-day ${inMonth?'':'out'}" data-fecha="${esc(fecha)}"><span class="day-num">${dy.getDate()}</span>${citas.length?`<span class="day-count">${citas.length}</span>${mini}`:'<span class="day-empty">Añadir</span>'}</td>`;
+      }
+      html+='</tr>'; cur=typeof addDays==='function'?addDays(cur,7):new Date(cur.getTime()+7*86400000); if(cur>last && cur.getMonth()!==first.getMonth()) break;
+    }
+    html+='</tbody>'; table.innerHTML=html;
+  };
+  function renderStable(){try{fillMainSelects(); buildBars(); window.renderWeek(); window.renderMonthView();}catch(e){console.warn('render estable',e);}}
+  const previousRenderAll=window.renderAll;
+  window.renderAll=function(){try{storeFromDom(); fillMainSelects(); buildBars();}catch(e){} try{if(previousRenderAll && !window.__yneaRenderingStable){window.__yneaRenderingStable=true; previousRenderAll.apply(this,arguments); window.__yneaRenderingStable=false;}}catch(e){window.__yneaRenderingStable=false;} renderStable();};
+  window.renderMapTipos=function(){
+    const d=ensureData(); const prof=$('mapProfesional')?.value||d.profesionales[0]||''; const box=$('mapTiposBox'); if(!box) return;
+    if($('mapProfesional') && !$('mapProfesional').options.length) $('mapProfesional').innerHTML=opts(d.profesionales,'',prof);
+    const seleccion=(d.tiposPorProfesional&&Array.isArray(d.tiposPorProfesional[prof])&&d.tiposPorProfesional[prof].length)?d.tiposPorProfesional[prof]:d.tipos;
+    box.innerHTML=d.tipos.map(t=>`<label class="pill" style="display:flex;gap:8px;align-items:center"><input type="checkbox" value="${esc(t)}" ${seleccion.includes(t)?'checked':''}> <span>${esc(t)}</span></label>`).join('');
+  };
+  window.saveMapTipos=function(){
+    const d=ensureData(); const prof=$('mapProfesional')?.value; if(!prof){alert('Selecciona un profesional.');return;}
+    const vals=[...document.querySelectorAll('#mapTiposBox input[type="checkbox"]:checked')].map(x=>x.value);
+    d.tiposPorProfesional[prof]=vals.length?vals:d.tipos.slice();
+    try{if(typeof save==='function') save();}catch(e){}
+    alert('Tipos guardados para '+prof+'.'); renderStable();
+  };
+  window.guardarEnCarpetaFija=function(){
+    try{
+      const payload={version:'Agenda Clínica Ynea backup',exportedAt:new Date().toISOString(),data:window.data||null};
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup_agenda_clinica_ynea_'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+      const st=$('backupMainStatus'); if(st) st.textContent='Copia descargada. El navegador la guarda en Descargas o te pregunta dónde guardarla.';
+    }catch(e){alert('No se pudo crear la copia: '+(e.message||e));}
+  };
+  document.addEventListener('click',function(ev){
+    const appt=ev.target.closest('.appt,.month-mini-item');
+    if(appt && appt.dataset.citaId){ev.preventDefault(); ev.stopPropagation(); try{if(typeof abrirEditorCita==='function') abrirEditorCita(Number(appt.dataset.citaId));}catch(e){} return;}
+    const slot=ev.target.closest('#weekTable .slot[data-fecha],#monthTable .month-day[data-fecha]');
+    if(slot){
+      const fecha=slot.dataset.fecha; const hora=slot.dataset.hora||'09:00';
+      if(slot.classList.contains('month-day') && typeof abrirDiaMensualYnea==='function'){try{abrirDiaMensualYnea(fecha);return;}catch(e){}}
+      if(typeof quickNewCitaConsulta==='function'){try{quickNewCitaConsulta(fecha,hora,state.weekConsulta||state.monthConsulta||'');}catch(e){}}
+    }
+  },true);
+  document.addEventListener('touchend',function(ev){
+    const appt=ev.target.closest('.appt,.month-mini-item');
+    if(appt && appt.dataset.citaId){ev.preventDefault(); ev.stopPropagation(); try{if(typeof abrirEditorCita==='function') abrirEditorCita(Number(appt.dataset.citaId));}catch(e){} }
+  },{capture:true,passive:false});
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(renderStable,300));
+  setTimeout(renderStable,500); setTimeout(renderStable,1200);
+})();
+</script>
