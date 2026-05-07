@@ -6205,3 +6205,140 @@ header{position:sticky!important; padding-right:132px!important;}
   setInterval(()=>{ if(mobile()) window.yneaDefNavUpdate(); },2000);
 })();
 </script>
+
+<!-- ===== YNEA FIX FINAL: CABECERA CALENDARIO PC/MÓVIL SIN DUPLICADOS ===== -->
+<style id="ynea-fix-final-header-calendar-css">
+/* Ocultar barras móviles añadidas anteriormente para evitar duplicados */
+.ynea-mobile-nav-def,
+#yneaMobileNavSemanaDef,
+#yneaMobileNavMesDef,
+#yneaMobileNavSemana,
+#yneaMobileNavMes,
+[id^="yneaMobileNav"]{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
+
+/* Barra original: siempre visible en PC y móvil */
+#semanaView .weekbar,
+#mensualView .weekbar{
+  display:grid!important;
+  gap:8px!important;
+  align-items:end!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  visibility:visible!important;
+  opacity:1!important;
+  overflow:visible!important;
+}
+
+/* PC */
+@media (min-width:901px){
+  #semanaView .weekbar{grid-template-columns:130px minmax(150px,1fr) 120px 130px minmax(170px,1fr) minmax(170px,1fr)!important;}
+  #mensualView .weekbar{grid-template-columns:130px minmax(150px,1fr) 120px 130px minmax(190px,1fr)!important;}
+  #semanaView .weekbar>*:nth-child(1), #mensualView .weekbar>*:nth-child(1){order:1!important;}
+  #semanaView .weekbar>*:nth-child(2), #mensualView .weekbar>*:nth-child(2){order:2!important;}
+  #semanaView .weekbar>*:nth-child(3), #mensualView .weekbar>*:nth-child(3){order:3!important;}
+  #semanaView .weekbar>*:nth-child(4), #mensualView .weekbar>*:nth-child(4){order:4!important;}
+  #semanaView .weekbar>*:nth-child(5), #mensualView .weekbar>*:nth-child(5){order:5!important;}
+  #semanaView .weekbar>*:nth-child(6){order:6!important;}
+}
+
+/* Móvil: primera línea Semana/Mes + Consulta + Profesional; segunda línea Anterior/Actual/Siguiente */
+@media (max-width:900px){
+  #semanaView .card,#mensualView .card{overflow:visible!important;}
+  #semanaView .weekbar,
+  #mensualView .weekbar{
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:6px!important;
+    margin:6px 0 8px!important;
+  }
+  #semanaView .weekbar>* , #mensualView .weekbar>*{min-width:0!important;width:100%!important;box-sizing:border-box!important;}
+  #semanaView .weekbar label,#mensualView .weekbar label{font-size:10px!important;margin:0 0 2px!important;line-height:1.1!important;white-space:nowrap!important;}
+  #semanaView .weekbar input,#semanaView .weekbar select,
+  #mensualView .weekbar input,#mensualView .weekbar select{
+    width:100%!important;min-width:0!important;min-height:30px!important;height:30px!important;
+    padding:4px 6px!important;font-size:11px!important;border-radius:9px!important;
+  }
+  #semanaView .weekbar button,#mensualView .weekbar button{
+    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+    width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;
+    padding:3px 2px!important;border-radius:10px!important;font-size:10px!important;line-height:1.05!important;
+    white-space:normal!important;overflow:hidden!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;
+  }
+  #semanaView .weekbar .nav-main,#mensualView .weekbar .nav-main{display:block!important;font-weight:900!important;font-size:10px!important;line-height:1.05!important;}
+  #semanaView .weekbar .nav-sub,#mensualView .weekbar .nav-sub{display:block!important;font-weight:700!important;font-size:8.5px!important;line-height:1.05!important;opacity:.76!important;margin-top:1px!important;}
+
+  /* Semana: orden correcto */
+  #semanaView .weekbar>*:nth-child(2){order:1!important;} /* Semana */
+  #semanaView .weekbar>*:nth-child(6){order:2!important;} /* Consulta */
+  #semanaView .weekbar>*:nth-child(5){order:3!important;} /* Profesional */
+  #semanaView .weekbar>*:nth-child(1){order:4!important;} /* Anterior */
+  #semanaView .weekbar>*:nth-child(3){order:5!important;} /* Actual */
+  #semanaView .weekbar>*:nth-child(4){order:6!important;} /* Siguiente */
+
+  /* Mes: Mes + Profesional arriba; botones debajo. No hay selector consulta en mensual. */
+  #mensualView .weekbar>*:nth-child(2){order:1!important;grid-column:auto!important;} /* Mes */
+  #mensualView .weekbar>*:nth-child(5){order:2!important;grid-column:span 2!important;} /* Profesional */
+  #mensualView .weekbar>*:nth-child(1){order:4!important;} /* Anterior */
+  #mensualView .weekbar>*:nth-child(3){order:5!important;} /* Actual */
+  #mensualView .weekbar>*:nth-child(4){order:6!important;} /* Siguiente */
+}
+</style>
+<script id="ynea-fix-final-header-calendar-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const pad=n=>String(n).padStart(2,'0');
+  function parseDate(v){return v?new Date(v+'T12:00:00'):new Date();}
+  function monday(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);return x;}
+  function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+  function fmt(d){return pad(d.getDate())+'/'+pad(d.getMonth()+1);}
+  function weekRange(d){const a=monday(d);const b=addDays(a,4);return fmt(a)+' - '+fmt(b);}
+  function monthLabel(v,shift){
+    let base=new Date();
+    if(v&&/^\d{4}-\d{2}$/.test(v)){const p=v.split('-').map(Number);base=new Date(p[0],p[1]-1,1);}
+    const d=new Date(base.getFullYear(),base.getMonth()+(shift||0),1);
+    return d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).replace(/\./g,'');
+  }
+  function twoLines(btn,main,sub){
+    if(!btn) return;
+    btn.style.display='flex';
+    btn.innerHTML='<span class="nav-main">'+main+'</span><span class="nav-sub">'+sub+'</span>';
+  }
+  function removeOldBars(){
+    document.querySelectorAll('.ynea-mobile-nav-def,[id^="yneaMobileNav"]').forEach(el=>{try{el.remove();}catch(e){el.style.display='none';}});
+  }
+  function updateWeekButtons(){
+    const bar=document.querySelector('#semanaView .weekbar'); if(!bar) return;
+    const kids=bar.children; if(kids.length<4) return;
+    const current=parseDate(($('weekPicker')&&$('weekPicker').value)||'');
+    twoLines(kids[0],'Anterior',weekRange(addDays(current,-7)));
+    twoLines(kids[2],'Actual',weekRange(new Date()));
+    twoLines(kids[3],'Siguiente',weekRange(addDays(current,7)));
+  }
+  function updateMonthButtons(){
+    const bar=document.querySelector('#mensualView .weekbar'); if(!bar) return;
+    const kids=bar.children; if(kids.length<4) return;
+    const mv=($('monthPicker')&&$('monthPicker').value)||'';
+    twoLines(kids[0],'Anterior',monthLabel(mv,-1));
+    twoLines(kids[2],'Actual',monthLabel('',0));
+    twoLines(kids[3],'Siguiente',monthLabel(mv,1));
+  }
+  function fix(){removeOldBars(); updateWeekButtons(); updateMonthButtons();}
+  window.yneaDefNavUpdate=fix;
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){const r=oldRenderAll?oldRenderAll.apply(this,arguments):undefined; setTimeout(fix,0); setTimeout(fix,120); return r;};
+  const oldSetView=window.setView;
+  window.setView=function(){const r=oldSetView?oldSetView.apply(this,arguments):undefined; setTimeout(fix,0); setTimeout(fix,120); return r;};
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(fix,80);setTimeout(fix,400);setTimeout(fix,1000);});
+  document.addEventListener('change',e=>{ if(e.target&&['weekPicker','monthPicker','weekProf','weekConsulta','monthProf'].includes(e.target.id)) setTimeout(fix,80);},true);
+  window.addEventListener('resize',()=>setTimeout(fix,100));
+  setInterval(fix,1500);
+})();
+</script>
