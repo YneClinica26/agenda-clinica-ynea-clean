@@ -6098,3 +6098,110 @@ header{position:sticky!important; padding-right:132px!important;}
   setInterval(update,1500);
 })();
 </script>
+
+<!-- ===== YNEA FIX DEFINITIVO: BARRA MÓVIL ANTERIOR / ACTUAL / SIGUIENTE SIEMPRE VISIBLE ===== -->
+<style id="ynea-definitivo-nav-calendario-css">
+@media (max-width: 900px){
+  #semanaView .ynea-mobile-nav-def,
+  #mensualView .ynea-mobile-nav-def{
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:6px!important;
+    width:100%!important;
+    margin:8px 0 10px 0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    clear:both!important;
+    visibility:visible!important;
+    opacity:1!important;
+    position:relative!important;
+    z-index:9999!important;
+  }
+  #semanaView .ynea-mobile-nav-def button,
+  #mensualView .ynea-mobile-nav-def button{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:38px!important;
+    height:38px!important;
+    padding:3px 2px!important;
+    border-radius:10px!important;
+    font-size:10px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    position:relative!important;
+    z-index:10000!important;
+  }
+  #semanaView .ynea-mobile-nav-def .main,
+  #mensualView .ynea-mobile-nav-def .main{display:block!important;font-weight:900!important;font-size:10px!important;line-height:1.05!important;}
+  #semanaView .ynea-mobile-nav-def .sub,
+  #mensualView .ynea-mobile-nav-def .sub{display:block!important;font-weight:700!important;font-size:8.5px!important;line-height:1.05!important;opacity:.78!important;margin-top:1px!important;}
+}
+@media (min-width: 901px){.ynea-mobile-nav-def{display:none!important;}}
+</style>
+<script id="ynea-definitivo-nav-calendario-js">
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  function mobile(){ return !window.matchMedia || window.matchMedia('(max-width:900px)').matches; }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function parseDate(v){ return v ? new Date(v+'T12:00:00') : new Date(); }
+  function monday(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); return x; }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function fmtDate(d){ return pad(d.getDate())+'/'+pad(d.getMonth()+1); }
+  function weekText(d){ const a=monday(d); const b=addDays(a,4); return fmtDate(a)+'-'+fmtDate(b); }
+  function monthText(v,shift){
+    let base=new Date();
+    if(v && /^\d{4}-\d{2}$/.test(v)){ const p=v.split('-').map(Number); base=new Date(p[0],p[1]-1,1); }
+    const d=new Date(base.getFullYear(), base.getMonth()+(shift||0), 1);
+    return d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).replace('.','');
+  }
+  function btn(id,main,sub,onclick){
+    return '<button class="secondary" type="button" id="'+id+'" onclick="'+onclick+'"><span class="main">'+main+'</span><span class="sub">'+sub+'</span></button>';
+  }
+  function ensureSemana(){
+    const view=$('semanaView'); if(!view) return;
+    const card=view.querySelector('.card') || view;
+    let bar=$('yneaMobileNavSemanaDef');
+    if(!bar){
+      bar=document.createElement('div'); bar.id='yneaMobileNavSemanaDef'; bar.className='ynea-mobile-nav-def';
+      const ref=view.querySelector('.weekbar') || view.querySelector('h2');
+      if(ref && ref.parentNode) ref.parentNode.insertBefore(bar, ref.nextSibling); else card.insertBefore(bar, card.firstChild);
+    }
+    const w=parseDate(($('weekPicker')&&$('weekPicker').value)||'');
+    bar.innerHTML=btn('yneaMobilePrevWeekDef','Anterior',weekText(addDays(w,-7)),'moveWeek(-1); setTimeout(yneaDefNavUpdate,80);')+
+                  btn('yneaMobileThisWeekDef','Actual',weekText(new Date()),'goThisWeek(); setTimeout(yneaDefNavUpdate,80);')+
+                  btn('yneaMobileNextWeekDef','Siguiente',weekText(addDays(w,7)),'moveWeek(1); setTimeout(yneaDefNavUpdate,80);');
+  }
+  function ensureMes(){
+    const view=$('mensualView'); if(!view) return;
+    const card=view.querySelector('.card') || view;
+    let bar=$('yneaMobileNavMesDef');
+    if(!bar){
+      bar=document.createElement('div'); bar.id='yneaMobileNavMesDef'; bar.className='ynea-mobile-nav-def';
+      const ref=view.querySelector('.weekbar') || view.querySelector('h2');
+      if(ref && ref.parentNode) ref.parentNode.insertBefore(bar, ref.nextSibling); else card.insertBefore(bar, card.firstChild);
+    }
+    const mv=($('monthPicker')&&$('monthPicker').value)||'';
+    bar.innerHTML=btn('yneaMobilePrevMonthDef','Anterior',monthText(mv,-1),'moveMonth(-1); setTimeout(yneaDefNavUpdate,80);')+
+                  btn('yneaMobileThisMonthDef','Actual',monthText('',0),'goThisMonth(); setTimeout(yneaDefNavUpdate,80);')+
+                  btn('yneaMobileNextMonthDef','Siguiente',monthText(mv,1),'moveMonth(1); setTimeout(yneaDefNavUpdate,80);');
+  }
+  window.yneaDefNavUpdate=function(){ if(!mobile()) return; ensureSemana(); ensureMes(); };
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){ const r=oldRenderAll?oldRenderAll.apply(this,arguments):undefined; setTimeout(window.yneaDefNavUpdate,0); setTimeout(window.yneaDefNavUpdate,150); return r; };
+  const oldSetView=window.setView;
+  window.setView=function(){ const r=oldSetView?oldSetView.apply(this,arguments):undefined; setTimeout(window.yneaDefNavUpdate,0); setTimeout(window.yneaDefNavUpdate,200); return r; };
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(window.yneaDefNavUpdate,200); setTimeout(window.yneaDefNavUpdate,800); setTimeout(window.yneaDefNavUpdate,1600);});
+  document.addEventListener('change',()=>setTimeout(window.yneaDefNavUpdate,120),true);
+  window.addEventListener('resize',()=>setTimeout(window.yneaDefNavUpdate,120));
+  setInterval(()=>{ if(mobile()) window.yneaDefNavUpdate(); },2000);
+})();
+</script>
