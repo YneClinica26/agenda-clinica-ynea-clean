@@ -2067,7 +2067,7 @@ function importBackup(event){
      if(confirm("¿Cargar esta copia de seguridad? Se sustituirán los datos actuales de esta agenda.")){
        localStorage.setItem("agendaClinicaSemanal",JSON.stringify(imported));
        alert("Copia cargada. La agenda se reiniciará ahora.");
-       location.reload();
+       /* reload eliminado */
      }
    }catch(err){
      alert("No se pudo cargar la copia. Archivo no válido.");
@@ -2545,7 +2545,7 @@ function importBackupFromMain(event){
         localStorage.setItem("agendaData", JSON.stringify(data));
 
         alert("Copia cargada correctamente. La agenda se recargará ahora.");
-        location.reload();
+        /* reload eliminado */
       }
     }catch(err){
       alert("Archivo no válido. Selecciona una copia .json creada desde esta agenda.");
@@ -4515,7 +4515,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   }
   function applyRole(){const r=currentRole(), allowed=ROLE_ALLOWED[r]||ROLE_ALLOWED.admin; document.querySelectorAll('.tabs .tab').forEach(btn=>{const oc=btn.getAttribute('onclick')||''; const m=oc.match(/setView\('([^']+)'/); if(!m) return; const v=m[1]; btn.style.display=(v==='anual'||(r&&!allowed.includes(v)))?'none':'';}); if(r==='usuario') document.querySelectorAll('button[onclick*="setView(\'config\'"]').forEach(b=>b.style.display='none'); const panel=$('yneaAccessPanelStable'); if(panel) panel.style.display=(r==='admin'||!r)?'block':'none';}
   const originalSetView=window.setView; window.setView=function(view,btn){const r=currentRole(); const allowed=ROLE_ALLOWED[r]||ROLE_ALLOWED.admin; if(view==='anual') view='semana'; if(r&&!allowed.includes(view)) view=allowed[0]||'semana'; const out=originalSetView?originalSetView(view,btn):undefined; applyRole(); refreshSelects(); return out;};
-  window.yneaLogout=function(){sessionStorage.removeItem('yneaCurrentUser'); try{document.documentElement.classList.add('ynea-locked');}catch(e){} location.reload();};
+  window.yneaLogout=function(){sessionStorage.removeItem('yneaCurrentUser'); try{document.documentElement.classList.add('ynea-locked');}catch(e){} /* reload eliminado */};
   const originalRefresh=window.refreshAllSelects; window.refreshAllSelects=function(){try{originalRefresh&&originalRefresh();}catch(e){console.warn(e)} refreshSelects();};
   function afterProfs(){ensureAccess(); saveObj(); refreshSelects(); renderAccessPanel(); renderLoginSelect();}
   const originalAddItem=window.addItem; window.addItem=function(key,inputId){if(key==='profesionales'){const d=dataObj(); const val=String($(inputId)?.value||'').trim(); if(!val) return; if(!d.profesionales.includes(val)) d.profesionales.push(val); if($(inputId)) $(inputId).value=''; ensureAccess(); syncLater(syncProfesionalToSupabase(val)); afterProfs(); try{if(typeof renderConfig==='function') renderConfig(); if(typeof renderAll==='function') renderAll();}catch(e){} return;} return originalAddItem?originalAddItem.apply(this,arguments):undefined;};
@@ -4552,7 +4552,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
     setTimeout(function(){
       try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){}
       try{document.documentElement.classList.add('ynea-locked');}catch(e){}
-      location.reload();
+      /* reload eliminado */
     },450);
   };
 })();
@@ -4872,7 +4872,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
     if(!isMobile()){
       try{ window.guardarEnCarpetaFija(); }catch(e){console.warn('backup cierre',e);}
     }
-    setTimeout(function(){ try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){} try{document.documentElement.classList.add('ynea-locked');}catch(e){} location.reload(); }, isMobile()?100:350);
+    setTimeout(function(){ try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){} try{document.documentElement.classList.add('ynea-locked');}catch(e){} /* reload eliminado */ }, isMobile()?100:350);
   };
 
   document.addEventListener('DOMContentLoaded',function(){
@@ -4984,7 +4984,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
   window.yneaForceCloudLoad=refreshFromCloud;
   window.yneaForceCloudSave=function(){return saveCloud(localData(),false)};
   window.yneaSubirEsteDispositivo=function(){return saveCloud(localData(),false)};
-  window.yneaSalirConCopia=async function(){try{await saveCloud(localData(),true)}catch(e){} try{sessionStorage.removeItem('yneaCurrentUser')}catch(e){} location.reload();};
+  window.yneaSalirConCopia=async function(){try{await saveCloud(localData(),true)}catch(e){} try{sessionStorage.removeItem('yneaCurrentUser')}catch(e){} /* reload eliminado */};
 
   document.addEventListener('DOMContentLoaded',()=>setTimeout(refreshFromCloud,900),true);
   window.addEventListener('focus',()=>setTimeout(refreshFromCloud,200));
@@ -5084,7 +5084,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
     if(!isMobile()){try{await escribirBackupPC();}catch(e){alert('No se pudo hacer la copia de seguridad: '+(e.message||e));}}
     try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){}
     try{document.documentElement.classList.add('ynea-locked');}catch(e){}
-    location.reload();
+    /* reload eliminado */
   };
 
   document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{instalarBloqueos(); setMinDates();},300);},true);
@@ -5131,61 +5131,223 @@ function pastelColorProfesional(nombre){
 </style>
 
 
-<style id="ynea-final-pacientes-solo-nombre">
+<style id="ynea-modal-pacientes-grid-recuperacion-final">
 @media (max-width:700px){
-  #pacientesView .card{padding:8px !important;margin-bottom:6px !important;}
-  #pacientesView h2{font-size:15px !important;margin:0 0 6px !important;line-height:1.05 !important;}
-  #pacientesSearchWrap,#pacientesView .tableWrap{margin-top:4px !important;}
-  #buscadorPacientes,#pacientesSearchWrap input{font-size:12px !important;padding:6px 8px !important;min-height:30px !important;}
-  #pacientesTable{width:100% !important;border-collapse:collapse !important;border-spacing:0 !important;font-size:11px !important;line-height:1 !important;}
+  /* El modal debe estar por encima de la barra Semana/Mes/Pacientes */
+  .editorCitaOverlay{
+    z-index:30000 !important;
+    align-items:flex-end !important;
+    padding:6px !important;
+  }
+  .editorCitaModal{
+    width:100% !important;
+    max-height:calc(100dvh - 12px) !important;
+    height:auto !important;
+    border-radius:18px 18px 0 0 !important;
+    padding:10px 10px 76px 10px !important;
+    overflow:auto !important;
+  }
+  .editorCitaHeader{
+    margin-bottom:6px !important;
+  }
+  .editorCitaHeader h2{
+    font-size:16px !important;
+    line-height:1.1 !important;
+  }
+  .editorCitaHeader p{
+    display:none !important;
+  }
+  .editorCitaGrid{
+    grid-template-columns:1fr 1fr !important;
+    gap:6px !important;
+  }
+  .editorCitaGrid label{
+    font-size:11px !important;
+    margin-bottom:2px !important;
+  }
+  .editorCitaGrid input,
+  .editorCitaGrid select,
+  .editorCitaGrid textarea{
+    min-height:30px !important;
+    height:30px !important;
+    padding:4px 6px !important;
+    font-size:12px !important;
+    border-radius:8px !important;
+  }
+  .editorCitaGrid textarea{
+    height:44px !important;
+    min-height:44px !important;
+  }
+  .editorCitaActions{
+    position:fixed !important;
+    left:8px !important;
+    right:8px !important;
+    bottom:8px !important;
+    z-index:31000 !important;
+    background:#ffffff !important;
+    border:1px solid #ead5df !important;
+    border-radius:14px !important;
+    padding:7px !important;
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:6px !important;
+    box-shadow:0 8px 26px rgba(15,23,42,.18) !important;
+  }
+  .editorCitaActions button{
+    min-width:0 !important;
+    width:100% !important;
+    min-height:34px !important;
+    height:34px !important;
+    padding:5px 7px !important;
+    font-size:12px !important;
+    border-radius:10px !important;
+  }
+
+  /* Listado de pacientes móvil: solo nombre, compacto */
+  #pacientesTable{
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    font-size:10.5px !important;
+    border-collapse:separate !important;
+    border-spacing:0 !important;
+  }
   #pacientesTable thead{display:none !important;}
-  #pacientesTable tbody{display:block !important;width:100% !important;}
-  #pacientesTable tr{display:block !important;margin:0 0 3px !important;padding:4px 6px !important;min-height:0 !important;height:auto !important;border:1px solid #f3cfe0 !important;border-radius:8px !important;background:#fff !important;line-height:1 !important;}
-  #pacientesTable td{display:none !important;}
-  #pacientesTable td:first-child{display:block !important;padding:0 !important;margin:0 !important;border:0 !important;font-size:11px !important;line-height:1.05 !important;}
-  #pacientesTable td:first-child::before{content:'' !important;display:none !important;}
-  #pacientesTable td:first-child b{font-size:11px !important;font-weight:600 !important;line-height:1.05 !important;}
+  #pacientesTable tbody{display:block !important;}
+  #pacientesTable tr{
+    display:block !important;
+    height:auto !important;
+    min-height:0 !important;
+    margin:0 0 3px 0 !important;
+    padding:3px 5px !important;
+    line-height:1 !important;
+    border:1px solid #f1d7e3 !important;
+    border-radius:8px !important;
+    background:#fff !important;
+  }
+  #pacientesTable td{
+    display:none !important;
+    padding:0 !important;
+    margin:0 !important;
+    line-height:1 !important;
+    font-size:10.5px !important;
+    border:0 !important;
+  }
+  #pacientesTable td:first-child{
+    display:block !important;
+    line-height:1 !important;
+  }
+  #pacientesTable td:first-child b{
+    font-size:10.5px !important;
+    line-height:1 !important;
+  }
 }
 </style>
-<script id="ynea-final-delete-grid-patients">
+
+<script id="ynea-recuperacion-modal-grid-final">
 (function(){
   'use strict';
-  function $(id){return document.getElementById(id)}
-  function soloNombrePacientes(){
-    const table=$('pacientesTable');
-    if(!table || !window.data || !Array.isArray(window.data.pacientes)) return;
-    const q=($('buscadorPacientes')?.value||'').toLowerCase().trim();
-    const rows=window.data.pacientes.filter(p=>{
-      const texto=[p.nombre,p.telefono,p.email,p.obs].join(' ').toLowerCase();
-      return !q || texto.includes(q);
-    });
-    table.innerHTML='<thead><tr><th>Nombre</th></tr></thead><tbody>'+rows.map(p=>`<tr onclick="window.editarPaciente&&window.editarPaciente('${p.id}')"><td><b>${p.nombre||''}</b></td></tr>`).join('')+'</tbody>';
+
+  function esMovil(){
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia('(max-width:700px)').matches;
   }
-  window.renderPatients=soloNombrePacientes;
 
-  window.eliminarCitaDesdeEditor=async function(){
-    const id=$('editCitaId')?.value;
-    if(!id){alert('No se ha encontrado la cita para eliminar.');return;}
-    if(!confirm('¿Eliminar esta cita?')) return;
-    if(!window.data) window.data={citas:[]};
-    window.data.citas=(window.data.citas||[]).filter(c=>String(c.id)!==String(id));
-    try{ if(typeof window.save==='function') window.save(); }catch(e){console.warn(e)}
-    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){console.warn(e)}
-    try{ const ov=$('editorCitaOverlay'); if(ov) ov.style.display='none'; }catch(e){}
-    try{ sessionStorage.setItem('yneaViewAfterReload','semana'); }catch(e){}
-    setTimeout(()=>location.reload(),120);
-  };
-
-  window.addEventListener('load',()=>{
+  function irCalendarioYRepintar(fecha){
     try{
-      if(sessionStorage.getItem('yneaViewAfterReload')==='semana'){
-        sessionStorage.removeItem('yneaViewAfterReload');
-        setTimeout(()=>{ if(typeof window.setView==='function') window.setView('semana'); },250);
+      if(fecha && typeof monday==='function'){
+        weekStart = monday(new Date(fecha));
+        const wp=document.getElementById('weekPicker');
+        if(wp) wp.value = fecha;
       }
     }catch(e){}
-    setTimeout(soloNombrePacientes,500);
-    setInterval(()=>{ if(document.getElementById('pacientesView')?.style.display!=='none') soloNombrePacientes(); },1000);
-  });
+    try{
+      if(typeof setView==='function') setView('semana');
+    }catch(e){}
+    try{
+      if(typeof renderAll==='function') renderAll();
+    }catch(e){}
+    setTimeout(function(){try{ if(typeof renderAll==='function') renderAll(); }catch(e){}},80);
+    setTimeout(function(){try{ if(typeof renderAll==='function') renderAll(); }catch(e){}},300);
+  }
+
+  // Render de pacientes móvil sin teléfono/email/observaciones.
+  const renderPatientsBase = window.renderPatients;
+  window.renderPatients = function(){
+    const tabla=document.getElementById('pacientesTable');
+    if(!tabla) return;
+    if(esMovil()){
+      const pacientes=(window.data && Array.isArray(window.data.pacientes)) ? window.data.pacientes : (typeof data!=='undefined' && Array.isArray(data.pacientes) ? data.pacientes : []);
+      tabla.innerHTML = '<tbody>' + pacientes.map(function(p){
+        return '<tr><td><b>' + String(p.nombre||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}) + '</b></td></tr>';
+      }).join('') + '</tbody>';
+      return;
+    }
+    if(typeof renderPatientsBase === 'function') return renderPatientsBase.apply(this, arguments);
+  };
+
+  // Crear cita: guardar, cerrar formulario móvil si existe y volver al calendario.
+  const addCitaBase = window.addCita;
+  window.addCita = function(){
+    const antes = (window.data && Array.isArray(window.data.citas)) ? window.data.citas.length : 0;
+    const r = addCitaBase.apply(this, arguments);
+    const despues = (window.data && Array.isArray(window.data.citas)) ? window.data.citas.length : antes;
+    if(despues > antes){
+      try{ if(typeof window.yneaForceCloudSave==='function') window.yneaForceCloudSave(); }catch(e){}
+      try{
+        const f=document.getElementById('fechaCita')?.value;
+        irCalendarioYRepintar(f);
+      }catch(e){ irCalendarioYRepintar(); }
+    }
+    return r;
+  };
+
+  // Editar cita: guardar, cerrar modal y volver al calendario.
+  const guardarEditorBase = window.guardarCitaDesdeEditor;
+  window.guardarCitaDesdeEditor = function(){
+    const f=document.getElementById('editCitaFecha')?.value;
+    const r = guardarEditorBase.apply(this, arguments);
+    try{ if(typeof window.yneaForceCloudSave==='function') window.yneaForceCloudSave(); }catch(e){}
+    try{
+      const ov=document.getElementById('editorCitaOverlay');
+      if(ov) ov.style.display='none';
+    }catch(e){}
+    irCalendarioYRepintar(f);
+    return r;
+  };
+
+  // Eliminar cita: NO cerrar app, NO recargar. Borra, guarda online y reconstruye cuadrícula.
+  window.eliminarCitaDesdeEditor = async function(){
+    const id=document.getElementById('editCitaId')?.value;
+    const f=document.getElementById('editCitaFecha')?.value;
+    if(!id){ alert('No se ha encontrado la cita para eliminar.'); return; }
+    if(!confirm('¿Eliminar esta cita?')) return;
+
+    try{
+      if(window.data && Array.isArray(window.data.citas)){
+        window.data.citas = window.data.citas.filter(function(c){return String(c.id)!==String(id);});
+      }
+      if(typeof data!=='undefined' && Array.isArray(data.citas)){
+        data.citas = data.citas.filter(function(c){return String(c.id)!==String(id);});
+      }
+    }catch(e){}
+
+    try{ if(typeof save==='function') save(); }catch(e){}
+    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){ console.warn(e); }
+
+    try{
+      const ov=document.getElementById('editorCitaOverlay');
+      if(ov) ov.style.display='none';
+    }catch(e){}
+
+    irCalendarioYRepintar(f);
+  };
+
+  // Compatibilidad con botones que llamen a otro nombre.
+  window.eliminarCita = window.eliminarCitaDesdeEditor;
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(function(){try{window.renderPatients();}catch(e){}},250);
+  }, true);
 })();
 </script>
 
