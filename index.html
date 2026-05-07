@@ -6004,3 +6004,97 @@ header{position:sticky!important; padding-right:132px!important;}
   setTimeout(renderStable,500); setTimeout(renderStable,1200);
 })();
 </script>
+
+<!-- ===== YNEA FIX FINAL: MOSTRAR ANTERIOR / ACTUAL / SIGUIENTE EN MÓVIL ===== -->
+<style id="ynea-fix-nav-mobile-visible-css">
+@media(max-width:900px){
+  #semanaView .ynea-final-actions,
+  #mensualView .ynea-final-actions,
+  #semanaView .ynea-rescate-actions,
+  #mensualView .ynea-rescate-actions,
+  #semanaView .ynea-cal-row.actions,
+  #mensualView .ynea-cal-row.actions{
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:6px!important;
+    width:100%!important;
+    max-width:100%!important;
+    visibility:visible!important;
+    opacity:1!important;
+    height:auto!important;
+    overflow:visible!important;
+    margin:6px 0 8px 0!important;
+    position:relative!important;
+    z-index:120!important;
+  }
+  #semanaView .ynea-final-actions button,
+  #mensualView .ynea-final-actions button,
+  #semanaView .ynea-rescate-actions button,
+  #mensualView .ynea-rescate-actions button,
+  #semanaView .ynea-cal-row.actions button,
+  #mensualView .ynea-cal-row.actions button{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    visibility:visible!important;
+    opacity:1!important;
+    width:100%!important;
+    min-width:0!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:3px 2px!important;
+    font-size:10px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    position:static!important;
+    pointer-events:auto!important;
+  }
+  .ynea-nav-main{display:block!important;font-weight:900!important;font-size:10px!important;line-height:1.05!important;}
+  .ynea-nav-sub{display:block!important;font-weight:700!important;font-size:8.5px!important;line-height:1.05!important;opacity:.75!important;margin-top:1px!important;}
+}
+</style>
+<script id="ynea-fix-nav-mobile-visible-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  function isMob(){return !window.matchMedia || window.matchMedia('(max-width:900px)').matches;}
+  function pad(n){return String(n).padStart(2,'0');}
+  function parseDate(v){return v ? new Date(v+'T12:00:00') : new Date();}
+  function monday(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); return x;}
+  function addDays(d,n){const x=new Date(d); x.setDate(x.getDate()+n); return x;}
+  function fmtDate(d){return pad(d.getDate())+'/'+pad(d.getMonth()+1);}
+  function weekLabel(d){const a=monday(d); const b=addDays(a,4); return fmtDate(a)+'-'+fmtDate(b);}
+  function monthLabel(v,shift){
+    const now=new Date();
+    let y=now.getFullYear(), m=now.getMonth();
+    if(v && /^\d{4}-\d{2}$/.test(v)){const p=v.split('-').map(Number); y=p[0]; m=p[1]-1;}
+    const d=new Date(y,m+(shift||0),1);
+    return d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).replace('.','');
+  }
+  function put(btn,main,sub){
+    if(!btn) return;
+    btn.style.display='flex'; btn.style.visibility='visible'; btn.style.opacity='1'; btn.style.pointerEvents='auto';
+    btn.innerHTML='<span class="ynea-nav-main">'+main+'</span><span class="ynea-nav-sub">'+sub+'</span>';
+  }
+  function update(){
+    if(!isMob()) return;
+    const w=parseDate(($('weekPicker')&&$('weekPicker').value)||'');
+    put($('yneaWeekPrev')||document.querySelector('#semanaView .ynea-final-actions button:nth-child(1),#semanaView .ynea-rescate-actions button:nth-child(1),#semanaView .ynea-cal-row.actions button:nth-child(1)'), 'Anterior', weekLabel(addDays(w,-7)));
+    put($('yneaWeekToday')||document.querySelector('#semanaView .ynea-final-actions button:nth-child(2),#semanaView .ynea-rescate-actions button:nth-child(2),#semanaView .ynea-cal-row.actions button:nth-child(2)'), 'Actual', weekLabel(new Date()));
+    put($('yneaWeekNext')||document.querySelector('#semanaView .ynea-final-actions button:nth-child(3),#semanaView .ynea-rescate-actions button:nth-child(3),#semanaView .ynea-cal-row.actions button:nth-child(3)'), 'Siguiente', weekLabel(addDays(w,7)));
+    const mv=($('monthPicker')&&$('monthPicker').value)||'';
+    put($('yneaMonthPrev')||document.querySelector('#mensualView .ynea-final-actions button:nth-child(1),#mensualView .ynea-rescate-actions button:nth-child(1),#mensualView .ynea-cal-row.actions button:nth-child(1)'), 'Anterior', monthLabel(mv,-1));
+    put($('yneaMonthToday')||document.querySelector('#mensualView .ynea-final-actions button:nth-child(2),#mensualView .ynea-rescate-actions button:nth-child(2),#mensualView .ynea-cal-row.actions button:nth-child(2)'), 'Actual', monthLabel('',0));
+    put($('yneaMonthNext')||document.querySelector('#mensualView .ynea-final-actions button:nth-child(3),#mensualView .ynea-rescate-actions button:nth-child(3),#mensualView .ynea-cal-row.actions button:nth-child(3)'), 'Siguiente', monthLabel(mv,1));
+  }
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){const r=oldRenderAll?oldRenderAll.apply(this,arguments):undefined; setTimeout(update,0); setTimeout(update,100); setTimeout(update,350); return r;};
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(update,200);setTimeout(update,800);setTimeout(update,1600);});
+  document.addEventListener('click',()=>setTimeout(update,120),true);
+  document.addEventListener('change',()=>setTimeout(update,120),true);
+  try{new MutationObserver(()=>setTimeout(update,50)).observe(document.body,{childList:true,subtree:true});}catch(e){}
+  setInterval(update,1500);
+})();
+</script>
