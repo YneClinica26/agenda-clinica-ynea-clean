@@ -1,13 +1,10 @@
 <!DOCTYPE html>
-<html lang="es" class="ynea-locked">
+<html lang="es">
 <head>
 <style id="ynea-anti-flash-lock">
   html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;pointer-events:none!important;user-select:none!important;}
   html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important;}
 </style>
-<script id="ynea-anti-flash-lock-js">
-  try{document.documentElement.classList.add('ynea-locked');}catch(e){}
-</script>
 
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
@@ -777,7 +774,6 @@ header{position:sticky;}
 
 <!-- YNEA FIX EARLY LOCK: evita parpadeo antes de acreditación -->
 <style id="ynea-early-login-lock-css">html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;pointer-events:none!important;user-select:none!important}html.ynea-locked #yneaLoginOverlay,html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important}</style>
-<script id="ynea-early-login-lock-js">try{document.documentElement.classList.add('ynea-locked')}catch(e){}</script>
 </head>
 <body>
 <header>
@@ -4305,7 +4301,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
 <script id="ynea-stable-access-js">
 (function(){
   'use strict';
-  try{ document.documentElement.classList.add('ynea-locked'); sessionStorage.removeItem('yneaCurrentUser'); }catch(e){}
+  try{ sessionStorage.removeItem('yneaCurrentUser'); }catch(e){}
   try{ if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});} if(window.caches){caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{});} }catch(e){}
   const STORAGE_URL='yneaSupabaseUrl';
   const STORAGE_KEY='yneaSupabaseAnonKey';
@@ -4515,7 +4511,11 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   }
   function applyRole(){const r=currentRole(), allowed=ROLE_ALLOWED[r]||ROLE_ALLOWED.admin; document.querySelectorAll('.tabs .tab').forEach(btn=>{const oc=btn.getAttribute('onclick')||''; const m=oc.match(/setView\('([^']+)'/); if(!m) return; const v=m[1]; btn.style.display=(v==='anual'||(r&&!allowed.includes(v)))?'none':'';}); if(r==='usuario') document.querySelectorAll('button[onclick*="setView(\'config\'"]').forEach(b=>b.style.display='none'); const panel=$('yneaAccessPanelStable'); if(panel) panel.style.display=(r==='admin'||!r)?'block':'none';}
   const originalSetView=window.setView; window.setView=function(view,btn){const r=currentRole(); const allowed=ROLE_ALLOWED[r]||ROLE_ALLOWED.admin; if(view==='anual') view='semana'; if(r&&!allowed.includes(view)) view=allowed[0]||'semana'; const out=originalSetView?originalSetView(view,btn):undefined; applyRole(); refreshSelects(); return out;};
-  window.yneaLogout=function(){sessionStorage.removeItem('yneaCurrentUser'); try{document.documentElement.classList.add('ynea-locked');}catch(e){} location.reload();};
+  window.yneaLogout=function(){
+    sessionStorage.removeItem('yneaCurrentUser');
+    try{document.documentElement.classList.remove('ynea-locked');}catch(e){}
+    location.reload();
+  };
   const originalRefresh=window.refreshAllSelects; window.refreshAllSelects=function(){try{originalRefresh&&originalRefresh();}catch(e){console.warn(e)} refreshSelects();};
   function afterProfs(){ensureAccess(); saveObj(); refreshSelects(); renderAccessPanel(); renderLoginSelect();}
   const originalAddItem=window.addItem; window.addItem=function(key,inputId){if(key==='profesionales'){const d=dataObj(); const val=String($(inputId)?.value||'').trim(); if(!val) return; if(!d.profesionales.includes(val)) d.profesionales.push(val); if($(inputId)) $(inputId).value=''; ensureAccess(); syncLater(syncProfesionalToSupabase(val)); afterProfs(); try{if(typeof renderConfig==='function') renderConfig(); if(typeof renderAll==='function') renderAll();}catch(e){} return;} return originalAddItem?originalAddItem.apply(this,arguments):undefined;};
@@ -4529,7 +4529,25 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   const originalRenderAll=window.renderAll; window.renderAll=function(){try{originalRenderAll&&originalRenderAll();}catch(e){console.warn(e)} try{refreshSelects(); renderAccessPanel(); applyRole();}catch(e){console.warn(e)} document.querySelectorAll('.notice,.autosaveBar,.appFab').forEach(el=>el.style.display='none');};
 
   setInterval(function(){try{if(!sessionStorage.getItem('yneaCurrentUser') && !document.getElementById('yneaLoginOverlay')){document.documentElement.classList.add('ynea-locked'); makeLogin();}}catch(e){}},1500);
-  document.addEventListener('DOMContentLoaded',async()=>{sessionStorage.removeItem('yneaCurrentUser'); addSupabasePanel(); ensureAccess(); refreshSelects(); try{renderAccessPanel();}catch(e){} const c=creds(); if(c.key){try{await loadCatalogs(false);}catch(e){console.warn('Supabase auto',e);}} await makeLogin(); try{if(typeof renderAll==='function') renderAll();}catch(e){} });
+  document.addEventListener('DOMContentLoaded',async()=>{
+    try{
+      sessionStorage.removeItem('yneaCurrentUser');
+      addSupabasePanel(); ensureAccess(); refreshSelects();
+      try{renderAccessPanel();}catch(e){}
+      await makeLogin();
+      if(document.getElementById('yneaLoginOverlay')) document.documentElement.classList.add('ynea-locked');
+      try{if(typeof renderAll==='function') renderAll();}catch(e){}
+    }catch(e){
+      console.error('Error iniciando acreditación Ynea',e);
+      document.documentElement.classList.remove('ynea-locked');
+      var d=document.createElement('div');
+      d.id='yneaLoginOverlay';
+      d.className='ynea-login-overlay';
+      d.innerHTML='<div class="ynea-login-card"><h2>Acceso clínica</h2><p>No se pudo cargar la acreditación. Recarga la página.</p><button type="button" class="ynea-login-button" onclick="location.reload()">Recargar</button></div>';
+      document.body.appendChild(d);
+      document.documentElement.classList.add('ynea-locked');
+    }
+  });
 })();
 </script>
 
@@ -5319,6 +5337,16 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
   #pacientesTable tbody td:nth-child(4)::before{content:'Obs.: ';font-weight:700;color:#64748b;font-size:9.5px!important;}
 }
 </style>
+
+<script id="ynea-no-blank-safety">
+setTimeout(function(){
+  try{
+    if(document.documentElement.classList.contains('ynea-locked') && !document.getElementById('yneaLoginOverlay')){
+      document.documentElement.classList.remove('ynea-locked');
+    }
+  }catch(e){}
+}, 2500);
+</script>
 </body>
 </html>
 
