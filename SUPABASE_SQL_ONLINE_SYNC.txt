@@ -1,5 +1,5 @@
 -- Copia TODO este contenido en Supabase > SQL Editor y pulsa Run.
--- Crea/arregla la agenda online única para que PC y móvil vean las mismas citas.
+-- Esto crea la agenda online única que sincroniza PC y móvil.
 
 create table if not exists agenda_online (
   id text primary key,
@@ -11,6 +11,7 @@ alter table agenda_online disable row level security;
 
 grant usage on schema public to anon;
 grant select, insert, update, delete on table agenda_online to anon;
+grant select, insert, update, delete on table agenda_online to authenticated;
 
 insert into agenda_online (id, datos, updated_at)
 values ('main', '{}'::jsonb, now())
