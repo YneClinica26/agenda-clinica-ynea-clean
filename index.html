@@ -2749,6 +2749,7 @@ function guardarCitaDesdeEditor(){
 
   Object.assign(cita, actualizada);
   if(typeof save==="function") save();
+  try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
   cerrarEditorCita();
   if(typeof renderAll==="function") renderAll();
 }
@@ -2757,6 +2758,7 @@ function eliminarCitaDesdeEditor(){
   if(!confirm("¿Eliminar esta cita?")) return;
   data.citas=(data.citas||[]).filter(c=>String(c.id)!==String(id));
   if(typeof save==="function") save();
+  try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
   cerrarEditorCita();
   if(typeof renderAll==="function") renderAll();
 }
@@ -3114,6 +3116,7 @@ function guardarCitaEnlazada(){
   }
 
   if(typeof save==="function") save();
+  try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
   cerrarCitaEnlazada();
   if(typeof renderAll==="function") renderAll();
   alert("Citas enlazadas guardadas correctamente.");
@@ -3406,6 +3409,7 @@ function guardarCitaDesdeEditor(){
 
   Object.assign(cita, actualizada);
   if(typeof save==="function") save();
+  try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
   if(typeof cerrarEditorCita==="function") cerrarEditorCita();
   if(typeof renderAll==="function") renderAll();
 }
@@ -3547,6 +3551,7 @@ function marcarAvisoEnviado(id, canal){
     canal: canal || "manual"
   };
   if(typeof save==="function") save();
+  try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
   if(typeof renderAll==="function") renderAll();
 }
 
@@ -3792,6 +3797,7 @@ function abrirNuevoPacienteDesdeBusqueda(){
   const nuevo={id:"p"+Date.now(), nombre:nombre.trim(), telefono, email, obs:""};
   data.pacientes.push(nuevo);
   if(typeof save==="function") save();
+  try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
   if(typeof refreshAllSelects==="function") refreshAllSelects();
   seleccionarPacienteCita(nuevo.id);
 }
@@ -5093,8 +5099,12 @@ function pastelColorProfesional(nombre){
 }
 setTimeout(()=>{
  document.querySelectorAll('.cita,.calendar-cita,.evento-cita').forEach(el=>{
-   const t=el.textContent||'';
-   el.style.background=pastelColorProfesional(t);
+   const t=(el.textContent||'').toLowerCase();
+   if(t.includes('susana')){
+      el.style.background='#f8c8dc';
+   } else {
+      el.style.background=pastelColorProfesional(t);
+   }
    el.style.border='1px solid rgba(0,0,0,0.08)';
  });
 },1000);
@@ -5277,3 +5287,29 @@ setInterval(()=>{
  });
 },700);
 </script>
+
+<style id="ynea-pacientes-compacto-final">
+@media (max-width:700px){
+  .tabla-pacientes,
+  .tablaPacientes,
+  .patients-table,
+  table{
+    font-size:11px !important;
+    border-collapse:collapse !important;
+  }
+  .tabla-pacientes tr,
+  .tablaPacientes tr,
+  .patients-table tr,
+  table tr{
+    height:20px !important;
+    line-height:1 !important;
+  }
+  .tabla-pacientes td,
+  .tablaPacientes td,
+  .patients-table td,
+  table td{
+    padding:1px 3px !important;
+    line-height:1 !important;
+  }
+}
+</style>
