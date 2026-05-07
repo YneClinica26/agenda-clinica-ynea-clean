@@ -4669,5 +4669,433 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 })();
 </script>
 
+
+
+<!-- ===== YNEA AJUSTE ESTABLE: tipos por profesional, copia, móvil y acreditación ===== -->
+<style id="ynea-ajuste-final-usuario-css">
+/* Calendario: misma familia visual en cabecera y navegación */
+#semanaView .ynea-calendar-bar,#mensualView .ynea-calendar-bar{
+  display:grid!important;
+  grid-template-columns:170px minmax(170px,1fr) minmax(170px,1fr) 108px 108px 108px!important;
+  gap:8px!important;align-items:end!important;
+}
+#semanaView #weekConsultaField,#mensualView #monthConsultaField{grid-column:auto!important;grid-row:auto!important;}
+#semanaView #weekProfField,#mensualView #monthProfField{grid-column:auto!important;grid-row:auto!important;}
+#semanaView .ynea-cal-field label,#mensualView .ynea-cal-field label,
+#semanaView .ynea-calendar-nav,#mensualView .ynea-calendar-nav{
+  font-size:12px!important;font-weight:800!important;line-height:1.1!important;
+}
+#semanaView .ynea-range-display,#mensualView .ynea-range-display,
+#semanaView .ynea-cal-field select,#mensualView .ynea-cal-field select,
+#semanaView button.ynea-calendar-nav,#mensualView button.ynea-calendar-nav{
+  background:#fff!important;background-image:none!important;color:#334155!important;border:1px solid #dbe3ee!important;
+  box-shadow:none!important;text-shadow:none!important;border-radius:11px!important;height:38px!important;min-height:38px!important;
+  padding:7px 10px!important;font-size:13px!important;font-weight:800!important;appearance:auto!important;
+}
+#semanaView button.ynea-calendar-nav:hover,#mensualView button.ynea-calendar-nav:hover{background:#f8fafc!important;}
+@media(max-width:900px){
+  #semanaView .ynea-calendar-bar,#mensualView .ynea-calendar-bar{
+    grid-template-columns:1fr 1fr 1fr!important;gap:5px!important;align-items:end!important;
+  }
+  #weekField,#monthField{grid-column:1!important;grid-row:1!important;}
+  #weekConsultaField,#monthConsultaField{grid-column:2!important;grid-row:1!important;}
+  #weekProfField,#monthProfField{grid-column:3!important;grid-row:1!important;}
+  #semanaView .ynea-calendar-nav:nth-of-type(1),#mensualView .ynea-calendar-nav:nth-of-type(1){grid-column:1!important;grid-row:2!important;}
+  #semanaView .ynea-calendar-nav:nth-of-type(2),#mensualView .ynea-calendar-nav:nth-of-type(2){grid-column:2!important;grid-row:2!important;}
+  #semanaView .ynea-calendar-nav:nth-of-type(3),#mensualView .ynea-calendar-nav:nth-of-type(3){grid-column:3!important;grid-row:2!important;}
+  #semanaView .ynea-cal-field label,#mensualView .ynea-cal-field label{font-size:10px!important;margin:0 0 2px!important;}
+  #semanaView .ynea-range-display,#mensualView .ynea-range-display,
+  #semanaView .ynea-cal-field select,#mensualView .ynea-cal-field select,
+  #semanaView button.ynea-calendar-nav,#mensualView button.ynea-calendar-nav{
+    height:32px!important;min-height:32px!important;font-size:10px!important;padding:4px 4px!important;border-radius:9px!important;
+  }
+  /* Pacientes en móvil como listado-tabla de PC: sin tarjetas deformadas */
+  #pacientesView .tableWrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
+  #pacientesTable{display:table!important;min-width:640px!important;width:100%!important;border-collapse:collapse!important;}
+  #pacientesTable thead{display:table-header-group!important;}
+  #pacientesTable tbody{display:table-row-group!important;}
+  #pacientesTable tr{display:table-row!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:#fff!important;}
+  #pacientesTable th,#pacientesTable td{display:table-cell!important;border:1px solid #e5e7eb!important;padding:6px 8px!important;font-size:11px!important;vertical-align:top!important;}
+  #pacientesTable td::before{content:none!important;}
+}
+/* Tipos por profesional con lineado claro */
+#mapTiposBox.ynea-tipos-lineado{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff;margin-top:8px;}
+#mapTiposBox.ynea-tipos-lineado .tipo-row{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eef2f7;}
+#mapTiposBox.ynea-tipos-lineado .tipo-row:nth-child(even){background:#f8fafc;}
+#mapTiposBox.ynea-tipos-lineado .tipo-row:last-child{border-bottom:0;}
+#mapTiposBox.ynea-tipos-lineado input{width:20px;height:20px;accent-color:#be185d;}
+#mapTiposBox.ynea-tipos-lineado span{font-weight:700;color:#334155;}
+#backupMainStatus.ynea-backup-ok{color:#166534;font-weight:700;}
+</style>
+<script id="ynea-ajuste-final-usuario-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const isMobile=()=>/iPhone|iPad|iPod|Android/i.test(navigator.userAgent||'') || matchMedia('(max-width: 700px)').matches;
+  function saveData(){try{ if(typeof save==='function') save(); else localStorage.setItem('agendaClinicaSemanal',JSON.stringify(window.data)); }catch(e){console.warn('saveData',e);} }
+  function allTiposActivos(){
+    const d=window.data||{};
+    return (d.tipos||[]).filter(t=>!d.caracteristicasTipo || !d.caracteristicasTipo[t] || d.caracteristicasTipo[t].activo!==false);
+  }
+  window.tiposPermitidosParaProfesional=function(prof){
+    const todos=allTiposActivos();
+    if(!prof) return todos;
+    const mapa=(window.data&&window.data.tiposPorProfesional)||{};
+    if(Object.prototype.hasOwnProperty.call(mapa,prof)){
+      const lista=Array.isArray(mapa[prof])?mapa[prof]:[];
+      return lista.filter(t=>todos.includes(t));
+    }
+    return todos;
+  };
+  function fillSelect(id,arr,first,keep){
+    const el=$(id); if(!el) return;
+    const old=keep!==undefined?keep:el.value;
+    el.innerHTML=(first||'')+(arr||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    if([...el.options].some(o=>o.value===old)) el.value=old;
+    else if(el.options.length && !first) el.selectedIndex=0;
+  }
+  function actualizarSelectTiposCita(){
+    const prof=$('profesionalCita')?.value||'';
+    const actual=$('tipoCita')?.value||'';
+    fillSelect('tipoCita',window.tiposPermitidosParaProfesional(prof),'',actual);
+    try{ if(typeof applyTipoDuration==='function') applyTipoDuration(); }catch(e){}
+  }
+  const refreshOld=window.refreshAllSelects;
+  window.refreshAllSelects=function(){
+    const keep={
+      wp:$('weekProf')?.value||'', wc:$('weekConsulta')?.value||'', mp:$('monthProf')?.value||'', mc:$('monthConsulta')?.value||'',
+      pc:$('profesionalCita')?.value||'', tc:$('tipoCita')?.value||''
+    };
+    try{ if(refreshOld) refreshOld.apply(this,arguments); }catch(e){ console.warn('refresh anterior',e); }
+    const d=window.data||{};
+    fillSelect('weekProf',d.profesionales||[],'<option value="">Todos</option>',keep.wp);
+    fillSelect('monthProf',d.profesionales||[],'<option value="">Todos</option>',keep.mp);
+    fillSelect('weekConsulta',d.consultas||[],'<option value="">Todas</option>',keep.wc);
+    fillSelect('monthConsulta',d.consultas||[],'<option value="">Todas</option>',keep.mc);
+    fillSelect('profesionalCita',d.profesionales||[],'',keep.pc);
+    fillSelect('consultaCita',d.consultas||[],'',$('consultaCita')?.value||'');
+    actualizarSelectTiposCita();
+    try{ if(typeof renderMapTipos==='function') renderMapTipos(); }catch(e){}
+  };
+  document.addEventListener('change',function(e){
+    if(e.target && e.target.id==='profesionalCita') actualizarSelectTiposCita();
+  },true);
+
+  function refreshTiposProfesionalSelectorFinal(){
+    const sel=$('mapProfesional'); if(!sel) return;
+    const old=sel.value;
+    fillSelect('mapProfesional',(window.data&&window.data.profesionales)||[],'',old);
+  }
+  window.renderMapTipos=function(){
+    refreshTiposProfesionalSelectorFinal();
+    const box=$('mapTiposBox'), sel=$('mapProfesional'); if(!box||!sel) return;
+    const d=window.data||{}; const prof=sel.value || (d.profesionales||[])[0] || '';
+    if(prof && sel.value!==prof) sel.value=prof;
+    const todos=allTiposActivos();
+    const mapa=d.tiposPorProfesional||(d.tiposPorProfesional={});
+    const seleccion=Object.prototype.hasOwnProperty.call(mapa,prof) ? (Array.isArray(mapa[prof])?mapa[prof]:[]) : todos;
+    box.className='ynea-tipos-lineado';
+    box.innerHTML=todos.length?todos.map((t,i)=>`
+      <label class="tipo-row" for="tipo-prof-${i}">
+        <input id="tipo-prof-${i}" type="checkbox" value="${esc(t)}" ${seleccion.includes(t)?'checked':''}>
+        <span>${esc(t)}</span>
+      </label>`).join(''):'<p class="small" style="padding:12px">No hay tipos de consulta creados.</p>';
+  };
+  window.saveMapTipos=function(){
+    const prof=$('mapProfesional')?.value||''; if(!prof){alert('Selecciona un profesional.');return;}
+    const d=window.data||{}; d.tiposPorProfesional=d.tiposPorProfesional||{};
+    d.tiposPorProfesional[prof]=[...document.querySelectorAll('#mapTiposBox input[type="checkbox"]:checked')].map(x=>x.value);
+    saveData();
+    actualizarSelectTiposCita();
+    try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
+    alert('Tipos guardados para '+prof+'.');
+  };
+  window.activarTiposProfesional=function(){
+    const prof=$('mapProfesional')?.value||''; if(!prof){alert('Selecciona un profesional.');return;}
+    window.data.tiposPorProfesional=window.data.tiposPorProfesional||{};
+    window.data.tiposPorProfesional[prof]=allTiposActivos(); saveData(); renderMapTipos(); actualizarSelectTiposCita();
+  };
+  window.desactivarTiposProfesional=function(){
+    const prof=$('mapProfesional')?.value||''; if(!prof){alert('Selecciona un profesional.');return;}
+    window.data.tiposPorProfesional=window.data.tiposPorProfesional||{};
+    window.data.tiposPorProfesional[prof]=[]; saveData(); renderMapTipos(); actualizarSelectTiposCita();
+  };
+
+  // Login: mostrar solo nombre del profesional, no tipo de acreditación.
+  window.renderLoginSelect=function(){
+    const sel=$('yneaLoginUser'), d=window.data; if(!sel||!d) return;
+    const old=sel.value;
+    sel.innerHTML=(d.profesionales||[]).map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+    if([...sel.options].some(o=>o.value===old)) sel.value=old;
+  };
+
+  function backupPayload(){return {version:'Agenda Clinica Ynea backup 1.0',exportedAt:new Date().toISOString(),data:window.data||{}};}
+  function backupName(){return 'backup_agenda_clinica_ynea_'+new Date().toISOString().slice(0,10)+'.json';}
+  async function writeWithHandle(handle,contenido){const file=await handle.getFileHandle(backupName(),{create:true}); const w=await file.createWritable(); await w.write(contenido); await w.close();}
+  window.guardarEnCarpetaFija=async function(){
+    const contenido=JSON.stringify(backupPayload(),null,2);
+    if(window.showDirectoryPicker && !isMobile()){
+      try{
+        let handle=window.yneaBackupDirHandle||null;
+        if(!handle){ handle=await window.showDirectoryPicker({mode:'readwrite'}); window.yneaBackupDirHandle=handle; }
+        const perm=await handle.requestPermission({mode:'readwrite'});
+        if(perm!=='granted') throw new Error('Sin permiso para escribir en la carpeta.');
+        await writeWithHandle(handle,contenido);
+        const st=$('backupMainStatus'); if(st){st.textContent='Copia guardada en la carpeta elegida.'; st.classList.add('ynea-backup-ok');}
+        return;
+      }catch(e){ if(e && e.name==='AbortError') return; alert('No se pudo guardar en la carpeta elegida. Se descargará el archivo.'); }
+    }
+    const blob=new Blob([contenido],{type:'application/json;charset=utf-8'}); const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=backupName(); document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+  };
+  window.cambiarRutaBackup=async function(){
+    if(!(window.showDirectoryPicker && !isMobile())){ alert('En este navegador no se puede fijar una carpeta. La copia irá a Descargas o a la carpeta que tengas configurada en el navegador.'); return; }
+    try{ window.yneaBackupDirHandle=await window.showDirectoryPicker({mode:'readwrite'}); const st=$('backupMainStatus'); if(st) st.textContent='Carpeta de copia seleccionada para esta sesión.'; }
+    catch(e){}
+  };
+  window.exportBackup=function(){ window.guardarEnCarpetaFija(); };
+  window.exportBackupNow=function(){ window.guardarEnCarpetaFija(); };
+  window.yneaSalirConCopia=function(){
+    try{ if(typeof save==='function') save(); }catch(e){}
+    if(!isMobile()){
+      try{ window.guardarEnCarpetaFija(); }catch(e){console.warn('backup cierre',e);}
+    }
+    setTimeout(function(){ try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){} try{document.documentElement.classList.add('ynea-locked');}catch(e){} location.reload(); }, isMobile()?100:350);
+  };
+
+  document.addEventListener('DOMContentLoaded',function(){
+    try{ refreshTiposProfesionalSelectorFinal(); renderMapTipos(); actualizarSelectTiposCita(); }catch(e){}
+    setTimeout(function(){try{window.refreshAllSelects(); window.renderLoginSelect();}catch(e){}},300);
+  },true);
+})();
+</script>
+
+
+<!-- ===== YNEA FIX REAL ONLINE 2026-05-07: Supabase como fuente única + tipos por profesional ===== -->
+<script id="ynea-online-sync-real-fix">
+(function(){
+  'use strict';
+
+  const SUPABASE_URL = 'https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
+  const CLOUD_TABLE = 'agenda_online';
+  const CLOUD_ID = 'main';
+  let cloudReady = false;
+  let cloudSaveTimer = null;
+  let savingCloud = false;
+
+  function $(id){ return document.getElementById(id); }
+  function getData(){
+    try{
+      if(typeof data !== 'undefined'){
+        window.data = data;
+        return data;
+      }
+    }catch(e){}
+    window.data = window.data || {};
+    return window.data;
+  }
+  function setData(newData){
+    try{
+      data = newData;
+      window.data = data;
+    }catch(e){
+      window.data = newData;
+    }
+  }
+  function normalizeAgenda(d){
+    d = d && typeof d === 'object' ? d : {};
+    d.profesionales = Array.isArray(d.profesionales) ? d.profesionales.filter(Boolean) : [];
+    d.consultas = Array.isArray(d.consultas) ? d.consultas.filter(Boolean) : ['Consulta 1'];
+    d.tipos = Array.isArray(d.tipos) ? d.tipos.filter(Boolean) : ['General'];
+    d.pacientes = Array.isArray(d.pacientes) ? d.pacientes : [];
+    d.citas = Array.isArray(d.citas) ? d.citas : [];
+    d.bloqueos = Array.isArray(d.bloqueos) ? d.bloqueos : [];
+    d.duracionesTipo = d.duracionesTipo && typeof d.duracionesTipo === 'object' ? d.duracionesTipo : {};
+    d.caracteristicasTipo = d.caracteristicasTipo && typeof d.caracteristicasTipo === 'object' ? d.caracteristicasTipo : {};
+    d.tiposPorProfesional = d.tiposPorProfesional && typeof d.tiposPorProfesional === 'object' ? d.tiposPorProfesional : {};
+    d.tipos.forEach(t => {
+      if(!d.duracionesTipo[t]) d.duracionesTipo[t] = '10';
+      if(!d.caracteristicasTipo[t]) d.caracteristicasTipo[t] = {descripcion:'', color:'', activo:true};
+    });
+    d.profesionales.forEach(p => {
+      if(!Array.isArray(d.tiposPorProfesional[p])) d.tiposPorProfesional[p] = [...d.tipos];
+    });
+    Object.keys(d.tiposPorProfesional).forEach(p => {
+      if(!d.profesionales.includes(p)) delete d.tiposPorProfesional[p];
+      else d.tiposPorProfesional[p] = [...new Set((d.tiposPorProfesional[p] || []).filter(t => d.tipos.includes(t)))];
+    });
+    return d;
+  }
+  function supa(){
+    if(window.yneaSupabaseClient) return window.yneaSupabaseClient;
+    if(window.supabase && window.supabase.createClient){
+      window.yneaSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth:{persistSession:false, autoRefreshToken:false, detectSessionInUrl:false},
+        global:{headers:{'Cache-Control':'no-cache'}}
+      });
+      return window.yneaSupabaseClient;
+    }
+    return null;
+  }
+  function status(text, bad){
+    const el = $('backupMainStatus') || $('autosaveStatus');
+    if(el){ el.textContent = text; el.style.color = bad ? '#991b1b' : '#166534'; }
+    console[bad?'warn':'log']('[Ynea online]', text);
+  }
+  async function loadCloud(){
+    const client = supa();
+    if(!client){ status('Supabase no está disponible.', true); return false; }
+    try{
+      const {data: row, error} = await client
+        .from(CLOUD_TABLE)
+        .select('datos,updated_at')
+        .eq('id', CLOUD_ID)
+        .maybeSingle();
+      if(error){
+        status('No se pudo leer la agenda online. Falta crear la tabla agenda_online.', true);
+        console.warn(error);
+        return false;
+      }
+      if(row && row.datos){
+        const online = normalizeAgenda(row.datos);
+        setData(online);
+        try{ localStorage.setItem('agendaClinicaSemanal', JSON.stringify(online)); }catch(e){}
+        cloudReady = true;
+        status('Agenda online cargada.');
+        rerenderEverything();
+        return true;
+      }
+      // Si no hay fila online todavía, subimos la agenda local actual como primera versión.
+      const local = normalizeAgenda(getData());
+      setData(local);
+      cloudReady = true;
+      await saveCloudNow();
+      status('Agenda online creada desde este dispositivo.');
+      return true;
+    }catch(e){
+      status('Error leyendo agenda online: ' + (e.message || e), true);
+      return false;
+    }
+  }
+  async function saveCloudNow(){
+    const client = supa();
+    if(!client || savingCloud) return;
+    savingCloud = true;
+    try{
+      const current = normalizeAgenda(getData());
+      setData(current);
+      try{ localStorage.setItem('agendaClinicaSemanal', JSON.stringify(current)); }catch(e){}
+      const {error} = await client.from(CLOUD_TABLE).upsert({
+        id: CLOUD_ID,
+        datos: current,
+        updated_at: new Date().toISOString()
+      }, {onConflict:'id'});
+      if(error){
+        status('No se pudo guardar online. Revisa la tabla agenda_online.', true);
+        console.warn(error);
+      }else{
+        cloudReady = true;
+        status('Guardado online: ' + new Date().toLocaleTimeString('es-ES'));
+      }
+    }catch(e){
+      status('Error guardando online: ' + (e.message || e), true);
+    }finally{
+      savingCloud = false;
+    }
+  }
+  function scheduleCloudSave(){
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(saveCloudNow, 450);
+  }
+  function rerenderEverything(){
+    try{ if(typeof refreshAllSelects === 'function') refreshAllSelects(); }catch(e){}
+    try{ if(typeof renderMapTipos === 'function') renderMapTipos(); }catch(e){}
+    try{ if(typeof renderConfig === 'function') renderConfig(); }catch(e){}
+    try{ if(typeof renderPatients === 'function') renderPatients(); }catch(e){}
+    try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
+    try{ if(typeof renderLoginSelect === 'function') renderLoginSelect(); }catch(e){}
+  }
+
+  // Arregla los parches anteriores que usaban window.data aunque la app original usa let data.
+  try{ window.data = getData(); }catch(e){}
+
+  // save() ahora guarda local y online. Así PC y móvil ven la misma agenda.
+  const previousSave = window.save;
+  window.save = function(){
+    const d = normalizeAgenda(getData());
+    setData(d);
+    try{ localStorage.setItem('agendaClinicaSemanal', JSON.stringify(d)); }catch(e){}
+    try{ if(previousSave && previousSave !== window.save) previousSave.apply(this, arguments); }catch(e){}
+    scheduleCloudSave();
+  };
+
+  // Refuerzos para funciones que a veces modifican data sin llamar bien a save().
+  ['addPaciente','guardarCita','guardarNuevoPacienteModal','saveMapTipos','guardarTipoConsultaEditado','addTipo','removeItem','renameItemDirect','addItem','deleteBloqueo'].forEach(name => {
+    const fn = window[name];
+    if(typeof fn === 'function' && !fn.__yneaOnlineWrapped){
+      window[name] = function(){
+        const res = fn.apply(this, arguments);
+        setTimeout(function(){ try{ window.save(); rerenderEverything(); }catch(e){} }, 80);
+        return res;
+      };
+      window[name].__yneaOnlineWrapped = true;
+    }
+  });
+
+  // Tipos por profesional: selector de cita solo muestra los tipos asignados al profesional elegido.
+  window.tiposPermitidosParaProfesional = function(prof){
+    const d = normalizeAgenda(getData());
+    if(!prof) return d.tipos;
+    const lista = d.tiposPorProfesional && Array.isArray(d.tiposPorProfesional[prof]) ? d.tiposPorProfesional[prof] : d.tipos;
+    return lista.length ? lista : d.tipos;
+  };
+  window.actualizarSelectTiposCita = function(){
+    const prof = $('profesionalCita') ? $('profesionalCita').value : '';
+    const select = $('tipoCita');
+    if(!select) return;
+    const old = select.value;
+    const tipos = window.tiposPermitidosParaProfesional(prof);
+    select.innerHTML = tipos.map(t => `<option value="${String(t).replace(/"/g,'&quot;')}">${String(t)}</option>`).join('');
+    if([...select.options].some(o => o.value === old)) select.value = old;
+    try{ if(typeof applyTipoDuration === 'function') applyTipoDuration(); }catch(e){}
+  };
+  document.addEventListener('change', function(e){
+    if(e.target && e.target.id === 'profesionalCita') window.actualizarSelectTiposCita();
+    if(e.target && (e.target.id === 'mapProfesional' || e.target.matches('[data-ynea-tipo-prof]'))){
+      setTimeout(function(){ try{ window.save(); }catch(err){} }, 50);
+    }
+  }, true);
+
+  // Importación de backup también se sube a Supabase.
+  const oldImport = window.importBackupFromMain;
+  if(typeof oldImport === 'function'){
+    window.importBackupFromMain = function(ev){
+      const r = oldImport.apply(this, arguments);
+      setTimeout(saveCloudNow, 700);
+      return r;
+    };
+  }
+
+  window.yneaForceCloudLoad = loadCloud;
+  window.yneaForceCloudSave = saveCloudNow;
+
+  document.addEventListener('DOMContentLoaded', function(){
+    // Primero intenta cargar online; después refresca la pantalla ya con los mismos datos que en otros dispositivos.
+    setTimeout(async function(){
+      await loadCloud();
+      window.actualizarSelectTiposCita();
+      rerenderEverything();
+    }, 200);
+  }, true);
+
+  // Sincronización periódica suave: si otro dispositivo guardó cambios, al abrir o esperar se refresca.
+  setInterval(function(){
+    if(document.visibilityState === 'visible') loadCloud();
+  }, 45000);
+})();
+</script>
+
 </body>
 </html>
