@@ -5095,4 +5095,128 @@ setTimeout(()=>{
 </script>
 </body>
 </html>
-
+<!-- YNEA FIX REAL: modal móvil, volver calendario y colores por profesional -->
+<style id="ynea-fix-real-modal-colores">
+@media (max-width:700px){
+  body.ynea-editor-open .mobileBottomNav,
+  body.ynea-editor-open .appFab{display:none !important; visibility:hidden !important; pointer-events:none !important;}
+  .editorCitaOverlay{
+    position:fixed !important; inset:0 !important; z-index:250000 !important;
+    display:none; align-items:flex-end !important; justify-content:center !important;
+    padding:8px !important; background:rgba(15,23,42,.38) !important;
+  }
+  .editorCitaModal{
+    width:100% !important; max-width:100% !important;
+    max-height:calc(100dvh - 18px) !important; height:auto !important;
+    border-radius:20px 20px 0 0 !important; padding:12px !important;
+    display:flex !important; flex-direction:column !important; overflow:hidden !important;
+  }
+  .editorCitaHeader{margin-bottom:8px !important; flex-shrink:0 !important;}
+  .editorCitaHeader h2{font-size:17px !important; line-height:1.1 !important;}
+  .editorCitaHeader p{display:none !important;}
+  .editorCitaGrid{
+    display:grid !important; grid-template-columns:1fr 1fr !important; gap:7px !important;
+    overflow:auto !important; padding-right:2px !important; min-height:0 !important;
+  }
+  .editorCitaGrid label,.editorCitaModal label{font-size:10px !important; margin:2px 0 2px !important;}
+  .editorCitaGrid input,.editorCitaGrid select,.editorCitaModal textarea{
+    min-height:30px !important; height:30px !important; padding:4px 7px !important;
+    font-size:12px !important; border-radius:9px !important;
+  }
+  .editorCitaModal textarea{height:42px !important; min-height:42px !important; flex-shrink:0 !important;}
+  .editorCitaActions{
+    position:relative !important; bottom:auto !important; z-index:250001 !important;
+    flex-shrink:0 !important; display:grid !important; grid-template-columns:1fr 1fr 1fr !important;
+    gap:6px !important; margin-top:8px !important; padding:8px 0 0 !important; background:#fff !important;
+    border-top:1px solid #eef2f7 !important;
+  }
+  .editorCitaActions button{width:100% !important; min-height:34px !important; padding:6px 5px !important; font-size:11px !important; border-radius:10px !important;}
+  .editorCitaActions .danger{font-size:10px !important;}
+}
+.appt.ynea-prof-color{border:1px solid rgba(15,23,42,.08) !important; color:#334155 !important;}
+.appt.ynea-prof-color .badge{background:rgba(255,255,255,.65) !important; color:#475569 !important; border:1px solid rgba(15,23,42,.08) !important;}
+</style>
+<script id="ynea-fix-real-modal-colores-js">
+(function(){
+  'use strict';
+  const pastel=['#fde2e4','#e2f0cb','#cddafd','#fff1c1','#e0c3fc','#b5ead7','#f9dcc4','#d8e2dc','#f1e3f3','#cdeac0','#ffdac1','#bde0fe'];
+  function escReg(s){return String(s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+  function colorFor(name){let h=0; const s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return pastel[h%pastel.length];}
+  function profs(){try{return (window.data&&Array.isArray(data.profesionales))?data.profesionales.slice().sort((a,b)=>String(b).length-String(a).length):[]}catch(e){return[]}}
+  function colorizarCitas(){
+    const ps=profs();
+    document.querySelectorAll('.appt').forEach(el=>{
+      const txt=el.textContent||'';
+      let prof=ps.find(p=>txt.includes(p));
+      if(!prof && window.data && Array.isArray(data.citas)){
+        const cita=data.citas.find(c=>c.profesional && txt.includes(c.profesional));
+        if(cita) prof=cita.profesional;
+      }
+      if(prof){el.style.setProperty('background',colorFor(prof),'important'); el.classList.add('ynea-prof-color');}
+    });
+  }
+  function volverCalendario(){
+    try{ if(typeof window.setView==='function') window.setView('semana'); }catch(e){}
+    try{ document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active')); const btn=[...document.querySelectorAll('.tab')].find(b=>(b.textContent||'').toLowerCase().includes('semanal')); if(btn)btn.classList.add('active'); }catch(e){}
+    try{ if(typeof window.appMobileSetView==='function') window.appMobileSetView('semana'); }catch(e){}
+    try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
+  }
+  function instalar(){
+    if(window.__yneaFixRealModalColoresInstalled) return;
+    window.__yneaFixRealModalColoresInstalled=true;
+    const oldAbrir=window.abrirEditorCita;
+    if(typeof oldAbrir==='function'){
+      window.abrirEditorCita=function(){
+        const r=oldAbrir.apply(this,arguments);
+        document.body.classList.add('ynea-editor-open');
+        const ov=document.getElementById('editorCitaOverlay'); if(ov) ov.style.display='flex';
+        setTimeout(colorizarCitas,50);
+        return r;
+      };
+    }
+    const oldCerrar=window.cerrarEditorCita;
+    window.cerrarEditorCita=function(){
+      document.body.classList.remove('ynea-editor-open');
+      const ov=document.getElementById('editorCitaOverlay'); if(ov) ov.style.display='none';
+      if(typeof oldCerrar==='function') return oldCerrar.apply(this,arguments);
+    };
+    const oldAdd=window.addCita;
+    if(typeof oldAdd==='function'){
+      window.addCita=function(){
+        const before=(window.data&&Array.isArray(data.citas))?data.citas.length:0;
+        const r=oldAdd.apply(this,arguments);
+        setTimeout(()=>{const after=(window.data&&Array.isArray(data.citas))?data.citas.length:before; if(after>before) volverCalendario(); colorizarCitas();},80);
+        return r;
+      };
+    }
+    const oldGuardar=window.guardarCitaDesdeEditor;
+    if(typeof oldGuardar==='function'){
+      window.guardarCitaDesdeEditor=function(){
+        const r=oldGuardar.apply(this,arguments);
+        document.body.classList.remove('ynea-editor-open');
+        setTimeout(()=>{volverCalendario(); colorizarCitas();},80);
+        return r;
+      };
+    }
+    const oldEliminar=window.eliminarCitaDesdeEditor;
+    if(typeof oldEliminar==='function'){
+      window.eliminarCitaDesdeEditor=function(){
+        const r=oldEliminar.apply(this,arguments);
+        document.body.classList.remove('ynea-editor-open');
+        setTimeout(()=>{volverCalendario(); colorizarCitas();},80);
+        return r;
+      };
+    }
+    const oldRender=window.renderAll;
+    if(typeof oldRender==='function'){
+      window.renderAll=function(){const r=oldRender.apply(this,arguments); setTimeout(colorizarCitas,20); return r;};
+    }
+    document.addEventListener('click',e=>{if(e.target.closest('.appt')) setTimeout(()=>document.body.classList.add('ynea-editor-open'),0);},true);
+    setInterval(colorizarCitas,1200);
+    setTimeout(colorizarCitas,300);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',instalar,true); else instalar();
+})();
+</script>
+</body>
+</html>
