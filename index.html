@@ -2762,6 +2762,7 @@ function eliminarCitaDesdeEditor(){
 }
 
 // Compatibilidad con versiones antiguas que llamaban a editCita().
+window.eliminarCitaDesdeEditor=eliminarCitaDesdeEditor;
 function editCita(id){
   abrirEditorCita(id);
 }
@@ -3410,6 +3411,7 @@ function guardarCitaDesdeEditor(){
 }
 
 // Compatibilidad
+window.eliminarCitaDesdeEditor=eliminarCitaDesdeEditor;
 function editCita(id){ abrirEditorCita(id); }
 </script>
 
@@ -5081,6 +5083,10 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 
 <script>
 function pastelColorProfesional(nombre){
+ const n=(nombre||'').toLowerCase();
+ if(n.includes('susana royo') || n.includes('dra susana royo') || n.includes('dr susana royo')){
+   return '#f9c5d5';
+ }
  const colors=['#fde2e4','#e2f0cb','#cddafd','#fff1c1','#e0c3fc','#b5ead7','#f9dcc4'];
  let h=0; for(let i=0;i<(nombre||'').length;i++) h+=nombre.charCodeAt(i);
  return colors[h % colors.length];
@@ -5220,3 +5226,28 @@ setTimeout(()=>{
 </script>
 </body>
 </html>
+
+
+<style>
+@media (max-width: 768px){
+  .pacientes-lista,
+  .tabla-pacientes,
+  .tablaPacientes,
+  .patients-table{
+    font-size:12px !important;
+    line-height:1.1 !important;
+  }
+  .pacientes-lista tr,
+  .tabla-pacientes tr,
+  .tablaPacientes tr,
+  .patients-table tr{
+    height:28px !important;
+  }
+  .pacientes-lista td,
+  .tabla-pacientes td,
+  .tablaPacientes td,
+  .patients-table td{
+    padding:2px 4px !important;
+  }
+}
+</style>
