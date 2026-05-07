@@ -1,5 +1,5 @@
 -- Copia TODO este contenido en Supabase > SQL Editor y pulsa Run.
--- Crea una única agenda online compartida entre PC y móvil.
+-- Crea/arregla la agenda online única para que PC y móvil vean las mismas citas.
 
 create table if not exists agenda_online (
   id text primary key,
@@ -9,10 +9,17 @@ create table if not exists agenda_online (
 
 alter table agenda_online disable row level security;
 
+grant usage on schema public to anon;
+grant select, insert, update, delete on table agenda_online to anon;
+
 insert into agenda_online (id, datos, updated_at)
 values ('main', '{}'::jsonb, now())
 on conflict (id) do nothing;
 
-select id, updated_at, jsonb_array_length(coalesce(datos->'citas','[]'::jsonb)) as numero_citas
+select
+  id,
+  updated_at,
+  jsonb_array_length(coalesce(datos->'citas','[]'::jsonb)) as numero_citas,
+  jsonb_array_length(coalesce(datos->'pacientes','[]'::jsonb)) as numero_pacientes
 from agenda_online
 where id='main';
