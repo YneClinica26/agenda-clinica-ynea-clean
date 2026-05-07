@@ -784,6 +784,20 @@ header{position:sticky;}
 <!-- YNEA FIX EARLY LOCK: evita parpadeo antes de acreditación -->
 <style id="ynea-early-login-lock-css">html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;pointer-events:none!important;user-select:none!important}html.ynea-locked #yneaLoginOverlay,html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important}</style>
 <script id="ynea-early-login-lock-js">try{document.documentElement.classList.add('ynea-locked')}catch(e){}</script>
+
+<style id="ynea-pc-header-fix-final">
+@media(min-width:901px){
+  #yneaTopLogoutBackup{
+    right:28px !important;
+    top:10px !important;
+  }
+  button[onclick*="bloqueos"],
+  .tab{
+    margin-right:6px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header>
@@ -5373,6 +5387,163 @@ function pastelColorProfesional(nombre){
   };
 
   window.eliminarCita = window.eliminarCitaDesdeEditor;
+})();
+</script>
+
+
+<style id="ynea-final-cerrar-y-huecos-real">
+/* Evita solape Cerrar/Bloqueos en PC aunque no tengan id específico */
+@media (min-width:701px){
+  header, .header, .topbar, .app-header, .toolbar, .acciones, .acciones-top{
+    flex-wrap:wrap !important;
+    gap:8px !important;
+  }
+  button{
+    white-space:nowrap !important;
+  }
+}
+
+/* En móvil/PC, si queda un bloque fantasma vacío de cita, no ocupa espacio */
+.cita:empty,
+.calendar-cita:empty,
+.evento-cita:empty,
+.evento:empty,
+.appointment:empty{
+  display:none !important;
+  height:0 !important;
+  min-height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+</style>
+
+<script id="ynea-final-reparar-huecos-y-cerrar-real">
+(function(){
+  function texto(el){ return (el && el.textContent ? el.textContent : '').trim().toLowerCase(); }
+
+  function repararBotonesPC(){
+    try{
+      const botones = Array.from(document.querySelectorAll('button'));
+      const cerrar = botones.find(b => texto(b) === 'cerrar' || texto(b).includes('cerrar'));
+      const bloqueos = botones.find(b => texto(b).includes('bloqueos') || texto(b).includes('bloqueo'));
+      if(cerrar){
+        cerrar.style.marginRight = '16px';
+        cerrar.style.marginLeft = '0';
+        cerrar.style.position = 'relative';
+        cerrar.style.zIndex = '5';
+      }
+      if(bloqueos){
+        bloqueos.style.marginLeft = '16px';
+        bloqueos.style.position = 'relative';
+        bloqueos.style.zIndex = '4';
+      }
+      if(cerrar && cerrar.parentElement){
+        cerrar.parentElement.style.display = 'flex';
+        cerrar.parentElement.style.flexWrap = 'wrap';
+        cerrar.parentElement.style.gap = '8px';
+        cerrar.parentElement.style.alignItems = 'center';
+      }
+    }catch(e){}
+  }
+
+  function limpiarHuecos(){
+    try{
+      const candidatos = Array.from(document.querySelectorAll('.cita,.calendar-cita,.evento-cita,.evento,.appointment,[data-cita-id],[data-event-id]'));
+      candidatos.forEach(function(el){
+        const t = texto(el);
+        const sinContenido = !t || t === 'undefined' || t === 'null' || t === '-' || t === '—';
+        const sinInputs = !el.querySelector('input,select,textarea,button');
+        if(sinContenido && sinInputs){
+          el.remove();
+        }
+      });
+
+      // Si una celda quedó artificialmente alta tras borrar, devolverla a tamaño normal.
+      Array.from(document.querySelectorAll('td, .calendar-cell, .day-cell, .slot, .time-slot')).forEach(function(celda){
+        const citas = celda.querySelectorAll('.cita,.calendar-cita,.evento-cita,.evento,.appointment,[data-cita-id],[data-event-id]');
+        if(citas.length === 0){
+          celda.style.minHeight = '';
+          celda.style.height = '';
+          celda.style.paddingBottom = '';
+        }
+      });
+    }catch(e){}
+  }
+
+  function reparar(){
+    try{ if(typeof renderWeek === 'function') renderWeek(); }catch(e){}
+    try{ if(typeof renderMonth === 'function') renderMonth(); }catch(e){}
+    try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
+    setTimeout(limpiarHuecos, 30);
+    setTimeout(limpiarHuecos, 160);
+    setTimeout(repararBotonesPC, 60);
+  }
+
+  window.yneaRepararCuadricula = reparar;
+
+  window.addEventListener('load', function(){
+    setTimeout(reparar, 150);
+    setTimeout(reparar, 600);
+    setTimeout(repararBotonesPC, 1000);
+  });
+
+  document.addEventListener('click', function(){
+    setTimeout(function(){
+      limpiarHuecos();
+      repararBotonesPC();
+    }, 80);
+  }, true);
+
+  // Tras eliminar cita, limpiar de nuevo sin cerrar app.
+  const anteriorEliminar = window.eliminarCitaDesdeEditor;
+  if(typeof anteriorEliminar === 'function'){
+    window.eliminarCitaDesdeEditor = async function(){
+      const r = await anteriorEliminar.apply(this, arguments);
+      setTimeout(reparar, 60);
+      setTimeout(reparar, 300);
+      return r;
+    };
+    window.eliminarCita = window.eliminarCitaDesdeEditor;
+  }
+})();
+</script>
+
+
+<script id="ynea-grid-delete-real-fix">
+(function(){
+  function limpiarHuecos(){
+    document.querySelectorAll('.slot').forEach(function(slot){
+      const citas = slot.querySelectorAll('.appt');
+      if(citas.length===0){
+        slot.innerHTML='';
+        slot.style.minHeight='62px';
+        slot.style.height='62px';
+      }
+    });
+  }
+
+  function refrescarTodo(){
+    try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){}
+    try{ if(typeof renderMonth==='function') renderMonth(); }catch(e){}
+    try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
+    setTimeout(limpiarHuecos,50);
+    setTimeout(limpiarHuecos,250);
+  }
+
+  const eliminarOriginal = window.eliminarCitaDesdeEditor;
+  if(typeof eliminarOriginal === 'function'){
+    window.eliminarCitaDesdeEditor = async function(){
+      const r = await eliminarOriginal.apply(this, arguments);
+      refrescarTodo();
+      return r;
+    };
+    window.eliminarCita = window.eliminarCitaDesdeEditor;
+  }
+
+  window.addEventListener('load', function(){
+    setTimeout(refrescarTodo,300);
+  });
 })();
 </script>
 
