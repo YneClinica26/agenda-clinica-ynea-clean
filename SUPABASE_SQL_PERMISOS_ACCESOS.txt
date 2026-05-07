@@ -1,0 +1,10 @@
+-- Ejecutar en Supabase > SQL Editor si no guarda los códigos de acceso
+alter table if exists profesionales disable row level security;
+alter table if exists agenda_online disable row level security;
+
+alter table if exists profesionales add column if not exists codigo text;
+alter table if exists profesionales add column if not exists rol text default 'usuario';
+alter table if exists profesionales add column if not exists activo boolean default true;
+
+update profesionales set activo = true where activo is null;
+update profesionales set rol = 'usuario' where rol is null or rol = '';
