@@ -5023,6 +5023,59 @@ header{position:sticky!important; padding-right:132px!important;}
 })();
 </script>
 
+
+
+<!-- ===== YNEA FIX: AÑADIR CITAS DESDE CALENDARIOS SIN ROMPER SELECTORES ===== -->
+<script id="ynea-fix-add-from-calendar">
+(function(){
+  'use strict';
+  const q=id=>document.getElementById(id);
+  function showAgendaFormKeepCalendar(){
+    const agenda=q('agendaView');
+    if(agenda){
+      agenda.style.display='block';
+      agenda.classList.add('ynea-inline-agenda');
+    }
+    const form=q('citaForm')||agenda;
+    if(form && form.scrollIntoView) setTimeout(()=>form.scrollIntoView({behavior:'smooth',block:'start'}),30);
+  }
+  function setValue(id,val){const el=q(id); if(el && val!==undefined && val!==null && val!=='') el.value=val;}
+  window.quickNewCitaConsulta=function(fecha,hora,consulta){
+    setValue('fechaCita',fecha);
+    setValue('horaCita',hora||'09:00');
+    const prof=(q('weekProf')&&q('weekProf').value)||(q('monthProf')&&q('monthProf').value)||'';
+    if(prof) setValue('profesionalCita',prof);
+    if(consulta) setValue('consultaCita',consulta);
+    try{ if(typeof window.actualizarTiposNuevaCita==='function') window.actualizarTiposNuevaCita(); }catch(e){}
+    showAgendaFormKeepCalendar();
+    try{ const p=q('buscadorPacienteCita')||q('pacienteCita'); if(p) setTimeout(()=>p.focus(),80); }catch(e){}
+  };
+  window.quickNewCita=function(fecha,hora){
+    const consulta=(q('weekConsulta')&&q('weekConsulta').value)||(q('monthConsulta')&&q('monthConsulta').value)||'';
+    window.quickNewCitaConsulta(fecha,hora,consulta);
+  };
+  document.addEventListener('click',function(ev){
+    const appt=ev.target.closest && ev.target.closest('.appt,.month-mini-item');
+    if(appt && appt.dataset && appt.dataset.citaId) return;
+    const weekSlot=ev.target.closest && ev.target.closest('#weekTable .slot[data-fecha]');
+    if(weekSlot){
+      ev.preventDefault(); ev.stopPropagation();
+      window.quickNewCitaConsulta(weekSlot.dataset.fecha,weekSlot.dataset.hora||'09:00',(q('weekConsulta')&&q('weekConsulta').value)||'');
+      return;
+    }
+    const monthDay=ev.target.closest && ev.target.closest('#monthTable .month-day[data-fecha]');
+    if(monthDay && !ev.target.closest('.month-mini-item')){
+      ev.preventDefault(); ev.stopPropagation();
+      window.quickNewCitaConsulta(monthDay.dataset.fecha,'09:00',(q('monthConsulta')&&q('monthConsulta').value)||'');
+      return;
+    }
+  },true);
+})();
+</script>
+<style id="ynea-fix-add-from-calendar-css">
+.ynea-inline-agenda{margin-top:12px!important;border-top:3px solid #fce7f3!important;padding-top:12px!important;}
+</style>
+
 </body>
 </html>
 <style id="ynea-mobile-calendar-header-fix-css">
@@ -5649,6 +5702,122 @@ header{position:sticky!important; padding-right:132px!important;}
 })();
 </script>
 
+
+
+<!-- ===== YNEA FIX: AÑADIR CITAS DESDE CALENDARIOS SIN ROMPER SELECTORES ===== -->
+<script id="ynea-fix-add-from-calendar">
+(function(){
+  'use strict';
+  const q=id=>document.getElementById(id);
+  function showAgendaFormKeepCalendar(){
+    const agenda=q('agendaView');
+    if(agenda){
+      agenda.style.display='block';
+      agenda.classList.add('ynea-inline-agenda');
+    }
+    const form=q('citaForm')||agenda;
+    if(form && form.scrollIntoView) setTimeout(()=>form.scrollIntoView({behavior:'smooth',block:'start'}),30);
+  }
+  function setValue(id,val){const el=q(id); if(el && val!==undefined && val!==null && val!=='') el.value=val;}
+  window.quickNewCitaConsulta=function(fecha,hora,consulta){
+    setValue('fechaCita',fecha);
+    setValue('horaCita',hora||'09:00');
+    const prof=(q('weekProf')&&q('weekProf').value)||(q('monthProf')&&q('monthProf').value)||'';
+    if(prof) setValue('profesionalCita',prof);
+    if(consulta) setValue('consultaCita',consulta);
+    try{ if(typeof window.actualizarTiposNuevaCita==='function') window.actualizarTiposNuevaCita(); }catch(e){}
+    showAgendaFormKeepCalendar();
+    try{ const p=q('buscadorPacienteCita')||q('pacienteCita'); if(p) setTimeout(()=>p.focus(),80); }catch(e){}
+  };
+  window.quickNewCita=function(fecha,hora){
+    const consulta=(q('weekConsulta')&&q('weekConsulta').value)||(q('monthConsulta')&&q('monthConsulta').value)||'';
+    window.quickNewCitaConsulta(fecha,hora,consulta);
+  };
+  document.addEventListener('click',function(ev){
+    const appt=ev.target.closest && ev.target.closest('.appt,.month-mini-item');
+    if(appt && appt.dataset && appt.dataset.citaId) return;
+    const weekSlot=ev.target.closest && ev.target.closest('#weekTable .slot[data-fecha]');
+    if(weekSlot){
+      ev.preventDefault(); ev.stopPropagation();
+      window.quickNewCitaConsulta(weekSlot.dataset.fecha,weekSlot.dataset.hora||'09:00',(q('weekConsulta')&&q('weekConsulta').value)||'');
+      return;
+    }
+    const monthDay=ev.target.closest && ev.target.closest('#monthTable .month-day[data-fecha]');
+    if(monthDay && !ev.target.closest('.month-mini-item')){
+      ev.preventDefault(); ev.stopPropagation();
+      window.quickNewCitaConsulta(monthDay.dataset.fecha,'09:00',(q('monthConsulta')&&q('monthConsulta').value)||'');
+      return;
+    }
+  },true);
+})();
+</script>
+<style id="ynea-fix-add-from-calendar-css">
+.ynea-inline-agenda{margin-top:12px!important;border-top:3px solid #fce7f3!important;padding-top:12px!important;}
+</style>
+
+
+
+<!-- ===== YNEA FIX: ETIQUETAS SEMANA/MES ANTERIOR Y SIGUIENTE EN MÓVIL ===== -->
+<style id="ynea-mobile-prev-next-labels-css">
+@media(max-width:900px){
+  .ynea-final-actions button,.ynea-rescate-actions button,.ynea-cal-row.actions button{
+    white-space:normal!important;
+    line-height:1.05!important;
+    min-height:38px!important;
+    height:auto!important;
+    padding:4px 2px!important;
+    font-size:10px!important;
+    text-align:center!important;
+  }
+  .ynea-mobile-nav-main{display:block!important;font-weight:900!important;font-size:10px!important;}
+  .ynea-mobile-nav-sub{display:block!important;font-weight:700!important;font-size:9px!important;opacity:.78!important;margin-top:1px!important;}
+}
+</style>
+<script id="ynea-mobile-prev-next-labels-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const isMob=()=>window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+  function pad(n){return String(n).padStart(2,'0');}
+  function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+  function monday(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); return x;}
+  function addDays(d,n){const x=new Date(d); x.setDate(x.getDate()+n); return x;}
+  function fmtDate(d){return pad(d.getDate())+'/'+pad(d.getMonth()+1);}
+  function fmtWeekFromStart(start){const a=monday(start); const b=addDays(a,4); return fmtDate(a)+'–'+fmtDate(b);}
+  function fmtMonth(d){return d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).replace('.', '');}
+  function setBtn(btn,main,sub){ if(btn) btn.innerHTML='<span class="ynea-mobile-nav-main">'+main+'</span><span class="ynea-mobile-nav-sub">'+sub+'</span>'; }
+  function updateLabels(){
+    if(!isMob()) return;
+    try{
+      const wv=($('weekPicker')&&$('weekPicker').value)||iso(new Date());
+      const w=monday(new Date(wv+'T12:00:00'));
+      setBtn($('yneaWeekPrev')||document.querySelector('#semanaView .ynea-final-actions button:nth-child(1)'), 'Anterior', fmtWeekFromStart(addDays(w,-7)));
+      setBtn($('yneaWeekToday')||document.querySelector('#semanaView .ynea-final-actions button:nth-child(2)'), 'Actual', fmtWeekFromStart(monday(new Date())));
+      setBtn($('yneaWeekNext')||document.querySelector('#semanaView .ynea-final-actions button:nth-child(3)'), 'Siguiente', fmtWeekFromStart(addDays(w,7)));
+    }catch(e){}
+    try{
+      const mv=($('monthPicker')&&$('monthPicker').value)||new Date().toISOString().slice(0,7);
+      const parts=mv.split('-').map(Number); const cur=new Date(parts[0]||new Date().getFullYear(),(parts[1]||1)-1,1);
+      const prev=new Date(cur.getFullYear(),cur.getMonth()-1,1);
+      const next=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+      const now=new Date(); const actual=new Date(now.getFullYear(),now.getMonth(),1);
+      setBtn($('yneaMonthPrev')||document.querySelector('#mensualView .ynea-final-actions button:nth-child(1)'), 'Anterior', fmtMonth(prev));
+      setBtn($('yneaMonthToday')||document.querySelector('#mensualView .ynea-final-actions button:nth-child(2)'), 'Actual', fmtMonth(actual));
+      setBtn($('yneaMonthNext')||document.querySelector('#mensualView .ynea-final-actions button:nth-child(3)'), 'Siguiente', fmtMonth(next));
+    }catch(e){}
+  }
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){
+    const r=oldRenderAll?oldRenderAll.apply(this,arguments):undefined;
+    setTimeout(updateLabels,0); setTimeout(updateLabels,80);
+    return r;
+  };
+  document.addEventListener('click',e=>{ if(e.target.closest && e.target.closest('#semanaView,#mensualView')) setTimeout(updateLabels,120); },true);
+  document.addEventListener('change',e=>{ if(e.target && ['weekPicker','monthPicker'].includes(e.target.id)) setTimeout(updateLabels,60); },true);
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(updateLabels,400);setTimeout(updateLabels,1400);});
+  setTimeout(updateLabels,600); setTimeout(updateLabels,1800);
+})();
+</script>
 </body>
 </html>
 
