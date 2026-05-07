@@ -1462,7 +1462,7 @@ function renderWeek(){
         if(hh) skip[date+"_"+hh]=true;
       }
       html+=`<td class="slot" rowspan="${bloques}">
-        <div class="appt ${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" title="${c.obs||""}" style="background:${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'#f8c8dc':''};height:100%;min-height:${Math.max(58,bloques*58)}px;display:flex;flex-direction:column;justify-content:center">
+        <div class="appt ${String(c.profesional||'').toLowerCase().includes('susana')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" title="${c.obs||""}" style="background:${String(c.profesional||'').toLowerCase().includes('susana')?'#f8c8dc':''};height:100%;min-height:${Math.max(58,bloques*58)}px;display:flex;flex-direction:column;justify-content:center">
           <strong>${p.nombre||""}</strong>
           <span>${c.profesional}</span>
           <span>${c.tipo} · ${c.duracion} min · ${c.consulta}</span>
@@ -1746,7 +1746,7 @@ function renderMonthView(){
        <strong>${d.getDate()}</strong>`;
      citas.slice(0,5).forEach(c=>{
        const p=paciente(c.pacienteId);
-       out+=`<div class="appt estado-${c.estado.replaceAll(" ","")} ${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="background:${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'#f8c8dc':''};margin-top:6px;cursor:pointer">
+       out+=`<div class="appt estado-${c.estado.replaceAll(" ","")} ${String(c.profesional||'').toLowerCase().includes('susana')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="background:${String(c.profesional||'').toLowerCase().includes('susana')?'#f8c8dc':''};margin-top:6px;cursor:pointer">
           <strong>${c.hora} · ${p.nombre||""}</strong>
           <span>${c.profesional}</span><br>
           <span>${c.tipo} · ${c.consulta}</span>
@@ -2754,14 +2754,20 @@ function guardarCitaDesdeEditor(){
   if(typeof renderAll==="function") renderAll();
 }
 function eliminarCitaDesdeEditor(){
-  const id=document.getElementById("editCitaId").value;
+  const id=document.getElementById("editCitaId")?.value;
+  if(!id){alert("No se ha encontrado la cita para eliminar.");return;}
   if(!confirm("¿Eliminar esta cita?")) return;
   data.citas=(data.citas||[]).filter(c=>String(c.id)!==String(id));
   if(typeof save==="function") save();
   try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
-  cerrarEditorCita();
-  if(typeof renderAll==="function") renderAll();
+  try{const ov=document.getElementById("editorCitaOverlay"); if(ov) ov.style.display="none";}catch(e){}
+  try{document.body.classList.remove('ynea-editor-open');}catch(e){}
+  try{const wt=document.getElementById('weekTable'); if(wt) wt.innerHTML=''; const mt=document.getElementById('monthTable'); if(mt) mt.innerHTML='';}catch(e){}
+  try{ if(typeof setView==='function') setView('semana'); }catch(e){}
+  try{ if(typeof renderAll==="function") renderAll(); }catch(e){}
+  setTimeout(()=>{try{ if(typeof renderAll==="function") renderAll(); }catch(e){}},120);
 }
+
 
 // Compatibilidad con versiones antiguas que llamaban a editCita().
 window.eliminarCitaDesdeEditor=eliminarCitaDesdeEditor;
@@ -4657,7 +4663,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
             const d=addDaysLocal(cur,i), date=iso(d), inMonth=d.getMonth()===month;
             const citas=(window.data.citas||[]).filter(c=>c.fecha===date && (!prof||c.profesional===prof) && c.consulta===consulta).sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));
             out+=`<td class="slot" style="min-width:210px;background:${inMonth?'#fff':'#f8fafc'}"><strong>${d.getDate()}</strong>`;
-            citas.slice(0,5).forEach(c=>{const p=(typeof paciente==='function'?paciente(c.pacienteId):{})||{}; out+=`<div class="appt estado-${String(c.estado||'').replaceAll(' ','')} ${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="background:${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'#f8c8dc':''};margin-top:6px;cursor:pointer"><strong>${c.hora} · ${p.nombre||''}</strong><span>${c.profesional||''}</span><br><span>${c.tipo||''} · ${c.consulta||''}</span></div>`;});
+            citas.slice(0,5).forEach(c=>{const p=(typeof paciente==='function'?paciente(c.pacienteId):{})||{}; out+=`<div class="appt estado-${String(c.estado||'').replaceAll(' ','')} ${String(c.profesional||'').toLowerCase().includes('susana')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="background:${String(c.profesional||'').toLowerCase().includes('susana')?'#f8c8dc':''};margin-top:6px;cursor:pointer"><strong>${c.hora} · ${p.nombre||''}</strong><span>${c.profesional||''}</span><br><span>${c.tipo||''} · ${c.consulta||''}</span></div>`;});
             if(citas.length>5) out+=`<p class="small">+${citas.length-5} citas más</p>`;
             out+='</td>';
           }
@@ -5097,428 +5103,91 @@ function pastelColorProfesional(nombre){
  let h=0; for(let i=0;i<(nombre||'').length;i++) h+=nombre.charCodeAt(i);
  return colors[h % colors.length];
 }
-setTimeout(()=>{
- document.querySelectorAll('.cita,.calendar-cita,.evento-cita').forEach(el=>{
- const t=(el.textContent||'').toLowerCase();
- if(t.includes('susana royo') || t.includes('dra susana')){
-   el.classList.add('susana-royo');
-   el.style.background='#f8c8dc';
- } else {
-   el.classList.remove('susana-royo');
- }
-});
-},1000);
-</script>
-</body>
-</html>
-<!-- YNEA FIX REAL: modal móvil, volver calendario y colores por profesional -->
-<style id="ynea-fix-real-modal-colores">
-@media (max-width:700px){
-  body.ynea-editor-open .mobileBottomNav,
-  body.ynea-editor-open .appFab{display:none !important; visibility:hidden !important; pointer-events:none !important;}
-  .editorCitaOverlay{
-    position:fixed !important; inset:0 !important; z-index:250000 !important;
-    display:none; align-items:flex-end !important; justify-content:center !important;
-    padding:8px !important; background:rgba(15,23,42,.38) !important;
-  }
-  .editorCitaModal{
-    width:100% !important; max-width:100% !important;
-    max-height:calc(100dvh - 18px) !important; height:auto !important;
-    border-radius:20px 20px 0 0 !important; padding:12px !important;
-    display:flex !important; flex-direction:column !important; overflow:hidden !important;
-  }
-  .editorCitaHeader{margin-bottom:8px !important; flex-shrink:0 !important;}
-  .editorCitaHeader h2{font-size:17px !important; line-height:1.1 !important;}
-  .editorCitaHeader p{display:none !important;}
-  .editorCitaGrid{
-    display:grid !important; grid-template-columns:1fr 1fr !important; gap:7px !important;
-    overflow:auto !important; padding-right:2px !important; min-height:0 !important;
-  }
-  .editorCitaGrid label,.editorCitaModal label{font-size:10px !important; margin:2px 0 2px !important;}
-  .editorCitaGrid input,.editorCitaGrid select,.editorCitaModal textarea{
-    min-height:30px !important; height:30px !important; padding:4px 7px !important;
-    font-size:12px !important; border-radius:9px !important;
-  }
-  .editorCitaModal textarea{height:42px !important; min-height:42px !important; flex-shrink:0 !important;}
-  .editorCitaActions{
-    position:relative !important; bottom:auto !important; z-index:250001 !important;
-    flex-shrink:0 !important; display:grid !important; grid-template-columns:1fr 1fr 1fr !important;
-    gap:6px !important; margin-top:8px !important; padding:8px 0 0 !important; background:#fff !important;
-    border-top:1px solid #eef2f7 !important;
-  }
-  .editorCitaActions button{width:100% !important; min-height:34px !important; padding:6px 5px !important; font-size:11px !important; border-radius:10px !important;}
-  .editorCitaActions .danger{font-size:10px !important;}
-}
-.appt.ynea-prof-color{border:1px solid rgba(15,23,42,.08) !important; color:#334155 !important;}
-.appt.ynea-prof-color .badge{background:rgba(255,255,255,.65) !important; color:#475569 !important; border:1px solid rgba(15,23,42,.08) !important;}
-</style>
-<script id="ynea-fix-real-modal-colores-js">
-(function(){
-  'use strict';
-  const pastel=['#fde2e4','#e2f0cb','#cddafd','#fff1c1','#e0c3fc','#b5ead7','#f9dcc4','#d8e2dc','#f1e3f3','#cdeac0','#ffdac1','#bde0fe'];
-  function escReg(s){return String(s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
-  function colorFor(name){const n=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); if(n.includes('susana')&&n.includes('royo')) return '#f8c8dc'; let h=0; const s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return pastel[h%pastel.length];}
-  function profs(){try{return (window.data&&Array.isArray(data.profesionales))?data.profesionales.slice().sort((a,b)=>String(b).length-String(a).length):[]}catch(e){return[]}}
-  function colorizarCitas(){
-    const ps=profs();
-    document.querySelectorAll('.appt').forEach(el=>{
-      const txt=el.textContent||'';
-      let prof=ps.find(p=>txt.includes(p));
-      if(!prof && window.data && Array.isArray(data.citas)){
-        const cita=data.citas.find(c=>c.profesional && txt.includes(c.profesional));
-        if(cita) prof=cita.profesional;
-      }
-      if(prof){el.style.setProperty('background',colorFor(prof),'important'); el.classList.add('ynea-prof-color');}
-    });
-  }
-  function volverCalendario(){
-    try{ if(typeof window.setView==='function') window.setView('semana'); }catch(e){}
-    try{ document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active')); const btn=[...document.querySelectorAll('.tab')].find(b=>(b.textContent||'').toLowerCase().includes('semanal')); if(btn)btn.classList.add('active'); }catch(e){}
-    try{ if(typeof window.appMobileSetView==='function') window.appMobileSetView('semana'); }catch(e){}
-    try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
-  }
-  function instalar(){
-    if(window.__yneaFixRealModalColoresInstalled) return;
-    window.__yneaFixRealModalColoresInstalled=true;
-    const oldAbrir=window.abrirEditorCita;
-    if(typeof oldAbrir==='function'){
-      window.abrirEditorCita=function(){
-        const r=oldAbrir.apply(this,arguments);
-        document.body.classList.add('ynea-editor-open');
-        const ov=document.getElementById('editorCitaOverlay'); if(ov) ov.style.display='flex';
-        setTimeout(colorizarCitas,50);
-        return r;
-      };
-    }
-    const oldCerrar=window.cerrarEditorCita;
-    window.cerrarEditorCita=function(){
-      document.body.classList.remove('ynea-editor-open');
-      const ov=document.getElementById('editorCitaOverlay'); if(ov) ov.style.display='none';
-      if(typeof oldCerrar==='function') return oldCerrar.apply(this,arguments);
-    };
-    const oldAdd=window.addCita;
-    if(typeof oldAdd==='function'){
-      window.addCita=function(){
-        const before=(window.data&&Array.isArray(data.citas))?data.citas.length:0;
-        const r=oldAdd.apply(this,arguments);
-        setTimeout(()=>{const after=(window.data&&Array.isArray(data.citas))?data.citas.length:before; if(after>before) volverCalendario(); colorizarCitas();},80);
-        return r;
-      };
-    }
-    const oldGuardar=window.guardarCitaDesdeEditor;
-    if(typeof oldGuardar==='function'){
-      window.guardarCitaDesdeEditor=function(){
-        const r=oldGuardar.apply(this,arguments);
-        document.body.classList.remove('ynea-editor-open');
-        setTimeout(()=>{volverCalendario(); colorizarCitas();},80);
-        return r;
-      };
-    }
-    const oldEliminar=window.eliminarCitaDesdeEditor;
-    if(typeof oldEliminar==='function'){
-      window.eliminarCitaDesdeEditor=function(){
-        const r=oldEliminar.apply(this,arguments);
-        document.body.classList.remove('ynea-editor-open');
-        setTimeout(()=>{volverCalendario(); colorizarCitas();},80);
-        return r;
-      };
-    }
-    const oldRender=window.renderAll;
-    if(typeof oldRender==='function'){
-      window.renderAll=function(){const r=oldRender.apply(this,arguments); setTimeout(colorizarCitas,20); return r;};
-    }
-    document.addEventListener('click',e=>{if(e.target.closest('.appt')) setTimeout(()=>document.body.classList.add('ynea-editor-open'),0);},true);
-    setInterval(colorizarCitas,1200);
-    setTimeout(colorizarCitas,300);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',instalar,true); else instalar();
-})();
-</script>
-</body>
-</html>
 
-
-<style>
-@media (max-width: 768px){
-  .pacientes-lista,
-  .tabla-pacientes,
-  .tablaPacientes,
-  .patients-table{
-    font-size:12px !important;
-    line-height:1.1 !important;
-  }
-  .pacientes-lista tr,
-  .tabla-pacientes tr,
-  .tablaPacientes tr,
-  .patients-table tr{
-    height:28px !important;
-  }
-  .pacientes-lista td,
-  .tabla-pacientes td,
-  .tablaPacientes td,
-  .patients-table td{
-    padding:2px 4px !important;
-  }
-}
-</style>
-
-<style>
-@media (max-width:768px){
-table, .tabla-pacientes, .patients-table, .pacientes-lista{
- font-size:11px !important;
- line-height:1.05 !important;
-}
-table td, table th,
-.tabla-pacientes td,.tabla-pacientes th,
-.patients-table td,.patients-table th,
-.pacientes-lista td,.pacientes-lista th{
- padding:2px 3px !important;
- height:24px !important;
-}
-}
-</style>
-<script>
-setInterval(()=>{
- document.querySelectorAll('.cita,.calendar-cita,.evento-cita,[data-profesional]').forEach(el=>{
-   const t=(el.textContent||'')+' '+(el.getAttribute('data-profesional')||'');
-   if(t.toLowerCase().includes('susana')){
-      el.style.background='#f8c8dc';
-   }
- });
-},700);
 </script>
 
-<style id="ynea-pacientes-compacto-final">
+<style id="ynea-final-fix-susana-pacientes-grid-v2">
+/* Color rosa estable para cualquier cita de Susana: el color se pinta en el HTML y se refuerza aquí. */
+.appt.ynea-susana-rosa{background:#f8c8dc !important;background-color:#f8c8dc !important;border-color:rgba(190,24,93,.22) !important;color:#334155 !important;}
+.appt.ynea-susana-rosa *{color:#334155 !important;}
 @media (max-width:700px){
-  .tabla-pacientes,
-  .tablaPacientes,
-  .patients-table,
-  table{
-    font-size:11px !important;
-    border-collapse:collapse !important;
-  }
-  .tabla-pacientes tr,
-  .tablaPacientes tr,
-  .patients-table tr,
-  table tr{
-    height:20px !important;
-    line-height:1 !important;
-  }
-  .tabla-pacientes td,
-  .tablaPacientes td,
-  .patients-table td,
-  table td{
-    padding:1px 3px !important;
-    line-height:1 !important;
-  }
-}
-</style>
-
-
-<!-- YNEA FIX DEFINITIVO REAL: eliminar cita, rosa Susana, pacientes móvil compacto -->
-<style id="ynea-fix-definitivo-real-css">
-@media (max-width:700px){
-  #pacientesView .card{padding:6px !important;margin-bottom:5px !important;}
-  #pacientesView h2{font-size:14px !important;line-height:1 !important;margin:0 0 5px !important;}
-  #pacientesSearchWrap{margin:0 0 5px 0 !important;gap:4px !important;}
-  #buscadorPacientes{height:28px !important;min-height:28px !important;padding:3px 7px !important;font-size:11px !important;border-radius:8px !important;}
-  #pacientesTable{font-size:10.5px !important;line-height:1 !important;border-spacing:0 !important;border-collapse:separate !important;}
+  /* Base pacientes móvil: solo nombre, compacto, sin teléfono/email/observaciones. */
+  #pacientesView .card{padding:6px !important;margin-bottom:6px !important;}
+  #pacientesView h2{font-size:14px !important;line-height:1.05 !important;margin:0 0 6px !important;}
+  #pacientesView .tableWrap{overflow:visible !important;border:0 !important;background:transparent !important;max-height:none !important;}
+  #pacientesTable{display:block !important;width:100% !important;min-width:0 !important;border:0 !important;border-collapse:separate !important;border-spacing:0 !important;font-size:10.5px !important;}
   #pacientesTable thead{display:none !important;}
   #pacientesTable tbody{display:block !important;width:100% !important;}
-  #pacientesView #pacientesTable tr,
-  #pacientesTable tbody tr{
-    display:block !important;width:100% !important;margin:0 0 3px 0 !important;padding:3px 5px !important;
-    border:1px solid #f1d7e3 !important;border-radius:8px !important;background:#fff !important;box-shadow:none !important;
-    min-height:0 !important;height:auto !important;line-height:1 !important;
-  }
-  #pacientesView #pacientesTable td,
-  #pacientesTable tbody td{
-    display:block !important;width:100% !important;border:0 !important;padding:0 !important;margin:0 !important;
-    font-size:10.5px !important;line-height:1.05 !important;min-height:0 !important;height:auto !important;vertical-align:top !important;
-  }
-  #pacientesTable td b{font-size:11px !important;line-height:1.05 !important;}
-  #pacientesTable td:nth-child(1)::before{content:'Paciente: ';font-weight:700;color:#64748b;}
-  #pacientesTable td:nth-child(2)::before{content:'Tel.: ';font-weight:700;color:#64748b;}
-  #pacientesTable td:nth-child(3)::before{content:'Email: ';font-weight:700;color:#64748b;}
-  #pacientesTable td:nth-child(4)::before{content:'Obs.: ';font-weight:700;color:#64748b;}
+  #pacientesView #pacientesTable tr{display:block !important;width:100% !important;min-height:0 !important;height:auto !important;margin:0 0 3px !important;padding:3px 5px !important;border:1px solid #f1d7e3 !important;border-radius:8px !important;background:#fff !important;box-shadow:none !important;line-height:1 !important;}
+  #pacientesView #pacientesTable td{display:none !important;border:0 !important;padding:0 !important;margin:0 !important;min-height:0 !important;height:auto !important;line-height:1 !important;font-size:10.5px !important;}
+  #pacientesView #pacientesTable td:nth-child(1){display:block !important;width:100% !important;line-height:1 !important;}
+  #pacientesView #pacientesTable td:nth-child(1)::before{content:'' !important;}
+  #pacientesView #pacientesTable td:nth-child(2),
+  #pacientesView #pacientesTable td:nth-child(3),
+  #pacientesView #pacientesTable td:nth-child(4){display:none !important;}
+  #pacientesView #pacientesTable td b{font-size:10.5px !important;line-height:1 !important;font-weight:700 !important;}
+  #buscadorPacientes{height:28px !important;min-height:28px !important;font-size:11px !important;padding:4px 7px !important;border-radius:8px !important;}
 }
 </style>
-<script id="ynea-fix-definitivo-real-js">
+
+
+<style id="ynea-final-pacientes-solo-nombre">
+@media (max-width:700px){
+  #pacientesView .card{padding:8px !important;margin-bottom:6px !important;}
+  #pacientesView h2{font-size:15px !important;margin:0 0 6px !important;line-height:1.05 !important;}
+  #pacientesSearchWrap,#pacientesView .tableWrap{margin-top:4px !important;}
+  #buscadorPacientes,#pacientesSearchWrap input{font-size:12px !important;padding:6px 8px !important;min-height:30px !important;}
+  #pacientesTable{width:100% !important;border-collapse:collapse !important;border-spacing:0 !important;font-size:11px !important;line-height:1 !important;}
+  #pacientesTable thead{display:none !important;}
+  #pacientesTable tbody{display:block !important;width:100% !important;}
+  #pacientesTable tr{display:block !important;margin:0 0 3px !important;padding:4px 6px !important;min-height:0 !important;height:auto !important;border:1px solid #f3cfe0 !important;border-radius:8px !important;background:#fff !important;line-height:1 !important;}
+  #pacientesTable td{display:none !important;}
+  #pacientesTable td:first-child{display:block !important;padding:0 !important;margin:0 !important;border:0 !important;font-size:11px !important;line-height:1.05 !important;}
+  #pacientesTable td:first-child::before{content:'' !important;display:none !important;}
+  #pacientesTable td:first-child b{font-size:11px !important;font-weight:600 !important;line-height:1.05 !important;}
+}
+</style>
+<script id="ynea-final-delete-grid-patients">
 (function(){
   'use strict';
-  const ROSA_SUSANA='#f8c8dc';
-  const $=id=>document.getElementById(id);
-  function normaliza(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
-  function esSusana(nombre){const n=normaliza(nombre); return n.includes('susana') && n.includes('royo');}
-  function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  function idDesdeCita(el){
-    const on=el.getAttribute('onclick')||'';
-    const m=on.match(/abrirEditorCita\(['"]?([^'"\)]+)['"]?\)/);
-    return m?m[1]:null;
+  function $(id){return document.getElementById(id)}
+  function soloNombrePacientes(){
+    const table=$('pacientesTable');
+    if(!table || !window.data || !Array.isArray(window.data.pacientes)) return;
+    const q=($('buscadorPacientes')?.value||'').toLowerCase().trim();
+    const rows=window.data.pacientes.filter(p=>{
+      const texto=[p.nombre,p.telefono,p.email,p.obs].join(' ').toLowerCase();
+      return !q || texto.includes(q);
+    });
+    table.innerHTML='<thead><tr><th>Nombre</th></tr></thead><tbody>'+rows.map(p=>`<tr onclick="window.editarPaciente&&window.editarPaciente('${p.id}')"><td><b>${p.nombre||''}</b></td></tr>`).join('')+'</tbody>';
   }
-  function colorizarSusana(){
-    try{
-      document.querySelectorAll('.appt,.cita,.calendar-cita,.evento-cita').forEach(el=>{
-        let prof='';
-        const id=idDesdeCita(el);
-        if(id && window.data && Array.isArray(data.citas)){
-          const c=data.citas.find(x=>String(x.id)===String(id));
-          if(c) prof=c.profesional||'';
-        }
-        const txt=el.textContent||'';
-        if(esSusana(prof) || esSusana(txt)){
-          el.style.setProperty('background', ROSA_SUSANA, 'important');
-          el.style.setProperty('background-color', ROSA_SUSANA, 'important');
-          el.style.setProperty('border', '1px solid rgba(190,24,93,.18)', 'important');
-          el.classList.add('ynea-susana-rosa');
-        }
-      });
-    }catch(e){}
-  }
-  async function guardarOnlineSeguro(){
-    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); else if(typeof window.save==='function') window.save(); }catch(e){ console.warn('No se pudo guardar online tras eliminar',e); }
-  }
-  window.eliminarCitaDesdeEditor=function(){
-    const input=$('editCitaId');
-    const id=input?input.value:'';
+  window.renderPatients=soloNombrePacientes;
+
+  window.eliminarCitaDesdeEditor=async function(){
+    const id=$('editCitaId')?.value;
     if(!id){alert('No se ha encontrado la cita para eliminar.');return;}
     if(!confirm('¿Eliminar esta cita?')) return;
-    try{
-      if(!window.data && typeof data!=='undefined') window.data=data;
-      const d=window.data||data;
-      const antes=(d.citas||[]).length;
-      d.citas=(d.citas||[]).filter(c=>String(c.id)!==String(id));
-      try{window.data=d; data=d;}catch(e){window.data=d;}
-      if((d.citas||[]).length===antes){alert('No se encontró la cita en la agenda.');return;}
-      if(typeof window.save==='function') window.save();
-      guardarOnlineSeguro();
-      const ov=$('editorCitaOverlay'); if(ov) ov.style.display='none';
-      document.body.classList.remove('ynea-editor-open');
-      try{ if(typeof window.setView==='function') window.setView('semana'); }catch(e){}
-      try{ const wt=document.getElementById('weekTable'); if(wt) wt.innerHTML=''; const mt=document.getElementById('monthTable'); if(mt) mt.innerHTML=''; }catch(e){}
-      try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
-      setTimeout(()=>{try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){} colorizarSusana();},180);
-    }catch(e){alert('No se pudo eliminar la cita: '+(e.message||e));}
+    if(!window.data) window.data={citas:[]};
+    window.data.citas=(window.data.citas||[]).filter(c=>String(c.id)!==String(id));
+    try{ if(typeof window.save==='function') window.save(); }catch(e){console.warn(e)}
+    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){console.warn(e)}
+    try{ const ov=$('editorCitaOverlay'); if(ov) ov.style.display='none'; }catch(e){}
+    try{ sessionStorage.setItem('yneaViewAfterReload','semana'); }catch(e){}
+    setTimeout(()=>location.reload(),120);
   };
-  document.addEventListener('click',function(e){
-    const btn=e.target.closest('button');
-    if(!btn) return;
-    const txt=normaliza(btn.textContent);
-    if(txt.includes('eliminar cita')){
-      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-      window.eliminarCitaDesdeEditor();
-    }
-  },true);
-  const oldRender=window.renderAll;
-  if(typeof oldRender==='function' && !oldRender.__yneaSusanaReal){
-    window.renderAll=function(){const r=oldRender.apply(this,arguments); setTimeout(colorizarSusana,80); return r;};
-    window.renderAll.__yneaSusanaReal=true;
-  }
-  const oldRenderPatients=window.renderPatients;
-  if(typeof oldRenderPatients==='function' && !oldRenderPatients.__yneaCompactReal){
-    window.renderPatients=function(){
-      const r=oldRenderPatients.apply(this,arguments);
-      try{
-        const table=$('pacientesTable');
-        if(table) table.classList.add('ynea-pacientes-compacto-real');
-      }catch(e){}
-      return r;
-    };
-    window.renderPatients.__yneaCompactReal=true;
-  }
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(()=>{try{if(window.renderPatients)window.renderPatients(); colorizarSusana();}catch(e){}},300);},true);
-  setInterval(colorizarSusana,700);
-})();
-</script>
 
-<style id="susana-pink-fixed">
-.cita.susana-royo,
-.calendar-cita.susana-royo,
-.evento-cita.susana-royo{
- background:#f8c8dc !important;
-}
-@media (max-width:700px){
- .paciente-telefono,
- .paciente-email,
- .telefono-paciente,
- .email-paciente{
-   display:none !important;
- }
- .tabla-pacientes,
- .tablaPacientes,
- .patients-table,
- table{
-   font-size:11px !important;
- }
- .tabla-pacientes tr,
- .tablaPacientes tr,
- .patients-table tr,
- table tr{
-   height:18px !important;
- }
- .tabla-pacientes td,
- .tablaPacientes td,
- .patients-table td,
- table td{
-   padding:0px 3px !important;
-   line-height:1 !important;
- }
-}
-</style>
-
-
-<!-- YNEA FIX AUTORITATIVO: Susana rosa estable, pacientes móvil compacto, cuadrícula tras eliminar -->
-<style id="ynea-final-authoritative-css">
-.appt.ynea-susana-rosa,
-.ynea-susana-rosa{
-  background:#f8c8dc !important;
-  background-color:#f8c8dc !important;
-  border-color:rgba(190,24,93,.20) !important;
-}
-@media (max-width:700px){
-  #pacientesView .card{padding:6px !important;margin-bottom:5px !important;}
-  #pacientesView h2{font-size:14px !important;margin:0 0 5px !important;line-height:1.05 !important;}
-  #pacientesSearchWrap{margin:0 0 5px 0 !important;gap:4px !important;}
-  #buscadorPacientes{height:28px !important;min-height:28px !important;padding:3px 7px !important;font-size:11px !important;border-radius:8px !important;}
-  #pacientesView .tableWrap{overflow:visible !important;border:0 !important;background:transparent !important;}
-  #pacientesTable{display:block !important;width:100% !important;min-width:0 !important;border-collapse:separate !important;border-spacing:0 !important;font-size:10.5px !important;}
-  #pacientesTable thead{display:none !important;}
-  #pacientesTable tbody{display:block !important;width:100% !important;}
-  #pacientesTable tr{display:block !important;width:100% !important;margin:0 0 3px 0 !important;padding:3px 5px !important;border:1px solid #f1d7e3 !important;border-radius:8px !important;background:#fff !important;box-shadow:none !important;min-height:0 !important;height:auto !important;line-height:1 !important;}
-  #pacientesTable td{display:none !important;border:0 !important;padding:0 !important;margin:0 !important;min-height:0 !important;height:auto !important;line-height:1 !important;}
-  #pacientesTable td:nth-child(1){display:block !important;width:100% !important;font-size:10.5px !important;line-height:1.05 !important;}
-  #pacientesTable td:nth-child(4){display:block !important;width:100% !important;font-size:9.5px !important;line-height:1.05 !important;color:#64748b !important;margin-top:1px !important;}
-  #pacientesTable td:nth-child(1)::before{content:'' !important;}
-  #pacientesTable td:nth-child(4)::before{content:'' !important;}
-  #pacientesTable td b{font-size:11px !important;line-height:1.05 !important;}
-}
-</style>
-<script id="ynea-final-authoritative-js">
-(function(){
-  const ROSA='#f8c8dc';
-  function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
-  function esSusana(s){const n=norm(s); return n.includes('susana') && n.includes('royo');}
-  function citaId(el){const on=el.getAttribute('onclick')||''; const m=on.match(/abrirEditorCita\(['"]?([^'"\)]+)['"]?\)/); return m?m[1]:null;}
-  function aplicarSusana(){
+  window.addEventListener('load',()=>{
     try{
-      document.querySelectorAll('.appt').forEach(el=>{
-        let prof=''; const id=citaId(el);
-        if(id && window.data && Array.isArray(window.data.citas)){const c=window.data.citas.find(x=>String(x.id)===String(id)); if(c) prof=c.profesional||'';}
-        if(esSusana(prof) || esSusana(el.textContent)){el.classList.add('ynea-susana-rosa'); el.style.setProperty('background',ROSA,'important'); el.style.setProperty('background-color',ROSA,'important');}
-      });
+      if(sessionStorage.getItem('yneaViewAfterReload')==='semana'){
+        sessionStorage.removeItem('yneaViewAfterReload');
+        setTimeout(()=>{ if(typeof window.setView==='function') window.setView('semana'); },250);
+      }
     }catch(e){}
-  }
-  const oldRenderAll=window.renderAll;
-  if(typeof oldRenderAll==='function' && !oldRenderAll.__yneaFinalAuthoritative){
-    window.renderAll=function(){const r=oldRenderAll.apply(this,arguments); aplicarSusana(); requestAnimationFrame(aplicarSusana); return r;};
-    window.renderAll.__yneaFinalAuthoritative=true;
-  }
-  const oldEliminar=window.eliminarCitaDesdeEditor;
-  window.eliminarCitaDesdeEditor=function(){
-    if(typeof oldEliminar==='function') oldEliminar.apply(this,arguments);
-    setTimeout(()=>{try{const wt=document.getElementById('weekTable'); if(wt) wt.innerHTML=''; const mt=document.getElementById('monthTable'); if(mt) mt.innerHTML=''; if(typeof window.renderAll==='function') window.renderAll();}catch(e){}},80);
-    setTimeout(()=>{try{if(typeof window.renderAll==='function') window.renderAll();}catch(e){}},350);
-  };
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(aplicarSusana,100),true);
+    setTimeout(soloNombrePacientes,500);
+    setInterval(()=>{ if(document.getElementById('pacientesView')?.style.display!=='none') soloNombrePacientes(); },1000);
+  });
 })();
 </script>
+
+</body>
+</html>
