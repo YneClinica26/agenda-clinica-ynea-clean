@@ -5099,14 +5099,14 @@ function pastelColorProfesional(nombre){
 }
 setTimeout(()=>{
  document.querySelectorAll('.cita,.calendar-cita,.evento-cita').forEach(el=>{
-   const t=(el.textContent||'').toLowerCase();
-   if(t.includes('susana')){
-      el.style.background='#f8c8dc';
-   } else {
-      el.style.background=pastelColorProfesional(t);
-   }
-   el.style.border='1px solid rgba(0,0,0,0.08)';
- });
+ const t=(el.textContent||'').toLowerCase();
+ if(t.includes('susana royo') || t.includes('dra susana')){
+   el.classList.add('susana-royo');
+   el.style.background='#f8c8dc';
+ } else {
+   el.classList.remove('susana-royo');
+ }
+});
 },1000);
 </script>
 </body>
@@ -5429,3 +5429,38 @@ setInterval(()=>{
   setInterval(colorizarSusana,700);
 })();
 </script>
+
+<style id="susana-pink-fixed">
+.cita.susana-royo,
+.calendar-cita.susana-royo,
+.evento-cita.susana-royo{
+ background:#f8c8dc !important;
+}
+@media (max-width:700px){
+ .paciente-telefono,
+ .paciente-email,
+ .telefono-paciente,
+ .email-paciente{
+   display:none !important;
+ }
+ .tabla-pacientes,
+ .tablaPacientes,
+ .patients-table,
+ table{
+   font-size:11px !important;
+ }
+ .tabla-pacientes tr,
+ .tablaPacientes tr,
+ .patients-table tr,
+ table tr{
+   height:18px !important;
+ }
+ .tabla-pacientes td,
+ .tablaPacientes td,
+ .patients-table td,
+ table td{
+   padding:0px 3px !important;
+   line-height:1 !important;
+ }
+}
+</style>
