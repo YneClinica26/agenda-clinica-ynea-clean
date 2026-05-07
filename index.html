@@ -5351,5 +5351,30 @@ function pastelColorProfesional(nombre){
 })();
 </script>
 
+
+<script id="ynea-grid-rebuild-fix">
+(function(){
+  function reconstruirCuadricula(){
+    try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){}
+    try{ if(typeof renderMonth==='function') renderMonth(); }catch(e){}
+    try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
+    setTimeout(function(){
+      try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){}
+      try{ if(typeof renderMonth==='function') renderMonth(); }catch(e){}
+      try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
+    },120);
+  }
+
+  const eliminarBase = window.eliminarCitaDesdeEditor;
+  window.eliminarCitaDesdeEditor = async function(){
+    const r = await eliminarBase.apply(this, arguments);
+    reconstruirCuadricula();
+    return r;
+  };
+
+  window.eliminarCita = window.eliminarCitaDesdeEditor;
+})();
+</script>
+
 </body>
 </html>
