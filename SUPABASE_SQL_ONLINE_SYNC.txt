@@ -1,4 +1,5 @@
-Pega esto en Supabase > SQL Editor y pulsa Run:
+-- Copia todo este contenido en Supabase > SQL Editor y pulsa Run.
+-- Esto crea la agenda online compartida entre PC y teléfono.
 
 create table if not exists agenda_online (
   id text primary key,
@@ -8,5 +9,8 @@ create table if not exists agenda_online (
 
 alter table agenda_online disable row level security;
 
--- Opcional: comprobar que existe
-select * from agenda_online;
+insert into agenda_online (id, datos, updated_at)
+values ('main', '{}'::jsonb, now())
+on conflict (id) do nothing;
+
+select id, updated_at from agenda_online;

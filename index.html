@@ -5097,5 +5097,118 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 })();
 </script>
 
+<!-- YNEA HOTFIX 2026-05-07: sincronización online robusta + sin backup móvil -->
+<script id="ynea-online-sync-robusto-v2">
+(function(){
+  'use strict';
+  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
+  const TABLE='agenda_online';
+  const ID='main';
+  let suppress=false, timer=null, saving=false, lastRemote='';
+  function $(id){return document.getElementById(id)}
+  function mobile(){return Math.min(screen.width||9999, innerWidth||9999) <= 820 || /iPhone|iPad|Android/i.test(navigator.userAgent||'')}
+  function msg(t,bad){const el=$('backupMainStatus')||$('autosaveStatus'); if(el){el.textContent=t; el.style.color=bad?'#991b1b':'#166534'} console[bad?'warn':'log']('[Ynea sync]',t)}
+  function client(){
+    if(window.yneaSupabaseClient) return window.yneaSupabaseClient;
+    if(window.supabase && window.supabase.createClient){
+      window.yneaSupabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{'Cache-Control':'no-cache'}}});
+      return window.yneaSupabaseClient;
+    }
+    return null;
+  }
+  function currentData(){
+    try{ if(typeof data!=='undefined' && data) return data; }catch(e){}
+    try{return JSON.parse(localStorage.getItem('agendaClinicaSemanal')||'{}')||{}}catch(e){return {}}
+  }
+  function setCurrentData(d){
+    d=normalize(d);
+    try{ data=d; window.data=d; }catch(e){ window.data=d; }
+    try{suppress=true; localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d)); localStorage.setItem('agendaData',JSON.stringify(d));}catch(e){}finally{suppress=false;}
+  }
+  function normalize(d){
+    d=d&&typeof d==='object'?d:{};
+    d.profesionales=Array.isArray(d.profesionales)?d.profesionales.filter(Boolean):[];
+    d.consultas=Array.isArray(d.consultas)?d.consultas.filter(Boolean):['Consulta 1'];
+    d.tipos=Array.isArray(d.tipos)?d.tipos.filter(Boolean):['General'];
+    d.pacientes=Array.isArray(d.pacientes)?d.pacientes:[];
+    d.citas=Array.isArray(d.citas)?d.citas:[];
+    d.bloqueos=Array.isArray(d.bloqueos)?d.bloqueos:[];
+    d.duracionesTipo=d.duracionesTipo&&typeof d.duracionesTipo==='object'?d.duracionesTipo:{};
+    d.caracteristicasTipo=d.caracteristicasTipo&&typeof d.caracteristicasTipo==='object'?d.caracteristicasTipo:{};
+    d.tiposPorProfesional=d.tiposPorProfesional&&typeof d.tiposPorProfesional==='object'?d.tiposPorProfesional:{};
+    d.tipos.forEach(t=>{ if(!d.duracionesTipo[t]) d.duracionesTipo[t]='10'; if(!d.caracteristicasTipo[t]) d.caracteristicasTipo[t]={descripcion:'',color:'',activo:true}; });
+    d.profesionales.forEach(p=>{ if(!Array.isArray(d.tiposPorProfesional[p]) || !d.tiposPorProfesional[p].length) d.tiposPorProfesional[p]=d.tipos.slice(); });
+    Object.keys(d.tiposPorProfesional).forEach(p=>{ if(!d.profesionales.includes(p)) delete d.tiposPorProfesional[p]; else d.tiposPorProfesional[p]=[...new Set((d.tiposPorProfesional[p]||[]).filter(t=>d.tipos.includes(t)))]; });
+    return d;
+  }
+  function render(){
+    try{ if(typeof refreshAllSelects==='function') refreshAllSelects(); }catch(e){}
+    try{ if(typeof renderMapTipos==='function') renderMapTipos(); }catch(e){}
+    try{ if(typeof renderConfig==='function') renderConfig(); }catch(e){}
+    try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
+    try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
+    try{ if(typeof renderLoginSelect==='function') renderLoginSelect(); }catch(e){}
+  }
+  async function loadOnline(){
+    const c=client(); if(!c){msg('Supabase no disponible',true);return false;}
+    const {data:row,error}=await c.from(TABLE).select('datos,updated_at').eq('id',ID).maybeSingle();
+    if(error){msg('No se lee agenda_online. Ejecuta el SQL de sincronización.',true); console.warn(error); return false;}
+    if(row&&row.datos){ const stamp=String(row.updated_at||'')+JSON.stringify(row.datos).length; if(stamp!==lastRemote){ lastRemote=stamp; setCurrentData(row.datos); render(); } msg('Agenda online actualizada'); return true; }
+    const d=normalize(currentData());
+    if((d.citas||[]).length || (d.pacientes||[]).length || (d.profesionales||[]).length){ await saveOnline(d); return true; }
+    msg('Agenda online vacía'); return false;
+  }
+  async function saveOnline(d){
+    if(saving) return false; const c=client(); if(!c) return false; saving=true;
+    try{
+      d=normalize(d||currentData()); setCurrentData(d);
+      const {error}=await c.from(TABLE).upsert({id:ID,datos:d,updated_at:new Date().toISOString()},{onConflict:'id'});
+      if(error){msg('No se pudo guardar online: '+(error.message||'error Supabase'),true); console.warn(error); return false;}
+      msg('Guardado online: '+new Date().toLocaleTimeString('es-ES'));
+      return true;
+    }catch(e){msg('Error guardando online: '+(e.message||e),true); return false;} finally{saving=false;}
+  }
+  function schedule(d){ if(suppress) return; clearTimeout(timer); timer=setTimeout(()=>saveOnline(d||currentData()),350); }
+
+  // Captura cualquier guardado local antiguo y lo sube a Supabase.
+  const oldSetItem=Storage.prototype.setItem;
+  if(!Storage.prototype.setItem.__yneaSyncWrapped){
+    Storage.prototype.setItem=function(k,v){
+      const r=oldSetItem.apply(this,arguments);
+      if(!suppress && (k==='agendaClinicaSemanal'||k==='agendaData')){
+        try{ schedule(JSON.parse(v)); }catch(e){ schedule(); }
+      }
+      return r;
+    };
+    Storage.prototype.setItem.__yneaSyncWrapped=true;
+  }
+  const oldSave=window.save;
+  window.save=function(){
+    let r; try{ if(typeof oldSave==='function' && oldSave!==window.save) r=oldSave.apply(this,arguments); }catch(e){console.warn(e)}
+    schedule(currentData()); return r;
+  };
+
+  // Al cerrar: móvil solo cierra sesión y guarda online, sin documento/descarga de backup.
+  window.yneaSalirConCopia=async function(){
+    try{ await saveOnline(currentData()); }catch(e){}
+    try{ sessionStorage.removeItem('yneaCurrentUser'); }catch(e){}
+    if(mobile()){
+      location.reload();
+      return;
+    }
+    // En PC se guarda online. La copia .json queda como botón manual en Copias de seguridad.
+    location.reload();
+  };
+
+  window.yneaForceCloudLoad=loadOnline;
+  window.yneaForceCloudSave=()=>saveOnline(currentData());
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(loadOnline,150),true);
+  window.addEventListener('focus',()=>setTimeout(loadOnline,100));
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') loadOnline(); });
+  setInterval(()=>{ if(document.visibilityState==='visible') loadOnline(); },15000);
+})();
+</script>
+
 </body>
 </html>
