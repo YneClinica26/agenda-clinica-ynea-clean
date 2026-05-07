@@ -5084,8 +5084,8 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 <script>
 function pastelColorProfesional(nombre){
  const n=(nombre||'').toLowerCase();
- if(n.includes('susana royo') || n.includes('dra susana royo') || n.includes('dr susana royo')){
-   return '#f9c5d5';
+ if(n.includes('susana')){
+   return '#f8c8dc';
  }
  const colors=['#fde2e4','#e2f0cb','#cddafd','#fff1c1','#e0c3fc','#b5ead7','#f9dcc4'];
  let h=0; for(let i=0;i<(nombre||'').length;i++) h+=nombre.charCodeAt(i);
@@ -5251,3 +5251,29 @@ setTimeout(()=>{
   }
 }
 </style>
+
+<style>
+@media (max-width:768px){
+table, .tabla-pacientes, .patients-table, .pacientes-lista{
+ font-size:11px !important;
+ line-height:1.05 !important;
+}
+table td, table th,
+.tabla-pacientes td,.tabla-pacientes th,
+.patients-table td,.patients-table th,
+.pacientes-lista td,.pacientes-lista th{
+ padding:2px 3px !important;
+ height:24px !important;
+}
+}
+</style>
+<script>
+setInterval(()=>{
+ document.querySelectorAll('.cita,.calendar-cita,.evento-cita,[data-profesional]').forEach(el=>{
+   const t=(el.textContent||'')+' '+(el.getAttribute('data-profesional')||'');
+   if(t.toLowerCase().includes('susana')){
+      el.style.background='#f8c8dc';
+   }
+ });
+},700);
+</script>
