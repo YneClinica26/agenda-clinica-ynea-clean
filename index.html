@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<style id="ynea-final-no-flash">
+  html:not(.ynea-login-ready) body{visibility:hidden!important;}
+  html.ynea-login-ready body{visibility:visible!important;}
+  #yneaLoginOverlay{visibility:visible!important;}
+</style>
+<script id="ynea-final-no-flash-js">
+  try{document.documentElement.classList.remove('ynea-login-ready');document.documentElement.classList.add('ynea-final-locking');}catch(e){}
+</script>
+
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -5254,6 +5263,178 @@ html.ynea-locked #yneaLoginOverlay,html.ynea-locked #yneaLoginOverlay *{visibili
   document.addEventListener('change',e=>{if(e.target&&['weekPicker','weekProf','weekConsulta','monthPicker','monthProf'].includes(e.target.id)) setTimeout(sync,30);},true);
   window.addEventListener('resize',()=>setTimeout(sync,80));
   setInterval(sync,900);
+})();
+</script>
+
+
+
+<!-- ===== YNEA FINAL FIX: login sin parpadeo + calendario estable ===== -->
+<style id="ynea-final-calendar-login-css">
+  /* Login: nunca mostrar la app antes de acreditación */
+  html:not(.ynea-login-ready) body{visibility:hidden!important;}
+  html.ynea-login-ready body{visibility:visible!important;}
+  html:not(.ynea-authenticated) header,
+  html:not(.ynea-authenticated) .container,
+  html:not(.ynea-authenticated) .mobileBottomNav,
+  html:not(.ynea-authenticated) .appFab,
+  html:not(.ynea-authenticated) .autosaveBar{visibility:hidden!important;pointer-events:none!important;}
+  html:not(.ynea-authenticated) #yneaLoginOverlay,
+  html:not(.ynea-authenticated) #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important;}
+
+  /* Cabecera calendario: fuerza una estructura limpia y estable */
+  #semanaView .weekbar.ynea-final-bar,
+  #mensualView .weekbar.ynea-final-bar{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    align-items:stretch!important;
+    margin:0 0 10px!important;
+    max-width:none!important;
+  }
+  #semanaView .weekbar.ynea-final-bar .ynea-final-top,
+  #mensualView .weekbar.ynea-final-bar .ynea-final-top{
+    display:grid!important;
+    grid-template-columns:minmax(150px,.85fr) minmax(150px,1fr) minmax(150px,1fr)!important;
+    gap:8px!important;
+    align-items:end!important;
+    width:100%!important;
+  }
+  #semanaView .weekbar.ynea-final-bar .ynea-final-actions,
+  #mensualView .weekbar.ynea-final-bar .ynea-final-actions{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:520px!important;
+  }
+  #semanaView .weekbar.ynea-final-bar .ynea-final-field,
+  #mensualView .weekbar.ynea-final-bar .ynea-final-field{min-width:0!important;width:100%!important;}
+  #semanaView .weekbar.ynea-final-bar label,
+  #mensualView .weekbar.ynea-final-bar label{
+    display:block!important;font-size:12px!important;font-weight:800!important;color:#64748b!important;margin:0 0 4px!important;line-height:1.1!important;white-space:nowrap!important;
+  }
+  #semanaView .weekbar.ynea-final-bar select,
+  #mensualView .weekbar.ynea-final-bar select,
+  #semanaView .weekbar.ynea-final-bar .ynea-final-display,
+  #mensualView .weekbar.ynea-final-bar .ynea-final-display{
+    width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;padding:7px 10px!important;
+    border:1px solid #dbe3ee!important;border-radius:11px!important;background:#fff!important;color:#0f172a!important;box-shadow:none!important;font-size:13px!important;text-align:left!important;
+  }
+  #semanaView .weekbar.ynea-final-bar .ynea-real-picker,
+  #mensualView .weekbar.ynea-final-bar .ynea-real-picker{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;pointer-events:none!important;}
+  #semanaView .weekbar.ynea-final-bar .ynea-final-actions button,
+  #mensualView .weekbar.ynea-final-bar .ynea-final-actions button{
+    display:block!important;visibility:visible!important;opacity:1!important;background:#fff!important;color:#334155!important;border:1px solid #dbe3ee!important;box-shadow:none!important;
+    min-height:38px!important;height:38px!important;border-radius:11px!important;padding:7px 8px!important;font-size:13px!important;font-weight:800!important;white-space:nowrap!important;
+  }
+  #semanaView .weekbar.ynea-final-bar .ynea-final-actions button:hover,
+  #mensualView .weekbar.ynea-final-bar .ynea-final-actions button:hover{background:#f8fafc!important;color:#0f172a!important;}
+  #semanaView .weekbar.ynea-final-bar .ynea-final-actions button:nth-child(1),
+  #mensualView .weekbar.ynea-final-bar .ynea-final-actions button:nth-child(1){grid-column:1!important;order:1!important;}
+  #semanaView .weekbar.ynea-final-bar .ynea-final-actions button:nth-child(2),
+  #mensualView .weekbar.ynea-final-bar .ynea-final-actions button:nth-child(2){grid-column:2!important;order:2!important;}
+  #semanaView .weekbar.ynea-final-bar .ynea-final-actions button:nth-child(3),
+  #mensualView .weekbar.ynea-final-bar .ynea-final-actions button:nth-child(3){grid-column:3!important;order:3!important;}
+  @media(max-width:900px){
+    #semanaView .weekbar.ynea-final-bar,
+    #mensualView .weekbar.ynea-final-bar{gap:5px!important;margin-bottom:6px!important;}
+    #semanaView .weekbar.ynea-final-bar .ynea-final-top,
+    #mensualView .weekbar.ynea-final-bar .ynea-final-top{grid-template-columns:.82fr 1fr 1fr!important;gap:5px!important;}
+    #semanaView .weekbar.ynea-final-bar .ynea-final-actions,
+    #mensualView .weekbar.ynea-final-bar .ynea-final-actions{grid-template-columns:repeat(3,1fr)!important;gap:5px!important;max-width:none!important;}
+    #semanaView .weekbar.ynea-final-bar label,
+    #mensualView .weekbar.ynea-final-bar label{font-size:9px!important;margin-bottom:2px!important;}
+    #semanaView .weekbar.ynea-final-bar select,
+    #mensualView .weekbar.ynea-final-bar select,
+    #semanaView .weekbar.ynea-final-bar .ynea-final-display,
+    #mensualView .weekbar.ynea-final-bar .ynea-final-display{height:30px!important;min-height:30px!important;font-size:10.5px!important;padding:4px 5px!important;border-radius:9px!important;}
+    #semanaView .weekbar.ynea-final-bar .ynea-final-actions button,
+    #mensualView .weekbar.ynea-final-bar .ynea-final-actions button{height:30px!important;min-height:30px!important;font-size:10.5px!important;padding:4px 5px!important;border-radius:9px!important;background:#fff!important;color:#334155!important;border-color:#dbe3ee!important;}
+  }
+</style>
+<script id="ynea-final-calendar-login-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function parseISO(v){const [y,m,d]=String(v||'').split('-').map(Number);return new Date(y||new Date().getFullYear(),(m||1)-1,d||1);}
+  function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function monday(d){d=new Date(d); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d;}
+  function addDays(d,n){const x=new Date(d); x.setDate(x.getDate()+n); return x;}
+  function weekLabel(v){const start=monday(parseISO(v||iso(new Date()))); const end=addDays(start,4); return start.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})+' - '+end.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});}
+  function monthLabel(v){const [y,m]=String(v||new Date().toISOString().slice(0,7)).split('-').map(Number); return new Date(y,(m||1)-1,1).toLocaleDateString('es-ES',{month:'long',year:'numeric'});}
+  function getData(){try{return window.data||data||{};}catch(e){return window.data||{};}}
+  function opt(arr, first, selected){return first+(arr||[]).map(x=>'<option value="'+esc(x)+'" '+(String(x)===String(selected)?'selected':'')+'>'+esc(x)+'</option>').join('');}
+  function showPicker(id){const p=$(id); if(!p)return; try{ if(p.showPicker) p.showPicker(); else {p.focus(); p.click();} }catch(e){p.focus();}}
+  function syncLoginVisibility(){
+    const hasUser=!!sessionStorage.getItem('yneaCurrentUser');
+    const overlay=!!$('yneaLoginOverlay');
+    document.documentElement.classList.toggle('ynea-authenticated',hasUser);
+    if(hasUser || overlay) document.documentElement.classList.add('ynea-login-ready');
+    else document.documentElement.classList.remove('ynea-login-ready');
+  }
+  function openLoginIfNeeded(){
+    syncLoginVisibility();
+    if(!sessionStorage.getItem('yneaCurrentUser') && !$('yneaLoginOverlay') && typeof window.yneaLogout!=='function'){}
+    if(!sessionStorage.getItem('yneaCurrentUser') && !$('yneaLoginOverlay') && typeof window.makeLogin==='function'){
+      try{window.makeLogin();}catch(e){}
+    }
+    syncLoginVisibility();
+  }
+  function buildWeekBar(){
+    const view=$('semanaView'); if(!view) return;
+    let bar=view.querySelector('.weekbar'); if(!bar){bar=document.createElement('div');bar.className='weekbar';view.querySelector('.card')?.insertBefore(bar,$('weekTitle'));}
+    const d=getData();
+    const oldProf=$('weekProf')?.value||'';
+    const oldConsulta=$('weekConsulta')?.value||'';
+    let wv=$('weekPicker')?.value || (window.weekStart?iso(window.weekStart):iso(monday(new Date())));
+    wv=iso(monday(parseISO(wv))); window.weekStart=parseISO(wv);
+    bar.className='weekbar ynea-final-bar';
+    bar.innerHTML='<div class="ynea-final-top">'
+      +'<div class="ynea-final-field"><label>Semana</label><input class="ynea-real-picker" type="date" id="weekPicker" value="'+esc(wv)+'"><button type="button" class="ynea-final-display" id="weekPickerDisplay">'+esc(weekLabel(wv))+'</button></div>'
+      +'<div class="ynea-final-field"><label>Consulta</label><select id="weekConsulta" onchange="renderAll()">'+opt(d.consultas||[],'<option value="">Todas</option>',oldConsulta)+'</select></div>'
+      +'<div class="ynea-final-field"><label>Profesional</label><select id="weekProf" onchange="renderAll()">'+opt(d.profesionales||[],'<option value="">Todos</option>',oldProf)+'</select></div>'
+      +'</div><div class="ynea-final-actions"><button class="secondary" type="button" id="yneaPrevWeekFinal">Anterior</button><button class="secondary" type="button" id="yneaThisWeekFinal">Actual</button><button class="secondary" type="button" id="yneaNextWeekFinal">Siguiente</button></div>';
+    $('weekPickerDisplay').onclick=()=>showPicker('weekPicker');
+    $('weekPicker').onchange=function(){window.weekStart=monday(parseISO(this.value)); this.value=iso(window.weekStart); window.renderAll&&window.renderAll();};
+    $('yneaPrevWeekFinal').onclick=function(){window.weekStart=addDays(window.weekStart||monday(new Date()),-7); $('weekPicker').value=iso(window.weekStart); window.renderAll&&window.renderAll();};
+    $('yneaThisWeekFinal').onclick=function(){window.weekStart=monday(new Date()); $('weekPicker').value=iso(window.weekStart); window.renderAll&&window.renderAll();};
+    $('yneaNextWeekFinal').onclick=function(){window.weekStart=addDays(window.weekStart||monday(new Date()),7); $('weekPicker').value=iso(window.weekStart); window.renderAll&&window.renderAll();};
+  }
+  function buildMonthBar(){
+    const view=$('mensualView'); if(!view) return;
+    let bar=view.querySelector('.weekbar'); if(!bar){bar=document.createElement('div');bar.className='weekbar';view.querySelector('.card')?.insertBefore(bar,$('monthTitle'));}
+    const d=getData();
+    const oldProf=$('monthProf')?.value||'';
+    const oldConsulta=$('monthConsulta')?.value||'';
+    const mv=$('monthPicker')?.value || new Date().toISOString().slice(0,7);
+    bar.className='weekbar ynea-final-bar';
+    bar.innerHTML='<div class="ynea-final-top">'
+      +'<div class="ynea-final-field"><label>Mes</label><input class="ynea-real-picker" type="month" id="monthPicker" value="'+esc(mv)+'"><button type="button" class="ynea-final-display" id="monthPickerDisplay">'+esc(monthLabel(mv))+'</button></div>'
+      +'<div class="ynea-final-field"><label>Consulta</label><select id="monthConsulta" onchange="renderAll()">'+opt(d.consultas||[],'<option value="">Todas</option>',oldConsulta)+'</select></div>'
+      +'<div class="ynea-final-field"><label>Profesional</label><select id="monthProf" onchange="renderAll()">'+opt(d.profesionales||[],'<option value="">Todos</option>',oldProf)+'</select></div>'
+      +'</div><div class="ynea-final-actions"><button class="secondary" type="button" id="yneaPrevMonthFinal">Anterior</button><button class="secondary" type="button" id="yneaThisMonthFinal">Actual</button><button class="secondary" type="button" id="yneaNextMonthFinal">Siguiente</button></div>';
+    $('monthPickerDisplay').onclick=()=>showPicker('monthPicker');
+    $('monthPicker').onchange=function(){window.renderAll&&window.renderAll();};
+    $('yneaPrevMonthFinal').onclick=function(){const [y,m]=($('monthPicker').value||new Date().toISOString().slice(0,7)).split('-').map(Number); const dt=new Date(y,m-2,1); $('monthPicker').value=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'); window.renderAll&&window.renderAll();};
+    $('yneaThisMonthFinal').onclick=function(){$('monthPicker').value=new Date().toISOString().slice(0,7); window.renderAll&&window.renderAll();};
+    $('yneaNextMonthFinal').onclick=function(){const [y,m]=($('monthPicker').value||new Date().toISOString().slice(0,7)).split('-').map(Number); const dt=new Date(y,m,1); $('monthPicker').value=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'); window.renderAll&&window.renderAll();};
+  }
+  function buildBars(){try{buildWeekBar();buildMonthBar();}catch(e){console.warn('Ynea final bars',e);} syncLoginVisibility();}
+  function patchRender(){
+    if(window.__yneaFinalPatched) return; window.__yneaFinalPatched=true;
+    const oldRender=window.renderAll;
+    window.renderAll=function(){let r; try{r=oldRender&&oldRender.apply(this,arguments);}catch(e){console.warn(e);} buildBars(); return r;};
+    const oldSet=window.setView;
+    window.setView=function(){let r; try{r=oldSet&&oldSet.apply(this,arguments);}catch(e){console.warn(e);} setTimeout(buildBars,0); setTimeout(syncLoginVisibility,0); return r;};
+    const oldSetItem=sessionStorage.setItem.bind(sessionStorage);
+    sessionStorage.setItem=function(k,v){const r=oldSetItem(k,v); if(k==='yneaCurrentUser') setTimeout(syncLoginVisibility,0); return r;};
+    const oldRemove=sessionStorage.removeItem.bind(sessionStorage);
+    sessionStorage.removeItem=function(k){const r=oldRemove(k); if(k==='yneaCurrentUser') setTimeout(syncLoginVisibility,0); return r;};
+  }
+  patchRender();
+  document.addEventListener('DOMContentLoaded',function(){patchRender(); openLoginIfNeeded(); buildBars(); setTimeout(openLoginIfNeeded,50); setTimeout(buildBars,200); setTimeout(openLoginIfNeeded,400);},true);
+  setInterval(function(){patchRender(); syncLoginVisibility(); if(sessionStorage.getItem('yneaCurrentUser')) buildBars(); else openLoginIfNeeded();},500);
 })();
 </script>
 
