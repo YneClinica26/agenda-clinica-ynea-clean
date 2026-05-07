@@ -5313,3 +5313,119 @@ setInterval(()=>{
   }
 }
 </style>
+
+
+<!-- YNEA FIX DEFINITIVO REAL: eliminar cita, rosa Susana, pacientes móvil compacto -->
+<style id="ynea-fix-definitivo-real-css">
+@media (max-width:700px){
+  #pacientesView .card{padding:6px !important;margin-bottom:5px !important;}
+  #pacientesView h2{font-size:14px !important;line-height:1 !important;margin:0 0 5px !important;}
+  #pacientesSearchWrap{margin:0 0 5px 0 !important;gap:4px !important;}
+  #buscadorPacientes{height:28px !important;min-height:28px !important;padding:3px 7px !important;font-size:11px !important;border-radius:8px !important;}
+  #pacientesTable{font-size:10.5px !important;line-height:1 !important;border-spacing:0 !important;border-collapse:separate !important;}
+  #pacientesTable thead{display:none !important;}
+  #pacientesTable tbody{display:block !important;width:100% !important;}
+  #pacientesView #pacientesTable tr,
+  #pacientesTable tbody tr{
+    display:block !important;width:100% !important;margin:0 0 3px 0 !important;padding:3px 5px !important;
+    border:1px solid #f1d7e3 !important;border-radius:8px !important;background:#fff !important;box-shadow:none !important;
+    min-height:0 !important;height:auto !important;line-height:1 !important;
+  }
+  #pacientesView #pacientesTable td,
+  #pacientesTable tbody td{
+    display:block !important;width:100% !important;border:0 !important;padding:0 !important;margin:0 !important;
+    font-size:10.5px !important;line-height:1.05 !important;min-height:0 !important;height:auto !important;vertical-align:top !important;
+  }
+  #pacientesTable td b{font-size:11px !important;line-height:1.05 !important;}
+  #pacientesTable td:nth-child(1)::before{content:'Paciente: ';font-weight:700;color:#64748b;}
+  #pacientesTable td:nth-child(2)::before{content:'Tel.: ';font-weight:700;color:#64748b;}
+  #pacientesTable td:nth-child(3)::before{content:'Email: ';font-weight:700;color:#64748b;}
+  #pacientesTable td:nth-child(4)::before{content:'Obs.: ';font-weight:700;color:#64748b;}
+}
+</style>
+<script id="ynea-fix-definitivo-real-js">
+(function(){
+  'use strict';
+  const ROSA_SUSANA='#f8c8dc';
+  const $=id=>document.getElementById(id);
+  function normaliza(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
+  function esSusana(nombre){const n=normaliza(nombre); return n.includes('susana') && n.includes('royo');}
+  function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function idDesdeCita(el){
+    const on=el.getAttribute('onclick')||'';
+    const m=on.match(/abrirEditorCita\(['"]?([^'"\)]+)['"]?\)/);
+    return m?m[1]:null;
+  }
+  function colorizarSusana(){
+    try{
+      document.querySelectorAll('.appt,.cita,.calendar-cita,.evento-cita').forEach(el=>{
+        let prof='';
+        const id=idDesdeCita(el);
+        if(id && window.data && Array.isArray(data.citas)){
+          const c=data.citas.find(x=>String(x.id)===String(id));
+          if(c) prof=c.profesional||'';
+        }
+        const txt=el.textContent||'';
+        if(esSusana(prof) || esSusana(txt)){
+          el.style.setProperty('background', ROSA_SUSANA, 'important');
+          el.style.setProperty('background-color', ROSA_SUSANA, 'important');
+          el.style.setProperty('border', '1px solid rgba(190,24,93,.18)', 'important');
+          el.classList.add('ynea-susana-rosa');
+        }
+      });
+    }catch(e){}
+  }
+  async function guardarOnlineSeguro(){
+    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); else if(typeof window.save==='function') window.save(); }catch(e){ console.warn('No se pudo guardar online tras eliminar',e); }
+  }
+  window.eliminarCitaDesdeEditor=function(){
+    const input=$('editCitaId');
+    const id=input?input.value:'';
+    if(!id){alert('No se ha encontrado la cita para eliminar.');return;}
+    if(!confirm('¿Eliminar esta cita?')) return;
+    try{
+      if(!window.data && typeof data!=='undefined') window.data=data;
+      const d=window.data||data;
+      const antes=(d.citas||[]).length;
+      d.citas=(d.citas||[]).filter(c=>String(c.id)!==String(id));
+      try{window.data=d; data=d;}catch(e){window.data=d;}
+      if((d.citas||[]).length===antes){alert('No se encontró la cita en la agenda.');return;}
+      if(typeof window.save==='function') window.save();
+      guardarOnlineSeguro();
+      const ov=$('editorCitaOverlay'); if(ov) ov.style.display='none';
+      document.body.classList.remove('ynea-editor-open');
+      try{ if(typeof window.setView==='function') window.setView('semana'); }catch(e){}
+      try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
+      setTimeout(colorizarSusana,120);
+    }catch(e){alert('No se pudo eliminar la cita: '+(e.message||e));}
+  };
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const txt=normaliza(btn.textContent);
+    if(txt.includes('eliminar cita')){
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      window.eliminarCitaDesdeEditor();
+    }
+  },true);
+  const oldRender=window.renderAll;
+  if(typeof oldRender==='function' && !oldRender.__yneaSusanaReal){
+    window.renderAll=function(){const r=oldRender.apply(this,arguments); setTimeout(colorizarSusana,80); return r;};
+    window.renderAll.__yneaSusanaReal=true;
+  }
+  const oldRenderPatients=window.renderPatients;
+  if(typeof oldRenderPatients==='function' && !oldRenderPatients.__yneaCompactReal){
+    window.renderPatients=function(){
+      const r=oldRenderPatients.apply(this,arguments);
+      try{
+        const table=$('pacientesTable');
+        if(table) table.classList.add('ynea-pacientes-compacto-real');
+      }catch(e){}
+      return r;
+    };
+    window.renderPatients.__yneaCompactReal=true;
+  }
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(()=>{try{if(window.renderPatients)window.renderPatients(); colorizarSusana();}catch(e){}},300);},true);
+  setInterval(colorizarSusana,700);
+})();
+</script>
