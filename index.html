@@ -1462,7 +1462,7 @@ function renderWeek(){
         if(hh) skip[date+"_"+hh]=true;
       }
       html+=`<td class="slot" rowspan="${bloques}">
-        <div class="appt" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" title="${c.obs||""}" style="height:100%;min-height:${Math.max(58,bloques*58)}px;display:flex;flex-direction:column;justify-content:center">
+        <div class="appt ${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" title="${c.obs||""}" style="background:${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'#f8c8dc':''};height:100%;min-height:${Math.max(58,bloques*58)}px;display:flex;flex-direction:column;justify-content:center">
           <strong>${p.nombre||""}</strong>
           <span>${c.profesional}</span>
           <span>${c.tipo} · ${c.duracion} min · ${c.consulta}</span>
@@ -1746,7 +1746,7 @@ function renderMonthView(){
        <strong>${d.getDate()}</strong>`;
      citas.slice(0,5).forEach(c=>{
        const p=paciente(c.pacienteId);
-       out+=`<div class="appt estado-${c.estado.replaceAll(" ","")}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="margin-top:6px;cursor:pointer">
+       out+=`<div class="appt estado-${c.estado.replaceAll(" ","")} ${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="background:${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'#f8c8dc':''};margin-top:6px;cursor:pointer">
           <strong>${c.hora} · ${p.nombre||""}</strong>
           <span>${c.profesional}</span><br>
           <span>${c.tipo} · ${c.consulta}</span>
@@ -4657,7 +4657,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
             const d=addDaysLocal(cur,i), date=iso(d), inMonth=d.getMonth()===month;
             const citas=(window.data.citas||[]).filter(c=>c.fecha===date && (!prof||c.profesional===prof) && c.consulta===consulta).sort((a,b)=>String(a.hora).localeCompare(String(b.hora)));
             out+=`<td class="slot" style="min-width:210px;background:${inMonth?'#fff':'#f8fafc'}"><strong>${d.getDate()}</strong>`;
-            citas.slice(0,5).forEach(c=>{const p=(typeof paciente==='function'?paciente(c.pacienteId):{})||{}; out+=`<div class="appt estado-${String(c.estado||'').replaceAll(' ','')}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="margin-top:6px;cursor:pointer"><strong>${c.hora} · ${p.nombre||''}</strong><span>${c.profesional||''}</span><br><span>${c.tipo||''} · ${c.consulta||''}</span></div>`;});
+            citas.slice(0,5).forEach(c=>{const p=(typeof paciente==='function'?paciente(c.pacienteId):{})||{}; out+=`<div class="appt estado-${String(c.estado||'').replaceAll(' ','')} ${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'ynea-susana-rosa':''}" onclick="event.stopPropagation(); abrirEditorCita(${c.id})" style="background:${String(c.profesional||'').toLowerCase().includes('susana')&&String(c.profesional||'').toLowerCase().includes('royo')?'#f8c8dc':''};margin-top:6px;cursor:pointer"><strong>${c.hora} · ${p.nombre||''}</strong><span>${c.profesional||''}</span><br><span>${c.tipo||''} · ${c.consulta||''}</span></div>`;});
             if(citas.length>5) out+=`<p class="small">+${citas.length-5} citas más</p>`;
             out+='</td>';
           }
@@ -5157,7 +5157,7 @@ setTimeout(()=>{
   'use strict';
   const pastel=['#fde2e4','#e2f0cb','#cddafd','#fff1c1','#e0c3fc','#b5ead7','#f9dcc4','#d8e2dc','#f1e3f3','#cdeac0','#ffdac1','#bde0fe'];
   function escReg(s){return String(s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
-  function colorFor(name){let h=0; const s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return pastel[h%pastel.length];}
+  function colorFor(name){const n=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); if(n.includes('susana')&&n.includes('royo')) return '#f8c8dc'; let h=0; const s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return pastel[h%pastel.length];}
   function profs(){try{return (window.data&&Array.isArray(data.profesionales))?data.profesionales.slice().sort((a,b)=>String(b).length-String(a).length):[]}catch(e){return[]}}
   function colorizarCitas(){
     const ps=profs();
@@ -5395,8 +5395,9 @@ setInterval(()=>{
       const ov=$('editorCitaOverlay'); if(ov) ov.style.display='none';
       document.body.classList.remove('ynea-editor-open');
       try{ if(typeof window.setView==='function') window.setView('semana'); }catch(e){}
+      try{ const wt=document.getElementById('weekTable'); if(wt) wt.innerHTML=''; const mt=document.getElementById('monthTable'); if(mt) mt.innerHTML=''; }catch(e){}
       try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
-      setTimeout(colorizarSusana,120);
+      setTimeout(()=>{try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){} colorizarSusana();},180);
     }catch(e){alert('No se pudo eliminar la cita: '+(e.message||e));}
   };
   document.addEventListener('click',function(e){
@@ -5464,3 +5465,60 @@ setInterval(()=>{
  }
 }
 </style>
+
+
+<!-- YNEA FIX AUTORITATIVO: Susana rosa estable, pacientes móvil compacto, cuadrícula tras eliminar -->
+<style id="ynea-final-authoritative-css">
+.appt.ynea-susana-rosa,
+.ynea-susana-rosa{
+  background:#f8c8dc !important;
+  background-color:#f8c8dc !important;
+  border-color:rgba(190,24,93,.20) !important;
+}
+@media (max-width:700px){
+  #pacientesView .card{padding:6px !important;margin-bottom:5px !important;}
+  #pacientesView h2{font-size:14px !important;margin:0 0 5px !important;line-height:1.05 !important;}
+  #pacientesSearchWrap{margin:0 0 5px 0 !important;gap:4px !important;}
+  #buscadorPacientes{height:28px !important;min-height:28px !important;padding:3px 7px !important;font-size:11px !important;border-radius:8px !important;}
+  #pacientesView .tableWrap{overflow:visible !important;border:0 !important;background:transparent !important;}
+  #pacientesTable{display:block !important;width:100% !important;min-width:0 !important;border-collapse:separate !important;border-spacing:0 !important;font-size:10.5px !important;}
+  #pacientesTable thead{display:none !important;}
+  #pacientesTable tbody{display:block !important;width:100% !important;}
+  #pacientesTable tr{display:block !important;width:100% !important;margin:0 0 3px 0 !important;padding:3px 5px !important;border:1px solid #f1d7e3 !important;border-radius:8px !important;background:#fff !important;box-shadow:none !important;min-height:0 !important;height:auto !important;line-height:1 !important;}
+  #pacientesTable td{display:none !important;border:0 !important;padding:0 !important;margin:0 !important;min-height:0 !important;height:auto !important;line-height:1 !important;}
+  #pacientesTable td:nth-child(1){display:block !important;width:100% !important;font-size:10.5px !important;line-height:1.05 !important;}
+  #pacientesTable td:nth-child(4){display:block !important;width:100% !important;font-size:9.5px !important;line-height:1.05 !important;color:#64748b !important;margin-top:1px !important;}
+  #pacientesTable td:nth-child(1)::before{content:'' !important;}
+  #pacientesTable td:nth-child(4)::before{content:'' !important;}
+  #pacientesTable td b{font-size:11px !important;line-height:1.05 !important;}
+}
+</style>
+<script id="ynea-final-authoritative-js">
+(function(){
+  const ROSA='#f8c8dc';
+  function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function esSusana(s){const n=norm(s); return n.includes('susana') && n.includes('royo');}
+  function citaId(el){const on=el.getAttribute('onclick')||''; const m=on.match(/abrirEditorCita\(['"]?([^'"\)]+)['"]?\)/); return m?m[1]:null;}
+  function aplicarSusana(){
+    try{
+      document.querySelectorAll('.appt').forEach(el=>{
+        let prof=''; const id=citaId(el);
+        if(id && window.data && Array.isArray(window.data.citas)){const c=window.data.citas.find(x=>String(x.id)===String(id)); if(c) prof=c.profesional||'';}
+        if(esSusana(prof) || esSusana(el.textContent)){el.classList.add('ynea-susana-rosa'); el.style.setProperty('background',ROSA,'important'); el.style.setProperty('background-color',ROSA,'important');}
+      });
+    }catch(e){}
+  }
+  const oldRenderAll=window.renderAll;
+  if(typeof oldRenderAll==='function' && !oldRenderAll.__yneaFinalAuthoritative){
+    window.renderAll=function(){const r=oldRenderAll.apply(this,arguments); aplicarSusana(); requestAnimationFrame(aplicarSusana); return r;};
+    window.renderAll.__yneaFinalAuthoritative=true;
+  }
+  const oldEliminar=window.eliminarCitaDesdeEditor;
+  window.eliminarCitaDesdeEditor=function(){
+    if(typeof oldEliminar==='function') oldEliminar.apply(this,arguments);
+    setTimeout(()=>{try{const wt=document.getElementById('weekTable'); if(wt) wt.innerHTML=''; const mt=document.getElementById('monthTable'); if(mt) mt.innerHTML=''; if(typeof window.renderAll==='function') window.renderAll();}catch(e){}},80);
+    setTimeout(()=>{try{if(typeof window.renderAll==='function') window.renderAll();}catch(e){}},350);
+  };
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(aplicarSusana,100),true);
+})();
+</script>
