@@ -785,36 +785,27 @@ header{position:sticky;}
 <style id="ynea-early-login-lock-css">html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;pointer-events:none!important;user-select:none!important}html.ynea-locked #yneaLoginOverlay,html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important}</style>
 <script id="ynea-early-login-lock-js">try{document.documentElement.classList.add('ynea-locked')}catch(e){}</script>
 
-<style id="ynea-cerrar-esquina-final">
-header{
-  position:sticky !important;
-  top:0 !important;
-}
-#yneaTopLogoutBackup{
-  position:absolute !important;
-  top:12px !important;
-  right:18px !important;
-  z-index:200 !important;
-  margin:0 !important;
-  transform:none !important;
-}
-@media(min-width:901px){
-  header .tabs{
-    padding-right:118px !important;
-  }
-}
+<style id="ynea-paciente-modal-fix">
 @media(max-width:900px){
-  header{
-    padding-right:88px !important;
+  .nuevoPacienteModal{
+    position:relative !important;
+    max-height:88vh !important;
+    overflow:auto !important;
+    padding-bottom:92px !important;
   }
-  #yneaTopLogoutBackup{
-    top:8px !important;
-    right:8px !important;
-    min-height:28px !important;
-    height:28px !important;
-    padding:5px 8px !important;
-    font-size:11px !important;
-    border-radius:10px !important;
+  .nuevoPacienteActions{
+    position:fixed !important;
+    left:10px !important;
+    right:10px !important;
+    bottom:74px !important;
+    z-index:30000 !important;
+    background:#fff !important;
+    padding:8px !important;
+    border-radius:14px !important;
+    box-shadow:0 8px 24px rgba(15,23,42,.18) !important;
+  }
+  .nuevoPacienteActions button{
+    width:100% !important;
   }
 }
 </style>
@@ -1468,26 +1459,7 @@ function goThisYear(){
  renderAll();
 }
 
-
-function yneaCitaValidaParaGrid(c){
-  try{
-    if(!c || !c.fecha || !c.hora) return false;
-    if(!c.pacienteId) return false;
-    const p = paciente(c.pacienteId);
-    return !!(p && p.id);
-  }catch(e){ return true; }
-}
-function yneaLimpiarCitasFantasma(){
-  try{
-    if(!data || !Array.isArray(data.citas)) return false;
-    const antes = data.citas.length;
-    data.citas = data.citas.filter(yneaCitaValidaParaGrid);
-    return data.citas.length !== antes;
-  }catch(e){ return false; }
-}
-
 function renderWeek(){
- const huboFantasma=yneaLimpiarCitasFantasma(); if(huboFantasma){try{if(typeof save==="function") save();}catch(e){}}
  const profFilter=$("weekProf").value;
  const consultaSeleccionada=$("weekConsulta").value;
  const days=[0,1,2,3,4].map(n=>addDays(weekStart,n));
@@ -5431,34 +5403,143 @@ function pastelColorProfesional(nombre){
 </script>
 
 
+<style id="ynea-final-cerrar-y-huecos-real">
+/* Evita solape Cerrar/Bloqueos en PC aunque no tengan id específico */
+@media (min-width:701px){
+  header, .header, .topbar, .app-header, .toolbar, .acciones, .acciones-top{
+    flex-wrap:wrap !important;
+    gap:8px !important;
+  }
+  button{
+    white-space:nowrap !important;
+  }
+}
 
-<script id="ynea-reparar-cuadricula-real-final">
+/* En móvil/PC, si queda un bloque fantasma vacío de cita, no ocupa espacio */
+.cita:empty,
+.calendar-cita:empty,
+.evento-cita:empty,
+.evento:empty,
+.appointment:empty{
+  display:none !important;
+  height:0 !important;
+  min-height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+</style>
+
+<script id="ynea-final-reparar-huecos-y-cerrar-real">
 (function(){
-  function repararCuadricula(){
+  function texto(el){ return (el && el.textContent ? el.textContent : '').trim().toLowerCase(); }
+
+  function repararBotonesPC(){
     try{
-      const cambio = (typeof yneaLimpiarCitasFantasma === 'function') ? yneaLimpiarCitasFantasma() : false;
-      if(cambio && typeof save === 'function') save();
+      const botones = Array.from(document.querySelectorAll('button'));
+      const cerrar = botones.find(b => texto(b) === 'cerrar' || texto(b).includes('cerrar'));
+      const bloqueos = botones.find(b => texto(b).includes('bloqueos') || texto(b).includes('bloqueo'));
+      if(cerrar){
+        cerrar.style.marginRight = '16px';
+        cerrar.style.marginLeft = '0';
+        cerrar.style.position = 'relative';
+        cerrar.style.zIndex = '5';
+      }
+      if(bloqueos){
+        bloqueos.style.marginLeft = '16px';
+        bloqueos.style.position = 'relative';
+        bloqueos.style.zIndex = '4';
+      }
+      if(cerrar && cerrar.parentElement){
+        cerrar.parentElement.style.display = 'flex';
+        cerrar.parentElement.style.flexWrap = 'wrap';
+        cerrar.parentElement.style.gap = '8px';
+        cerrar.parentElement.style.alignItems = 'center';
+      }
     }catch(e){}
+  }
+
+  function limpiarHuecos(){
+    try{
+      const candidatos = Array.from(document.querySelectorAll('.cita,.calendar-cita,.evento-cita,.evento,.appointment,[data-cita-id],[data-event-id]'));
+      candidatos.forEach(function(el){
+        const t = texto(el);
+        const sinContenido = !t || t === 'undefined' || t === 'null' || t === '-' || t === '—';
+        const sinInputs = !el.querySelector('input,select,textarea,button');
+        if(sinContenido && sinInputs){
+          el.remove();
+        }
+      });
+
+      // Si una celda quedó artificialmente alta tras borrar, devolverla a tamaño normal.
+      Array.from(document.querySelectorAll('td, .calendar-cell, .day-cell, .slot, .time-slot')).forEach(function(celda){
+        const citas = celda.querySelectorAll('.cita,.calendar-cita,.evento-cita,.evento,.appointment,[data-cita-id],[data-event-id]');
+        if(citas.length === 0){
+          celda.style.minHeight = '';
+          celda.style.height = '';
+          celda.style.paddingBottom = '';
+        }
+      });
+    }catch(e){}
+  }
+
+  function reparar(){
     try{ if(typeof renderWeek === 'function') renderWeek(); }catch(e){}
     try{ if(typeof renderMonth === 'function') renderMonth(); }catch(e){}
     try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
+    setTimeout(limpiarHuecos, 30);
+    setTimeout(limpiarHuecos, 160);
+    setTimeout(repararBotonesPC, 60);
   }
 
-  const eliminarAnterior = window.eliminarCitaDesdeEditor;
-  if(typeof eliminarAnterior === 'function'){
+  window.yneaRepararCuadricula = reparar;
+
+  window.addEventListener('load', function(){
+    setTimeout(reparar, 150);
+    setTimeout(reparar, 600);
+    setTimeout(repararBotonesPC, 1000);
+  });
+
+  document.addEventListener('click', function(){
+    setTimeout(function(){
+      limpiarHuecos();
+      repararBotonesPC();
+    }, 80);
+  }, true);
+
+  // Tras eliminar cita, limpiar de nuevo sin cerrar app.
+  const anteriorEliminar = window.eliminarCitaDesdeEditor;
+  if(typeof anteriorEliminar === 'function'){
     window.eliminarCitaDesdeEditor = async function(){
-      const r = await eliminarAnterior.apply(this, arguments);
-      setTimeout(repararCuadricula, 40);
-      setTimeout(repararCuadricula, 200);
+      const r = await anteriorEliminar.apply(this, arguments);
+      setTimeout(reparar, 60);
+      setTimeout(reparar, 300);
       return r;
     };
     window.eliminarCita = window.eliminarCitaDesdeEditor;
   }
+})();
+</script>
 
-  window.addEventListener('load', function(){
-    setTimeout(repararCuadricula, 250);
-    setTimeout(repararCuadricula, 900);
-  });
+
+<script id="ynea-grid-safe-fix">
+(function(){
+  function refrescar(){
+    try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){}
+    try{ if(typeof renderMonth==='function') renderMonth(); }catch(e){}
+    try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
+  }
+
+  const eliminarPrevio = window.eliminarCitaDesdeEditor;
+  if(typeof eliminarPrevio==='function'){
+    window.eliminarCitaDesdeEditor = async function(){
+      const r = await eliminarPrevio.apply(this, arguments);
+      setTimeout(refrescar,50);
+      setTimeout(refrescar,250);
+      return r;
+    };
+    window.eliminarCita = window.eliminarCitaDesdeEditor;
+  }
 })();
 </script>
 
