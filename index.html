@@ -6256,5 +6256,221 @@ function pastelColorProfesional(nombre){
 })();
 </script>
 
+
+
+<!-- ===== YNEA FIX FINAL 2026-05-08: modal paciente móvil + anti-duplicados ===== -->
+<style id="ynea-fix-modal-paciente-duplicados-20260508">
+@media(max-width:900px){
+  html.ynea-patient-modal-open,
+  body.ynea-patient-modal-open{
+    overflow:hidden !important;
+    height:100dvh !important;
+  }
+  html.ynea-patient-modal-open .mobileBottomNav,
+  body.ynea-patient-modal-open .mobileBottomNav,
+  html.ynea-patient-modal-open .appFab,
+  body.ynea-patient-modal-open .appFab,
+  html.ynea-patient-modal-open .autosaveBar,
+  body.ynea-patient-modal-open .autosaveBar{
+    display:none !important;
+    visibility:hidden !important;
+    pointer-events:none !important;
+  }
+  #nuevoPacienteOverlay,
+  .nuevoPacienteOverlay{
+    z-index:2147483600 !important;
+    align-items:flex-end !important;
+    justify-content:center !important;
+    padding:0 !important;
+  }
+  #nuevoPacienteOverlay .nuevoPacienteModal,
+  .nuevoPacienteOverlay .nuevoPacienteModal,
+  #nuevoPacienteModal,
+  .nuevoPacienteModal{
+    width:100% !important;
+    max-width:100% !important;
+    max-height:100dvh !important;
+    margin:0 !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    border-radius:18px 18px 0 0 !important;
+    padding:10px 10px calc(86px + env(safe-area-inset-bottom)) 10px !important;
+  }
+  #nuevoPacienteOverlay .nuevoPacienteActions,
+  .nuevoPacienteOverlay .nuevoPacienteActions,
+  .nuevoPacienteActions{
+    position:fixed !important;
+    left:8px !important;
+    right:8px !important;
+    bottom:calc(8px + env(safe-area-inset-bottom)) !important;
+    z-index:2147483640 !important;
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:7px !important;
+    background:#fff !important;
+    border:1px solid #f3cfe0 !important;
+    border-radius:14px !important;
+    padding:7px !important;
+    margin:0 !important;
+    box-shadow:0 12px 34px rgba(15,23,42,.28) !important;
+  }
+  #nuevoPacienteOverlay .nuevoPacienteActions button,
+  .nuevoPacienteOverlay .nuevoPacienteActions button,
+  .nuevoPacienteActions button{
+    width:100% !important;
+    min-width:0 !important;
+    height:38px !important;
+    min-height:38px !important;
+    padding:6px 7px !important;
+    font-size:12px !important;
+    border-radius:10px !important;
+  }
+}
+</style>
+<script id="ynea-fix-modal-paciente-duplicados-20260508-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const trim=id=>String(($(id)&&$(id).value)||'').trim();
+  const SAVE_LOCK_MS=45000;
+
+  function normText(v){
+    return String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+  }
+  function normPhone(v){ return String(v||'').replace(/[^0-9]/g,''); }
+  function normEmail(v){ return String(v||'').trim().toLowerCase(); }
+  function getData(){
+    try{ if(window.data) return window.data; }catch(e){}
+    try{ if(data) return data; }catch(e){}
+    return {pacientes:[],citas:[]};
+  }
+  function setLocalData(d){
+    try{ window.data=d; data=d; }catch(e){ window.data=d; }
+    try{ localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d)); }catch(e){}
+    try{ if(typeof save==='function') save(); }catch(e){}
+    window.yneaLocalPendingUntil=Date.now()+SAVE_LOCK_MS;
+  }
+  function refreshYnea(){
+    ['refreshAllSelects','actualizarBuscadorPacienteCita','renderPatients','renderAll'].forEach(fn=>{try{ if(typeof window[fn]==='function') window[fn](); }catch(e){}});
+  }
+  function showPatientError(msg){
+    try{ if(typeof mostrarErrorNuevoPaciente==='function') return mostrarErrorNuevoPaciente(msg); }catch(e){}
+    alert(msg);
+  }
+  function patientLabel(p){
+    return (p.nombre||'Sin nombre')+(p.telefono?' · Tel: '+p.telefono:'')+(p.email?' · Email: '+p.email:'');
+  }
+  function findDuplicatePatient(nombre, telefono, email, ignoreId){
+    const d=getData();
+    const n=normText(nombre), t=normPhone(telefono), e=normEmail(email);
+    for(const p of (d.pacientes||[])){
+      if(ignoreId && String(p.id)===String(ignoreId)) continue;
+      const hits=[];
+      if(n && normText(p.nombre)===n) hits.push('nombre');
+      if(t && normPhone(p.telefono)===t) hits.push('teléfono');
+      if(e && normEmail(p.email)===e) hits.push('email');
+      if(hits.length) return {patient:p, fields:hits};
+    }
+    return null;
+  }
+  function duplicateMessage(dup){
+    return 'No se puede guardar. Ya existe un paciente con el mismo '+dup.fields.join(', ')+'\n\nPaciente existente: '+patientLabel(dup.patient);
+  }
+  function setPatientModalOpen(on){
+    document.documentElement.classList.toggle('ynea-patient-modal-open',!!on);
+    document.body.classList.toggle('ynea-patient-modal-open',!!on);
+    const nav=document.querySelector('.mobileBottomNav');
+    if(nav) nav.style.display=on?'none':'';
+  }
+  function isPatientModalVisible(){
+    const o=$('nuevoPacienteOverlay');
+    return !!(o && getComputedStyle(o).display!=='none');
+  }
+
+  const oldAbrir=window.abrirNuevoPaciente;
+  window.abrirNuevoPaciente=function(){
+    if(typeof oldAbrir==='function') oldAbrir.apply(this,arguments);
+    const o=$('nuevoPacienteOverlay'); if(o) o.style.display='flex';
+    setPatientModalOpen(true);
+    setTimeout(()=>{try{ $('npNombre') && $('npNombre').focus(); }catch(e){}},80);
+  };
+  const oldCerrar=window.cerrarNuevoPaciente;
+  window.cerrarNuevoPaciente=function(){
+    if(typeof oldCerrar==='function') oldCerrar.apply(this,arguments);
+    const o=$('nuevoPacienteOverlay'); if(o) o.style.display='none';
+    setPatientModalOpen(false);
+  };
+  setInterval(()=>setPatientModalOpen(isPatientModalVisible()),300);
+
+  window.guardarNuevoPacienteModal=async function(){
+    try{ if(typeof limpiarErrorNuevoPaciente==='function') limpiarErrorNuevoPaciente(); }catch(e){}
+    const nombre=trim('npNombre'), telefono=trim('npTelefono'), email=trim('npEmail'), obs=trim('npObs');
+    if(!nombre) return showPatientError('El nombre del paciente es obligatorio.');
+    if(!telefono) return showPatientError('El teléfono es obligatorio.');
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showPatientError('Introduce un email válido o deja el campo vacío.');
+    const dup=findDuplicatePatient(nombre,telefono,email);
+    if(dup) return showPatientError(duplicateMessage(dup));
+
+    const d=getData();
+    if(!Array.isArray(d.pacientes)) d.pacientes=[];
+    const p={id:'p'+Date.now()+'_'+Math.random().toString(36).slice(2,6),nombre,telefono,email,obs};
+    d.pacientes.push(p);
+    setLocalData(d);
+    try{ if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(p.id); }catch(e){}
+    const sel=$('pacienteCita'); if(sel) sel.value=p.id;
+    ['npNombre','npTelefono','npEmail','npObs'].forEach(id=>{const el=$(id); if(el) el.value='';});
+    if($('nuevoPacienteOverlay')) $('nuevoPacienteOverlay').style.display='none';
+    setPatientModalOpen(false);
+    refreshYnea();
+    try{ if(typeof window.yneaGuardadoEstable==='function') await window.yneaGuardadoEstable(); else if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){ console.warn('Supabase paciente:',e); alert('Paciente guardado en este dispositivo, pero no se ha podido confirmar Supabase.'); }
+    refreshYnea();
+    return true;
+  };
+
+  window.addPaciente=async function(){
+    const nombre=trim('pacNombre'), telefono=trim('pacTelefono'), email=trim('pacEmail'), obs=String(($('pacObs')&&$('pacObs').value)||'').trim();
+    if(!nombre) return alert('Escribe el nombre del paciente.');
+    if(!telefono) return alert('El teléfono es obligatorio.');
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('Introduce un email válido o deja el campo vacío.');
+    const dup=findDuplicatePatient(nombre,telefono,email);
+    if(dup) return alert(duplicateMessage(dup));
+    const d=getData();
+    if(!Array.isArray(d.pacientes)) d.pacientes=[];
+    const p={id:'p'+Date.now()+'_'+Math.random().toString(36).slice(2,6),nombre,telefono,email,obs};
+    d.pacientes.push(p);
+    setLocalData(d);
+    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(id=>{const el=$(id); if(el) el.value='';});
+    try{ if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(p.id); }catch(e){}
+    refreshYnea();
+    try{ if(typeof window.yneaGuardadoEstable==='function') await window.yneaGuardadoEstable(); else if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){ console.warn('Supabase paciente:',e); }
+    refreshYnea();
+    alert('Paciente guardado.');
+    return true;
+  };
+
+  const oldEditar=window.editarPacienteYnea;
+  window.editarPacienteYnea=function(id){
+    const d=getData();
+    const p=(d.pacientes||[]).find(x=>String(x.id)===String(id));
+    if(!p){ if(typeof oldEditar==='function') return oldEditar.apply(this,arguments); return; }
+    const nombre=prompt('Nombre del paciente:',p.nombre||''); if(nombre===null) return;
+    const telefono=prompt('Teléfono:',p.telefono||''); if(telefono===null) return;
+    const email=prompt('Email:',p.email||''); if(email===null) return;
+    if(!String(nombre).trim()) return alert('El nombre es obligatorio.');
+    if(!String(telefono).trim()) return alert('El teléfono es obligatorio.');
+    if(String(email).trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) return alert('Introduce un email válido o deja el campo vacío.');
+    const dup=findDuplicatePatient(nombre,telefono,email,id);
+    if(dup) return alert(duplicateMessage(dup));
+    const obs=prompt('Observaciones:',p.obs||''); if(obs===null) return;
+    Object.assign(p,{nombre:String(nombre).trim(),telefono:String(telefono).trim(),email:String(email).trim(),obs:String(obs||'').trim()});
+    setLocalData(d);
+    refreshYnea();
+    try{ if(typeof window.yneaGuardadoEstable==='function') window.yneaGuardadoEstable(); }catch(e){}
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>setPatientModalOpen(isPatientModalVisible()),true);
+})();
+</script>
+
 </body>
 </html>
