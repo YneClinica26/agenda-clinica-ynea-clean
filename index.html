@@ -6472,5 +6472,159 @@ function pastelColorProfesional(nombre){
 })();
 </script>
 
+
+
+<!-- ===== YNEA FIX DEFINITIVO 2026-05-08: modal paciente por encima de barra móvil + cerrar PC esquina ===== -->
+<style id="ynea-fix-definitivo-modal-cerrar-20260508">
+/* Botón Cerrar siempre en la esquina superior derecha, sin tapar el título */
+#yneaTopLogoutBackup{
+  position:fixed !important;
+  top:14px !important;
+  right:18px !important;
+  left:auto !important;
+  z-index:2147483000 !important;
+  margin:0 !important;
+  transform:none !important;
+  white-space:nowrap !important;
+}
+header{padding-right:150px !important;}
+
+@media(max-width:900px){
+  #yneaTopLogoutBackup{
+    top:8px !important;
+    right:8px !important;
+    font-size:11px !important;
+    min-height:28px !important;
+    padding:5px 7px !important;
+  }
+  header{padding-right:92px !important;}
+
+  /* Cuando el modal de nuevo paciente está abierto, ninguna navegación inferior debe quedar encima */
+  html.ynea-patient-modal-open .mobileBottomNav,
+  body.ynea-patient-modal-open .mobileBottomNav,
+  html.ynea-patient-modal-open nav.mobileBottomNav,
+  body.ynea-patient-modal-open nav.mobileBottomNav,
+  html.ynea-patient-modal-open .appFab,
+  body.ynea-patient-modal-open .appFab,
+  html.ynea-patient-modal-open .autosaveBar,
+  body.ynea-patient-modal-open .autosaveBar{
+    display:none !important;
+    opacity:0 !important;
+    visibility:hidden !important;
+    pointer-events:none !important;
+  }
+
+  #nuevoPacienteOverlay,
+  .nuevoPacienteOverlay{
+    position:fixed !important;
+    inset:0 !important;
+    z-index:2147483500 !important;
+    background:rgba(15,23,42,.58) !important;
+    display:none;
+    align-items:flex-end !important;
+    justify-content:center !important;
+    padding:0 !important;
+  }
+  #nuevoPacienteOverlay[style*="flex"],
+  .nuevoPacienteOverlay[style*="flex"]{
+    display:flex !important;
+  }
+  #nuevoPacienteModal,
+  .nuevoPacienteModal{
+    position:relative !important;
+    z-index:2147483510 !important;
+    width:100vw !important;
+    max-width:100vw !important;
+    height:auto !important;
+    max-height:100dvh !important;
+    margin:0 !important;
+    border-radius:18px 18px 0 0 !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    padding:10px 10px calc(150px + env(safe-area-inset-bottom)) 10px !important;
+  }
+
+  /* El botón Guardar queda por ENCIMA de la barra Semana/Mes/Pacientes aunque algún CSS antiguo la repinte */
+  #nuevoPacienteOverlay .nuevoPacienteActions,
+  .nuevoPacienteOverlay .nuevoPacienteActions,
+  .nuevoPacienteActions{
+    position:fixed !important;
+    left:8px !important;
+    right:8px !important;
+    bottom:calc(70px + env(safe-area-inset-bottom)) !important;
+    z-index:2147483647 !important;
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:7px !important;
+    background:#ffffff !important;
+    border:1px solid #f3cfe0 !important;
+    border-radius:14px !important;
+    padding:7px !important;
+    margin:0 !important;
+    box-shadow:0 14px 36px rgba(15,23,42,.35) !important;
+  }
+  #nuevoPacienteOverlay .nuevoPacienteActions button,
+  .nuevoPacienteOverlay .nuevoPacienteActions button,
+  .nuevoPacienteActions button{
+    width:100% !important;
+    min-width:0 !important;
+    height:40px !important;
+    min-height:40px !important;
+    padding:6px 8px !important;
+    font-size:12px !important;
+    border-radius:10px !important;
+  }
+}
+</style>
+<script id="ynea-fix-definitivo-modal-cerrar-20260508-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  function modalVisible(){
+    const o=$('nuevoPacienteOverlay');
+    if(!o) return false;
+    const s=getComputedStyle(o);
+    return s.display!=='none' && s.visibility!=='hidden' && s.opacity!=='0';
+  }
+  function forceModalState(on){
+    document.documentElement.classList.toggle('ynea-patient-modal-open',!!on);
+    document.body.classList.toggle('ynea-patient-modal-open',!!on);
+    document.querySelectorAll('.mobileBottomNav,.appFab,.autosaveBar').forEach(el=>{
+      if(on){
+        el.setAttribute('data-ynea-hidden-by-patient-modal','1');
+        el.style.setProperty('display','none','important');
+        el.style.setProperty('visibility','hidden','important');
+        el.style.setProperty('pointer-events','none','important');
+      }else if(el.getAttribute('data-ynea-hidden-by-patient-modal')==='1'){
+        el.removeAttribute('data-ynea-hidden-by-patient-modal');
+        el.style.removeProperty('display');
+        el.style.removeProperty('visibility');
+        el.style.removeProperty('pointer-events');
+      }
+    });
+  }
+
+  const prevAbrir=window.abrirNuevoPaciente;
+  window.abrirNuevoPaciente=function(){
+    if(typeof prevAbrir==='function') prevAbrir.apply(this,arguments);
+    const o=$('nuevoPacienteOverlay');
+    if(o){ o.style.setProperty('display','flex','important'); }
+    forceModalState(true);
+  };
+  const prevCerrar=window.cerrarNuevoPaciente;
+  window.cerrarNuevoPaciente=function(){
+    if(typeof prevCerrar==='function') prevCerrar.apply(this,arguments);
+    const o=$('nuevoPacienteOverlay');
+    if(o){ o.style.setProperty('display','none','important'); }
+    forceModalState(false);
+  };
+
+  // Vigila cambios de estilo hechos por funciones antiguas y vuelve a ocultar la barra si el modal sigue abierto.
+  setInterval(()=>forceModalState(modalVisible()),120);
+  document.addEventListener('DOMContentLoaded',()=>forceModalState(modalVisible()),true);
+  window.addEventListener('resize',()=>forceModalState(modalVisible()),true);
+})();
+</script>
+
 </body>
 </html>
