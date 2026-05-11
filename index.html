@@ -4398,7 +4398,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   const STORAGE_URL='yneaSupabaseUrl';
   const STORAGE_KEY='yneaSupabaseAnonKey';
   const ACCESS_FLAG='yneaAccessConfigured';
-  const DEFAULT_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const DEFAULT_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const DEFAULT_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const ROLE_LABELS={usuario:'Usuario profesional',recepcion:'Recepción',admin:'Administrador'};
   const ROLE_ALLOWED={usuario:['semana','mensual','pacientes','agenda'],recepcion:['semana','mensual','pacientes','agenda','bloqueos'],admin:['semana','mensual','pacientes','agenda','config','bloqueos','listados','infoDiaria','avisos','copias']};
@@ -4959,7 +4959,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 <script id="ynea-sync-duro-final">
 (function(){
   'use strict';
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLE='agenda_online';
   const ID='main';
@@ -6043,7 +6043,7 @@ function pastelColorProfesional(nombre){
 (function(){
   'use strict';
 
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLE='agenda_online';
   const ID='main';
@@ -7520,6 +7520,128 @@ header{padding-right:150px !important;}
   document.addEventListener('click',function(e){ const row=e.target.closest&&e.target.closest('#pacientesTable tbody tr[data-paciente-id]'); if(row && typeof window.editarPacienteYnea==='function') window.editarPacienteYnea(row.dataset.pacienteId); },true);
   document.addEventListener('DOMContentLoaded',function(){connect(); setTimeout(window.renderPatients,300);});
   setTimeout(function(){connect(); if($('pacientesView')) window.renderPatients();},1200);
+})();
+</script>
+
+
+
+<!-- YNEA FIX REAL PACIENTES + SUPABASE URL 2026-05-11 -->
+<script id="ynea-fix-real-pacientes-supabase-url-20260511">
+(function(){
+  'use strict';
+  const CORRECT_SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
+  const TABLE='agenda_online';
+  const ID='main';
+  const KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const normTxt=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  function clone(x){try{return JSON.parse(JSON.stringify(x||{}));}catch(e){return {};}}
+  function unwrap(x){
+    x=clone(x);
+    if(x && x.datos) x=x.datos;
+    if(x && x.data && (Array.isArray(x.data.pacientes)||Array.isArray(x.data.citas))) x=x.data;
+    if(x && x.agenda && (Array.isArray(x.agenda.pacientes)||Array.isArray(x.agenda.citas))) x=x.agenda;
+    return x||{};
+  }
+  function ensure(d){
+    d=unwrap(d);
+    if(!Array.isArray(d.profesionales)) d.profesionales=[];
+    if(!Array.isArray(d.consultas)) d.consultas=['Consulta 1'];
+    if(!Array.isArray(d.tipos)) d.tipos=['General'];
+    if(!Array.isArray(d.pacientes)) d.pacientes=[];
+    if(!Array.isArray(d.citas)) d.citas=[];
+    if(!Array.isArray(d.bloqueos)) d.bloqueos=[];
+    d.duracionesTipo=d.duracionesTipo&&typeof d.duracionesTipo==='object'?d.duracionesTipo:{};
+    d.caracteristicasTipo=d.caracteristicasTipo&&typeof d.caracteristicasTipo==='object'?d.caracteristicasTipo:{};
+    d.tiposPorProfesional=d.tiposPorProfesional&&typeof d.tiposPorProfesional==='object'?d.tiposPorProfesional:{};
+    return d;
+  }
+  function getGlobal(){try{return ensure(data||window.data||{});}catch(e){return ensure(window.data||{});}}
+  function getLS(k){try{return ensure(JSON.parse(localStorage.getItem(k)||'{}'));}catch(e){return ensure({});}}
+  function kPaciente(p){return String(p.id||'') || ['pac',p.nombre,p.telefono,p.email].map(normTxt).join('|');}
+  function kCita(c){return String(c.id||'') || ['cit',c.fecha,c.hora,c.pacienteId,c.profesional,c.consulta,c.tipo].map(x=>String(x||'')).join('|');}
+  function mergeArr(a,b,keyFn){const m=new Map(); (a||[]).forEach(x=>m.set(keyFn(x),clone(x))); (b||[]).forEach(x=>{const k=keyFn(x); const old=m.get(k); m.set(k, JSON.stringify(x).length>=JSON.stringify(old||{}).length?clone(x):old);}); return Array.from(m.values()).filter(Boolean);}
+  function uniq(a){return Array.from(new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean)));}
+  function merge(a,b){
+    a=ensure(a); b=ensure(b);
+    const out=Object.assign({},a,b);
+    out.profesionales=uniq([...(a.profesionales||[]),...(b.profesionales||[])]);
+    out.consultas=uniq([...(a.consultas||[]),...(b.consultas||[])]); if(!out.consultas.length) out.consultas=['Consulta 1'];
+    out.tipos=uniq([...(a.tipos||[]),...(b.tipos||[])]); if(!out.tipos.length) out.tipos=['General'];
+    out.pacientes=mergeArr(a.pacientes,b.pacientes,kPaciente);
+    out.citas=mergeArr(a.citas,b.citas,kCita);
+    out.bloqueos=mergeArr(a.bloqueos,b.bloqueos,x=>String(x.id||JSON.stringify(x)));
+    out.duracionesTipo=Object.assign({},a.duracionesTipo||{},b.duracionesTipo||{});
+    out.caracteristicasTipo=Object.assign({},a.caracteristicasTipo||{},b.caracteristicasTipo||{});
+    out.tiposPorProfesional=Object.assign({},a.tiposPorProfesional||{},b.tiposPorProfesional||{});
+    return ensure(out);
+  }
+  function setDataSafe(d){
+    d=ensure(d);
+    try{window.data=d; data=d;}catch(e){window.data=d;}
+    try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d));localStorage.setItem('agendaData',JSON.stringify(d));localStorage.setItem('yneaLastGoodData',JSON.stringify(d));localStorage.setItem('ynea_guard_shadow_data_v2',JSON.stringify(d));}catch(e){}
+    return d;
+  }
+  function bestLocal(){
+    return [getGlobal(),getLS('agendaClinicaSemanal'),getLS('agendaData'),getLS('yneaLastGoodData'),getLS('ynea_guard_shadow_data_v2')].reduce((acc,x)=>merge(acc,x),ensure({}));
+  }
+  async function fetchCloud(){
+    const url=CORRECT_SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(ID)+'&select=id,datos,updated_at';
+    const r=await fetch(url,{method:'GET',cache:'no-store',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Cache-Control':'no-cache',Pragma:'no-cache'}});
+    const text=await r.text(); let rows=null; try{rows=text?JSON.parse(text):null;}catch(e){}
+    if(!r.ok) throw new Error((rows&&(rows.message||rows.error))||text||('HTTP '+r.status));
+    return ensure(Array.isArray(rows)&&rows[0]?rows[0].datos:{});
+  }
+  async function saveCloud(d){
+    d=ensure(d);
+    const url=CORRECT_SUPABASE_URL+'/rest/v1/'+TABLE+'?on_conflict=id';
+    const r=await fetch(url,{method:'POST',cache:'no-store',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=representation','Cache-Control':'no-cache',Pragma:'no-cache'},body:JSON.stringify({id:ID,datos:d,updated_at:new Date().toISOString()})});
+    const text=await r.text(); if(!r.ok) throw new Error(text||('HTTP '+r.status));
+    return true;
+  }
+  function renderPatientsReal(){
+    const table=$('pacientesTable'); if(!table) return;
+    const d=bestLocal();
+    const q=normTxt(($('buscadorPacientes')||{}).value||'');
+    const lista=(d.pacientes||[]).filter(p=>!q || normTxt([p.nombre,p.telefono,p.email,p.obs].join(' ')).includes(q)).sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
+    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+
+      (lista.length?lista.map(p=>`<tr data-paciente-id="${esc(p.id)}"><td><b>${esc(p.nombre||'Sin nombre')}</b></td><td>${esc(p.telefono||'')}</td><td>${esc(p.email||'')}</td><td>${esc(p.obs||'')}</td></tr>`).join(''):'<tr><td colspan="4" style="padding:14px;text-align:center;color:#64748b">No hay pacientes cargados todavía.</td></tr>')+
+      '</tbody>';
+    const info=$('pacientesSearchInfo'); if(info) info.textContent=(q?lista.length+' de ':'')+(d.pacientes||[]).length+' pacientes';
+  }
+  window.renderPatients=renderPatientsReal;
+  window.yneaRecargarPacientesSupabase=async function(){
+    try{
+      const local=bestLocal();
+      const remote=await fetchCloud();
+      const merged=merge(local,remote);
+      setDataSafe(merged);
+      if((local.pacientes||[]).length > (remote.pacientes||[]).length || (local.citas||[]).length > (remote.citas||[]).length){try{await saveCloud(merged);}catch(e){console.warn('No se pudo subir mezcla',e);}}
+      try{if(typeof refreshAllSelects==='function')refreshAllSelects();}catch(e){}
+      try{if(typeof renderAll==='function')renderAll();}catch(e){}
+      renderPatientsReal();
+      return true;
+    }catch(e){
+      console.error('[YNEA pacientes] Error recargando Supabase:',e);
+      renderPatientsReal();
+      return false;
+    }
+  };
+  const oldSetView=window.setView;
+  window.setView=function(view,btn){
+    const r=oldSetView?oldSetView.apply(this,arguments):undefined;
+    if(view==='pacientes') setTimeout(()=>{window.yneaRecargarPacientesSupabase();},100);
+    return r;
+  };
+  function init(){
+    try{localStorage.setItem('yneaSupabaseUrl',CORRECT_SUPABASE_URL);}catch(e){}
+    const i=$('buscadorPacientes'); if(i && !i.__yneaRealPac){i.addEventListener('input',renderPatientsReal); i.__yneaRealPac=true;}
+    renderPatientsReal();
+    setTimeout(()=>window.yneaRecargarPacientesSupabase(),700);
+    setTimeout(renderPatientsReal,1600);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,true); else init();
 })();
 </script>
 
