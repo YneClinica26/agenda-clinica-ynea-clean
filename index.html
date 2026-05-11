@@ -7149,5 +7149,201 @@ header{padding-right:150px !important;}
   setTimeout(function(){bind();paint();},1200);
 })();
 </script>
+
+
+<!-- ===== YNEA FIX 2026-05-11: NO BORRAR CITAS RECIÉN CREADAS POR SINCRONIZACIÓN ===== -->
+<script id="ynea-fix-no-borrar-citas-sync-20260511">
+(function(){
+  'use strict';
+  const DATA_KEYS = new Set(['agendaClinicaSemanal','agendaData']);
+  const SHADOW_KEY = 'ynea_guard_shadow_data_v2';
+  const GUARD_MS = 120000;
+  let internal = false;
+  let guardUntil = Date.now() + 3000;
+
+  function clone(x){ try{return JSON.parse(JSON.stringify(x||{}));}catch(e){return {};}}
+  function getWinData(){ try{return clone(window.data || data || {});}catch(e){ try{return clone(window.data||{});}catch(_){return {};}} }
+  function getLSData(key){ try{return clone(JSON.parse(localStorage.getItem(key)||'{}'));}catch(e){return {};}}
+  function getShadow(){ try{return clone(JSON.parse(localStorage.getItem(SHADOW_KEY)||'{}'));}catch(e){return {};}}
+  function uniqText(a){ return Array.from(new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean))); }
+  function norm(d){
+    d = d && typeof d==='object' ? clone(d) : {};
+    d.profesionales = uniqText(d.profesionales||[]);
+    d.consultas = uniqText(d.consultas||[]);
+    d.tipos = uniqText(d.tipos||[]);
+    d.pacientes = Array.isArray(d.pacientes) ? d.pacientes.filter(Boolean) : [];
+    d.citas = Array.isArray(d.citas) ? d.citas.filter(Boolean) : [];
+    d.bloqueos = Array.isArray(d.bloqueos) ? d.bloqueos.filter(Boolean) : [];
+    d.duracionesTipo = d.duracionesTipo && typeof d.duracionesTipo==='object' ? d.duracionesTipo : {};
+    d.caracteristicasTipo = d.caracteristicasTipo && typeof d.caracteristicasTipo==='object' ? d.caracteristicasTipo : {};
+    d.tiposPorProfesional = d.tiposPorProfesional && typeof d.tiposPorProfesional==='object' ? d.tiposPorProfesional : {};
+    return d;
+  }
+  function keyOf(item, prefix){
+    if(item && item.id!==undefined && item.id!==null && String(item.id)!=='') return String(item.id);
+    if(prefix==='cita') return ['cita',item.fecha,item.hora,item.pacienteId,item.profesional,item.consulta,item.tipo].map(x=>String(x||'')).join('|');
+    if(prefix==='paciente') return ['paciente',item.nombre,item.telefono,item.email].map(x=>String(x||'').trim().toLowerCase()).join('|');
+    return prefix+'|'+JSON.stringify(item||{});
+  }
+  function better(a,b){
+    if(!a) return clone(b);
+    if(!b) return clone(a);
+    const aa = JSON.stringify(a).length;
+    const bb = JSON.stringify(b).length;
+    return clone(bb>=aa ? b : a);
+  }
+  function mergeById(a,b,prefix){
+    const map = new Map();
+    (Array.isArray(a)?a:[]).forEach(x=>map.set(keyOf(x,prefix), clone(x)));
+    (Array.isArray(b)?b:[]).forEach(x=>{ const k=keyOf(x,prefix); map.set(k, better(map.get(k), x)); });
+    return Array.from(map.values());
+  }
+  function mergeData(a,b){
+    a=norm(a); b=norm(b);
+    const out = Object.assign({}, a, b);
+    out.profesionales = uniqText([...(a.profesionales||[]),...(b.profesionales||[])]);
+    out.consultas = uniqText([...(a.consultas||[]),...(b.consultas||[])]);
+    out.tipos = uniqText([...(a.tipos||[]),...(b.tipos||[])]);
+    out.pacientes = mergeById(a.pacientes,b.pacientes,'paciente');
+    out.citas = mergeById(a.citas,b.citas,'cita');
+    out.bloqueos = mergeById(a.bloqueos,b.bloqueos,'bloqueo');
+    out.duracionesTipo = Object.assign({}, a.duracionesTipo||{}, b.duracionesTipo||{});
+    out.caracteristicasTipo = Object.assign({}, a.caracteristicasTipo||{}, b.caracteristicasTipo||{});
+    out.tiposPorProfesional = Object.assign({}, a.tiposPorProfesional||{}, b.tiposPorProfesional||{});
+    return norm(out);
+  }
+  function hasMoreImportant(merged, incoming){
+    incoming = norm(incoming); merged = norm(merged);
+    return (merged.citas||[]).length > (incoming.citas||[]).length || (merged.pacientes||[]).length > (incoming.pacientes||[]).length;
+  }
+  function setGuard(){ guardUntil = Date.now()+GUARD_MS; try{ window.__yneaSyncGuardUntil = guardUntil; }catch(e){} }
+  function writeShadow(d){
+    try{
+      internal = true;
+      localStorage.setItem(SHADOW_KEY, JSON.stringify(norm(d)));
+    }catch(e){} finally{ internal=false; }
+  }
+  function setAppData(d){
+    d=norm(d);
+    try{ window.data=d; data=d; }catch(e){ window.data=d; }
+    try{
+      internal = true;
+      localStorage.setItem('agendaClinicaSemanal', JSON.stringify(d));
+      localStorage.setItem('agendaData', JSON.stringify(d));
+    }catch(e){} finally{ internal=false; }
+    writeShadow(d);
+  }
+  function currentMerged(){
+    return mergeData(mergeData(getLSData('agendaClinicaSemanal'), getLSData('agendaData')), mergeData(getWinData(), getShadow()));
+  }
+  function render(){
+    ['refreshAllSelects','actualizarBuscadorPacienteCita','renderPatients','renderMapTipos','renderWeek','renderMonth','renderAll'].forEach(fn=>{
+      try{ if(typeof window[fn]==='function') window[fn](); }catch(e){}
+    });
+  }
+
+  // Evita que un refresco antiguo de Supabase borre citas/pacientes que acabas de crear.
+  const oldSet = Storage.prototype.setItem;
+  if(!Storage.prototype.setItem.__yneaNoDeleteGuardV2){
+    Storage.prototype.setItem = function(k,v){
+      if(!internal && DATA_KEYS.has(k)){
+        try{
+          const incoming = norm(JSON.parse(String(v||'{}')));
+          const merged = mergeData(currentMerged(), incoming);
+          if(hasMoreImportant(merged, incoming)){
+            setGuard();
+            v = JSON.stringify(merged);
+            try{ window.data = merged; data = merged; }catch(e){ window.data=merged; }
+            writeShadow(merged);
+          }else{
+            writeShadow(mergeData(getShadow(), incoming));
+          }
+        }catch(e){}
+      }
+      return oldSet.call(this,k,v);
+    };
+    Storage.prototype.setItem.__yneaNoDeleteGuardV2 = true;
+  }
+
+  // No permitimos que scripts antiguos bajen el bloqueo a 0 justo después de guardar.
+  try{
+    let pendingValue = window.yneaLocalPendingUntil || 0;
+    Object.defineProperty(window,'yneaLocalPendingUntil',{
+      configurable:true,
+      get(){ return Math.max(pendingValue||0, guardUntil||0); },
+      set(v){
+        const n = Number(v||0);
+        if(n===0 && Date.now()<guardUntil) { pendingValue = guardUntil; return; }
+        pendingValue = Math.max(n, (Date.now()<guardUntil ? guardUntil : 0));
+      }
+    });
+    window.yneaLocalPendingUntil = Math.max(window.yneaLocalPendingUntil||0, guardUntil);
+  }catch(e){}
+
+  // Reconciliación continua: si una recarga remota deja la cita fuera de memoria, la reinyecta y la vuelve a subir.
+  async function reconcileAndUpload(silent){
+    const merged = currentMerged();
+    const wd = norm(getWinData());
+    const needs = hasMoreImportant(merged, wd);
+    if(needs){
+      setGuard();
+      setAppData(merged);
+      render();
+    }
+    if(needs || !silent){
+      try{
+        if(typeof window.__yneaOriginalForceCloudSave==='function') await window.__yneaOriginalForceCloudSave();
+        else if(typeof window.yneaForceCloudSave==='function' && window.yneaForceCloudSave!==reconcileAndUpload) await window.yneaForceCloudSave();
+      }catch(e){ console.warn('[YNEA no borrar] subida tras reconciliar falló', e); }
+    }
+    return true;
+  }
+
+  // Guardamos referencia y envolvemos el guardado cloud final.
+  if(typeof window.yneaForceCloudSave==='function' && !window.__yneaOriginalForceCloudSave){
+    window.__yneaOriginalForceCloudSave = window.yneaForceCloudSave;
+  }
+  window.yneaForceCloudSave = async function(){
+    setGuard();
+    const merged=currentMerged();
+    setAppData(merged);
+    if(typeof window.__yneaOriginalForceCloudSave==='function'){
+      try{return await window.__yneaOriginalForceCloudSave();}
+      finally{ setGuard(); writeShadow(currentMerged()); }
+    }
+    return true;
+  };
+  window.yneaGuardadoEstable = window.yneaForceCloudSave;
+  window.yneaSubirEsteDispositivo = window.yneaForceCloudSave;
+
+  ['save','addCita','guardarCitaDesdeEditor','guardarEdicionCita','guardarCitaEnlazada','guardarNuevoPacienteModal','addPaciente'].forEach(name=>{
+    const fn=window[name];
+    if(typeof fn==='function' && !fn.__yneaNoDeleteGuardV2){
+      window[name]=function(){
+        setGuard();
+        const r=fn.apply(this,arguments);
+        Promise.resolve(r).finally(()=>{
+          setGuard();
+          const merged=currentMerged();
+          setAppData(merged);
+          setTimeout(()=>reconcileAndUpload(true),350);
+          setTimeout(()=>reconcileAndUpload(true),2500);
+        });
+        return r;
+      };
+      window[name].__yneaNoDeleteGuardV2=true;
+    }
+  });
+
+  function init(){
+    writeShadow(currentMerged());
+    setGuard();
+    setInterval(()=>reconcileAndUpload(true),1500);
+    setTimeout(()=>reconcileAndUpload(true),500);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,true); else init();
+})();
+</script>
+
 </body>
 </html>
