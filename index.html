@@ -7465,5 +7465,115 @@ header{padding-right:150px !important;}
 })();
 </script>
 
+
+
+<!-- ===== YNEA FIX 2026-05-11: RECUPERAR LISTADO DE PACIENTES ===== -->
+<style id="ynea-fix-recupera-pacientes-css">
+#pacientesTable{width:100%!important;border-collapse:collapse!important;}
+#pacientesTable th,#pacientesTable td{border:1px solid #e5e7eb!important;padding:7px 8px!important;font-size:12px!important;vertical-align:top!important;}
+#pacientesTable tbody tr{cursor:pointer!important;}
+#pacientesTable tbody tr:hover{background:#fff1f7!important;}
+#pacientesCardsMobile{display:none;}
+@media(max-width:900px){
+  #pacientesView .tableWrap{display:none!important;}
+  #pacientesCardsMobile{display:block!important;}
+  .pacienteMobileCard{display:block!important;background:#fff!important;border:1px solid #f3cfe0!important;border-radius:14px!important;padding:10px!important;margin:0 0 8px 0!important;box-shadow:0 3px 12px rgba(15,23,42,.05)!important;overflow-wrap:anywhere!important;}
+  .pacienteMobileCard b{display:block!important;font-size:14px!important;color:#111827!important;margin-bottom:4px!important;}
+  .pacienteMobileCard span{display:block!important;font-size:12px!important;color:#475569!important;margin-top:2px!important;}
+}
+</style>
+<script id="ynea-fix-recupera-pacientes-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  function getData(){
+    try{
+      if(typeof data!=='undefined' && data && Array.isArray(data.pacientes)) return data;
+    }catch(e){}
+    try{
+      if(window.data && Array.isArray(window.data.pacientes)) return window.data;
+    }catch(e){}
+    try{
+      const a=JSON.parse(localStorage.getItem('agendaClinicaSemanal')||'null');
+      if(a && Array.isArray(a.pacientes)) return a;
+    }catch(e){}
+    try{
+      const b=JSON.parse(localStorage.getItem('agendaData')||'null');
+      if(b && Array.isArray(b.pacientes)) return b;
+    }catch(e){}
+    return {pacientes:[]};
+  }
+  function ensureCards(){
+    let cards=$('pacientesCardsMobile');
+    if(!cards){
+      cards=document.createElement('div');
+      cards.id='pacientesCardsMobile';
+      const table=$('pacientesTable');
+      const wrap=table && table.closest('.tableWrap');
+      if(wrap && wrap.parentNode) wrap.parentNode.insertBefore(cards, wrap.nextSibling);
+      else ($('pacientesView')||document.body).appendChild(cards);
+    }
+    return cards;
+  }
+  function coincide(p,q){
+    if(!q) return true;
+    return norm([p.nombre,p.telefono,p.email,p.obs].join(' ')).includes(q);
+  }
+  window.renderPatients=function(){
+    const d=getData();
+    const table=$('pacientesTable');
+    const q=norm($('buscadorPacientes')?.value||'');
+    const lista=(d.pacientes||[]).filter(p=>coincide(p,q));
+    const total=(d.pacientes||[]).length;
+    if(table){
+      table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+
+        (lista.length?lista.map(p=>`<tr data-paciente-id="${esc(p.id)}"><td><b>${esc(p.nombre||'')}</b></td><td>${esc(p.telefono||'')}</td><td>${esc(p.email||'')}</td><td>${esc(p.obs||'')}</td></tr>`).join(''):`<tr><td colspan="4" style="text-align:center;color:#64748b;padding:14px">No hay pacientes que coincidan.</td></tr>`)+
+        '</tbody>';
+    }
+    const cards=ensureCards();
+    cards.innerHTML=lista.length?lista.map(p=>`<div class="pacienteMobileCard" data-paciente-id="${esc(p.id)}"><b>${esc(p.nombre||'Sin nombre')}</b><span>Teléfono: ${esc(p.telefono||'')}</span><span>Email: ${esc(p.email||'')}</span>${p.obs?`<span>Obs.: ${esc(p.obs)}</span>`:''}</div>`).join(''):'<div class="pacienteMobileCard">No hay pacientes que coincidan.</div>';
+    const info=$('pacientesSearchInfo');
+    if(info) info.textContent=q?`${lista.length} de ${total} pacientes`:`${total} pacientes`;
+  };
+  function conectar(){
+    const input=$('buscadorPacientes');
+    if(input){
+      input.removeAttribute('disabled');
+      input.style.pointerEvents='auto';
+      if(input.dataset.yneaRecuperaPacientes!=='1'){
+        input.dataset.yneaRecuperaPacientes='1';
+        ['input','keyup','change','search','paste'].forEach(ev=>input.addEventListener(ev,()=>setTimeout(()=>window.renderPatients(),0),false));
+      }
+    }
+  }
+  document.addEventListener('click',function(e){
+    const el=e.target.closest('.pacienteMobileCard,#pacientesTable tbody tr');
+    if(!el || !el.dataset.pacienteId) return;
+    if(typeof window.editarPacienteYnea==='function'){
+      e.preventDefault();
+      window.editarPacienteYnea(el.dataset.pacienteId);
+    }
+  },true);
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){
+    const r=typeof oldRenderAll==='function'?oldRenderAll.apply(this,arguments):undefined;
+    conectar();
+    try{window.renderPatients();}catch(e){console.error('renderPatients final',e);}
+    return r;
+  };
+  const oldSetView=window.setView;
+  window.setView=function(view,btn){
+    const r=typeof oldSetView==='function'?oldSetView.apply(this,arguments):undefined;
+    if(view==='pacientes') setTimeout(()=>{conectar();window.renderPatients();},50);
+    return r;
+  };
+  function init(){conectar();ensureCards();window.renderPatients();}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,true); else init();
+  setTimeout(init,300); setTimeout(init,1200);
+})();
+</script>
+
 </body>
 </html>
