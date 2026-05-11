@@ -7575,5 +7575,146 @@ header{padding-right:150px !important;}
 })();
 </script>
 
+
+
+<!-- YNEA FIX DEFINITIVO LISTADO PACIENTES 2026-05-11
+     Recupera pacientes desde memoria local + localStorage + Supabase y pinta tabla/tarjetas.
+     Se coloca al final para imponerse a todos los parches anteriores. -->
+<style id="ynea-fix-definitivo-pacientes-css">
+#pacientesSearchInfo{display:inline-block;margin-left:8px;color:#64748b;font-size:12px;white-space:nowrap}
+#pacientesCardsMobile{display:none}
+@media(max-width:700px){
+  #pacientesView .tableWrap{display:none!important}
+  #pacientesCardsMobile{display:block!important;margin-top:8px}
+  .pacienteMobileCard{display:block!important;background:#fff!important;border:1px solid #f3cfe0!important;border-radius:12px!important;padding:9px 10px!important;margin:0 0 7px!important;box-shadow:0 3px 12px rgba(15,23,42,.05)!important;overflow-wrap:anywhere!important}
+  .pacienteMobileCard b{display:block!important;font-size:14px!important;color:#111827!important;margin-bottom:3px!important;line-height:1.15!important}
+  .pacienteMobileCard span{display:block!important;font-size:11.5px!important;color:#475569!important;margin-top:2px!important;line-height:1.15!important}
+  #pacientesSearchWrap{display:flex!important;align-items:center!important;gap:6px!important;width:100%!important;margin-bottom:6px!important}
+  #buscadorPacientes{width:100%!important;min-height:34px!important;font-size:13px!important;padding:7px 9px!important;pointer-events:auto!important;background:#fff!important}
+  #pacientesSearchInfo{font-size:11px!important;margin-left:0!important}
+}
+</style>
+<script id="ynea-fix-definitivo-pacientes-js">
+(function(){
+  'use strict';
+  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
+  const TABLE='agenda_online';
+  const ID='main';
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  let loadingRemote=false;
+  let lastRemoteLoad=0;
+
+  function readJSON(key){try{const v=JSON.parse(localStorage.getItem(key)||'null'); return v&&typeof v==='object'?v:null;}catch(e){return null;}}
+  function getWinData(){try{if(typeof data!=='undefined'&&data&&typeof data==='object')return data;}catch(e){} try{if(window.data&&typeof window.data==='object')return window.data;}catch(e){} return null;}
+  function pacienteKey(p){
+    const id=String(p?.id||'').trim(); if(id) return 'id:'+id;
+    const tel=norm(p?.telefono||''); if(tel) return 'tel:'+tel;
+    const mail=norm(p?.email||''); if(mail) return 'mail:'+mail;
+    return 'nom:'+norm(p?.nombre||'');
+  }
+  function mergePacientes(){
+    const out=[]; const seen=new Set();
+    const fuentes=[getWinData(), window.yneaPacientesCache?{pacientes:window.yneaPacientesCache}:null, readJSON('agendaClinicaSemanal'), readJSON('agendaData'), readJSON('yneaPacientesBackup')].filter(Boolean);
+    fuentes.forEach(src=>{
+      (Array.isArray(src.pacientes)?src.pacientes:[]).forEach(p=>{
+        if(!p || !String(p.nombre||p.telefono||p.email||'').trim()) return;
+        const k=pacienteKey(p); if(seen.has(k)) return;
+        seen.add(k);
+        out.push({id:String(p.id||('p'+Date.now()+Math.random().toString(36).slice(2))),nombre:String(p.nombre||'').trim(),telefono:String(p.telefono||'').trim(),email:String(p.email||'').trim(),obs:String(p.obs||p.observaciones||'').trim()});
+      });
+    });
+    out.sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es',{sensitivity:'base'}));
+    return out;
+  }
+  function applyPacientesToData(pacientes){
+    if(!Array.isArray(pacientes)) pacientes=[];
+    let d=getWinData();
+    if(!d){d={profesionales:[],consultas:['Consulta 1'],tipos:['General'],duracionesTipo:{General:'10'},caracteristicasTipo:{},tiposPorProfesional:{},pacientes:[],citas:[],bloqueos:[]};}
+    d.pacientes=pacientes;
+    try{window.data=d; data=d;}catch(e){window.data=d;}
+    try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d)); localStorage.setItem('agendaData',JSON.stringify(d)); localStorage.setItem('yneaPacientesBackup',JSON.stringify({pacientes:pacientes,ts:Date.now()}));}catch(e){}
+  }
+  async function loadRemotePacientes(force){
+    if(loadingRemote) return;
+    if(!force && Date.now()-lastRemoteLoad<5000) return;
+    loadingRemote=true;
+    try{
+      const url=SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(ID)+'&select=datos,updated_at';
+      const r=await fetch(url,{method:'GET',cache:'no-store',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Cache-Control':'no-cache','Pragma':'no-cache'}});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const rows=await r.json();
+      const remote=(Array.isArray(rows)&&rows[0]&&rows[0].datos)?rows[0].datos:null;
+      if(remote && Array.isArray(remote.pacientes)){
+        window.yneaPacientesCache=remote.pacientes;
+        const merged=mergePacientes();
+        applyPacientesToData(merged);
+        paintPatients();
+      }
+      lastRemoteLoad=Date.now();
+    }catch(e){console.warn('[YNEA pacientes] no se pudo leer Supabase',e);}
+    finally{loadingRemote=false;}
+  }
+  function ensureCards(){
+    let cards=$('pacientesCardsMobile');
+    if(!cards){
+      cards=document.createElement('div'); cards.id='pacientesCardsMobile';
+      const table=$('pacientesTable'); const wrap=table&&table.closest('.tableWrap');
+      if(wrap&&wrap.parentNode) wrap.parentNode.insertBefore(cards,wrap.nextSibling); else ($('pacientesView')||document.body).appendChild(cards);
+    }
+    return cards;
+  }
+  function coincide(p,q){return !q || norm([p.nombre,p.telefono,p.email,p.obs].join(' ')).includes(q);}
+  function paintPatients(){
+    const table=$('pacientesTable');
+    const cards=ensureCards();
+    const q=norm($('buscadorPacientes')?.value||'');
+    const pacientes=mergePacientes();
+    applyPacientesToData(pacientes);
+    const lista=pacientes.filter(p=>coincide(p,q));
+    const empty=q?'No hay pacientes que coincidan.':'No hay pacientes cargados.';
+    const rows=lista.length?lista.map(p=>`<tr data-paciente-id="${esc(p.id)}"><td><b>${esc(p.nombre||'Sin nombre')}</b></td><td>${esc(p.telefono||'')}</td><td>${esc(p.email||'')}</td><td>${esc(p.obs||'')}</td></tr>`).join(''):`<tr><td colspan="4" style="text-align:center;color:#64748b;padding:14px">${empty}</td></tr>`;
+    if(table) table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+rows+'</tbody>';
+    cards.innerHTML=lista.length?lista.map(p=>`<div class="pacienteMobileCard" data-paciente-id="${esc(p.id)}"><b>${esc(p.nombre||'Sin nombre')}</b><span>Teléfono: ${esc(p.telefono||'')}</span><span>Email: ${esc(p.email||'')}</span>${p.obs?`<span>Obs.: ${esc(p.obs)}</span>`:''}</div>`).join(''):`<div class="pacienteMobileCard">${empty}</div>`;
+    const info=$('pacientesSearchInfo'); if(info) info.textContent=q?`${lista.length} de ${pacientes.length}`:`${pacientes.length} pacientes`;
+    if(!pacientes.length) loadRemotePacientes(true);
+  }
+  function conectar(){
+    const input=$('buscadorPacientes');
+    if(input){
+      input.disabled=false; input.removeAttribute('disabled'); input.style.pointerEvents='auto'; input.style.background='#fff';
+      if(input.dataset.yneaPacientesDefinitivo!=='1'){
+        input.dataset.yneaPacientesDefinitivo='1';
+        ['input','keyup','change','search','paste'].forEach(ev=>input.addEventListener(ev,()=>setTimeout(paintPatients,0),false));
+      }
+    }
+  }
+  window.renderPatients=function(){conectar(); paintPatients(); loadRemotePacientes(false);};
+  const oldSetView=window.setView;
+  window.setView=function(view,btn){
+    const r=typeof oldSetView==='function'?oldSetView.apply(this,arguments):undefined;
+    if(view==='pacientes') setTimeout(()=>{conectar(); paintPatients(); loadRemotePacientes(true);},80);
+    return r;
+  };
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){
+    const r=typeof oldRenderAll==='function'?oldRenderAll.apply(this,arguments):undefined;
+    const pv=$('pacientesView');
+    if(pv && getComputedStyle(pv).display!=='none') setTimeout(()=>{conectar(); paintPatients();},0);
+    return r;
+  };
+  document.addEventListener('click',function(e){
+    const el=e.target.closest('.pacienteMobileCard,#pacientesTable tbody tr');
+    if(!el||!el.dataset.pacienteId) return;
+    if(typeof window.editarPacienteYnea==='function'){e.preventDefault(); window.editarPacienteYnea(el.dataset.pacienteId);}
+  },true);
+  function init(){conectar(); ensureCards(); paintPatients(); loadRemotePacientes(true);}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,true); else init();
+  setTimeout(init,400); setTimeout(init,1600); setInterval(()=>{const pv=$('pacientesView'); if(pv&&getComputedStyle(pv).display!=='none') loadRemotePacientes(false);},7000);
+})();
+</script>
+
 </body>
 </html>
