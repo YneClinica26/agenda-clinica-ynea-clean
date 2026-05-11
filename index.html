@@ -7645,5 +7645,158 @@ header{padding-right:150px !important;}
 })();
 </script>
 
+
+
+<!-- ===== YNEA REPARACION REAL PACIENTES 2026-05-11: carga independiente local + Supabase ===== -->
+<style id="ynea-pacientes-rescate-css">
+  #yneaPacientesRescateBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 10px 0}
+  #yneaPacientesRescateMsg{font-size:12px;color:#64748b}
+  #yneaPacientesRescateBtn{min-width:0!important;padding:8px 10px!important;font-size:12px!important;background:#e2e8f0!important;color:#1f2937!important;border:1px solid #cbd5e1!important}
+  @media(max-width:900px){#pacientesView .tableWrap{overflow:auto!important}#pacientesTable{display:table!important;min-width:620px!important;width:100%!important}#pacientesTable thead{display:table-header-group!important}#pacientesTable tbody{display:table-row-group!important}#pacientesTable tr{display:table-row!important}#pacientesTable th,#pacientesTable td{display:table-cell!important;border:1px solid #e5e7eb!important;padding:6px!important;font-size:11px!important}}
+</style>
+<script id="ynea-pacientes-rescate-final-20260511">
+(function(){
+  'use strict';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
+  const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const norm=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const clone=x=>{try{return JSON.parse(JSON.stringify(x||{}));}catch(e){return {};}};
+  let lastPatients=[];
+
+  function canonicalPatient(p){
+    if(!p||typeof p!=='object') return null;
+    const nombre=p.nombre||p.name||p.full_name||p.paciente||p.patient||p.apellidos||'';
+    const telefono=p.telefono||p.phone||p.tel||p.movil||p.mobile||'';
+    const email=p.email||p.mail||p.correo||'';
+    const obs=p.obs||p.observaciones||p.notes||p.nota||'';
+    const id=p.id||p.uuid||('p_'+[nombre,telefono,email].map(norm).join('_'));
+    if(!String(nombre||telefono||email).trim()) return null;
+    return {id:String(id), nombre:String(nombre||'Sin nombre'), telefono:String(telefono||''), email:String(email||''), obs:String(obs||'')};
+  }
+  function keyPac(p){return norm(p.email)||norm(p.telefono)||norm(p.nombre)||String(p.id||'');}
+  function mergePatients(a,b){
+    const map=new Map();
+    [...(a||[]),...(b||[])].forEach(x=>{const p=canonicalPatient(x); if(!p)return; const k=keyPac(p); const old=map.get(k)||{}; map.set(k,Object.assign({},old,p,{id:old.id||p.id}));});
+    return Array.from(map.values()).sort((x,y)=>String(x.nombre||'').localeCompare(String(y.nombre||''),'es'));
+  }
+  function looksLikePatientsArray(arr){
+    return Array.isArray(arr) && arr.some(x=>x&&typeof x==='object'&&(x.nombre||x.name||x.telefono||x.email||x.phone));
+  }
+  function findPatientsDeep(obj, seen=new Set(), depth=0){
+    if(!obj||depth>5) return [];
+    if(typeof obj!=='object') return [];
+    if(seen.has(obj)) return [];
+    seen.add(obj);
+    let out=[];
+    if(looksLikePatientsArray(obj)) out=mergePatients(out,obj);
+    if(Array.isArray(obj)){
+      obj.forEach(x=>{out=mergePatients(out,findPatientsDeep(x,seen,depth+1));});
+    }else{
+      if(looksLikePatientsArray(obj.pacientes)) out=mergePatients(out,obj.pacientes);
+      if(obj.datos) out=mergePatients(out,findPatientsDeep(obj.datos,seen,depth+1));
+      if(obj.data) out=mergePatients(out,findPatientsDeep(obj.data,seen,depth+1));
+      if(obj.agenda) out=mergePatients(out,findPatientsDeep(obj.agenda,seen,depth+1));
+      Object.keys(obj).forEach(k=>{ if(['datos','data','agenda','pacientes'].includes(k)) return; const v=obj[k]; if(v&&typeof v==='object') out=mergePatients(out,findPatientsDeep(v,seen,depth+1)); });
+    }
+    return out;
+  }
+  function localPatients(){
+    let out=[];
+    try{ if(window.data&&Array.isArray(window.data.pacientes)) out=mergePatients(out,window.data.pacientes); }catch(e){}
+    try{ if(typeof data!=='undefined'&&data&&Array.isArray(data.pacientes)) out=mergePatients(out,data.pacientes); }catch(e){}
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        let raw=localStorage.getItem(k)||'';
+        if(!raw || (raw[0]!=='{' && raw[0]!=='[')) continue;
+        try{out=mergePatients(out,findPatientsDeep(JSON.parse(raw)));}catch(e){}
+      }
+    }catch(e){}
+    return out;
+  }
+  async function fetchSupabasePatients(){
+    const headers={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Cache-Control':'no-cache',Pragma:'no-cache'};
+    const base=SUPABASE_URL.replace(/\/+$/,'')+'/rest/v1/';
+    const urls=[
+      base+'agenda_online?id=eq.main&select=*',
+      base+'ynea_app_state?id=eq.main&select=*',
+      base+'ynea_app_state?key=eq.main&select=*',
+      base+'pacientes?select=*'
+    ];
+    let out=[];
+    for(const url of urls){
+      try{
+        const r=await fetch(url,{method:'GET',headers,cache:'no-store',mode:'cors'});
+        const text=await r.text();
+        if(!r.ok) continue;
+        let j=null; try{j=text?JSON.parse(text):null;}catch(e){continue;}
+        out=mergePatients(out,findPatientsDeep(j));
+      }catch(e){ /* sin alertas */ }
+    }
+    return out;
+  }
+  function writePatientsToData(patients){
+    patients=mergePatients(localPatients(),patients);
+    lastPatients=patients;
+    try{
+      const d=(window.data&&typeof window.data==='object')?window.data:(typeof data!=='undefined'?data:{});
+      if(!Array.isArray(d.pacientes) || patients.length>=d.pacientes.length) d.pacientes=patients;
+      window.data=d; try{data=d;}catch(e){}
+      localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d));
+      localStorage.setItem('agendaData',JSON.stringify(d));
+      localStorage.setItem('yneaLastGoodData',JSON.stringify(d));
+    }catch(e){}
+    return patients;
+  }
+  function ensureBar(){
+    const view=$('pacientesView'); if(!view) return;
+    const card=view.querySelector('.card'); if(!card) return;
+    if($('yneaPacientesRescateBar')) return;
+    const wrap=document.createElement('div');
+    wrap.id='yneaPacientesRescateBar';
+    wrap.innerHTML='<button type="button" id="yneaPacientesRescateBtn">Recargar pacientes</button><span id="yneaPacientesRescateMsg">Preparado</span>';
+    const search=$('pacientesSearchWrap');
+    if(search && search.parentNode) search.parentNode.insertBefore(wrap,search.nextSibling); else card.insertBefore(wrap,card.firstChild.nextSibling);
+    const b=$('yneaPacientesRescateBtn'); if(b) b.addEventListener('click',()=>window.yneaCargarPacientesAhora(true));
+  }
+  function setMsg(msg,bad){const el=$('yneaPacientesRescateMsg'); if(el){el.textContent=msg; el.style.color=bad?'#991b1b':'#64748b';}}
+  function renderPatientsFinal(){
+    ensureBar();
+    const table=$('pacientesTable'); if(!table) return;
+    let patients=mergePatients(lastPatients,localPatients());
+    const q=norm(($('buscadorPacientes')||{}).value||'');
+    const filtered=patients.filter(p=>!q||norm([p.nombre,p.telefono,p.email,p.obs].join(' ')).includes(q));
+    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+
+      (filtered.length?filtered.map(p=>`<tr data-paciente-id="${esc(p.id)}"><td><b>${esc(p.nombre)}</b></td><td>${esc(p.telefono)}</td><td>${esc(p.email)}</td><td>${esc(p.obs)}</td></tr>`).join(''):`<tr><td colspan="4" style="padding:16px;text-align:center;color:#991b1b">No hay pacientes cargados. Pulsa “Recargar pacientes”.</td></tr>`)+
+      '</tbody>';
+    const info=$('pacientesSearchInfo'); if(info) info.textContent=(q?filtered.length+' de ':'')+patients.length+' pacientes';
+    setMsg(patients.length?('Cargados '+patients.length+' pacientes'):'Sin pacientes cargados',!patients.length);
+  }
+  window.renderPatients=renderPatientsFinal;
+  window.yneaCargarPacientesAhora=async function(manual){
+    ensureBar(); setMsg('Cargando pacientes...',false);
+    let local=localPatients();
+    if(local.length){writePatientsToData(local); renderPatientsFinal();}
+    const remote=await fetchSupabasePatients();
+    const all=writePatientsToData(mergePatients(local,remote));
+    try{ if(typeof refreshAllSelects==='function') refreshAllSelects(); }catch(e){}
+    renderPatientsFinal();
+    if(!all.length && manual) setMsg('No encuentro pacientes ni en este equipo ni en Supabase. Revisa RLS o la tabla.',true);
+    return all;
+  };
+  const oldSetView=window.setView;
+  window.setView=function(view,btn){
+    const r=oldSetView?oldSetView.apply(this,arguments):undefined;
+    if(view==='pacientes') setTimeout(()=>window.yneaCargarPacientesAhora(false),50);
+    return r;
+  };
+  document.addEventListener('input',e=>{if(e.target&&e.target.id==='buscadorPacientes') renderPatientsFinal();},true);
+  document.addEventListener('DOMContentLoaded',()=>{ensureBar(); window.yneaCargarPacientesAhora(false);},true);
+  setTimeout(()=>{ensureBar(); window.yneaCargarPacientesAhora(false);},1200);
+})();
+</script>
+
 </body>
 </html>
