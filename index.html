@@ -7345,5 +7345,125 @@ header{padding-right:150px !important;}
 })();
 </script>
 
+
+
+<!-- ===== YNEA FIX 2026-05-11: CONSERVAR FECHA/HORA AL CREAR CITA DESDE CALENDARIO ===== -->
+<script id="ynea-fix-fecha-hora-cita-desde-calendario-20260511">
+(function(){
+  'use strict';
+  const SLOT_KEY='ynea_cita_slot_pendiente_v1';
+  const $=id=>document.getElementById(id);
+  const val=id=>String(($(id)&&$(id).value)||'').trim();
+  const setv=(id,v)=>{const el=$(id); if(el && v) el.value=String(v);};
+  function validFecha(f){return /^\d{4}-\d{2}-\d{2}$/.test(String(f||''));}
+  function validHora(h){return /^\d{2}:\d{2}$/.test(String(h||''));}
+  function guardarSlot(fecha,hora,consulta){
+    if(!validFecha(fecha) || !validHora(hora)) return;
+    const slot={fecha:String(fecha),hora:String(hora),consulta:String(consulta||''),ts:Date.now()};
+    window.__yneaSlotCitaPendiente=slot;
+    try{sessionStorage.setItem(SLOT_KEY,JSON.stringify(slot));}catch(e){}
+    setv('fechaCita',slot.fecha);
+    setv('horaCita',slot.hora);
+    if(slot.consulta && $('consultaCita')) setv('consultaCita',slot.consulta);
+  }
+  function leerSlot(){
+    let s=window.__yneaSlotCitaPendiente || null;
+    if(!s){try{s=JSON.parse(sessionStorage.getItem(SLOT_KEY)||'null');}catch(e){s=null;}}
+    if(!s || !validFecha(s.fecha) || !validHora(s.hora)) return null;
+    if(Date.now()-Number(s.ts||0)>60*60*1000) return null;
+    return s;
+  }
+  function conservarCamposActuales(){
+    const f=val('fechaCita');
+    const h=val('horaCita');
+    if(validFecha(f) && validHora(h)) guardarSlot(f,h,val('consultaCita'));
+  }
+  function restaurarSlot(forzar){
+    const s=leerSlot();
+    if(!s) return false;
+    if(forzar || !validFecha(val('fechaCita'))) setv('fechaCita',s.fecha);
+    if(forzar || !validHora(val('horaCita'))) setv('horaCita',s.hora);
+    if(s.consulta && $('consultaCita') && !val('consultaCita')) setv('consultaCita',s.consulta);
+    return true;
+  }
+  function parseOnclick(txt){
+    txt=String(txt||'');
+    let m=txt.match(/quickNewCitaConsulta\(['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*,\s*['"]?([^'"]*)['"]?\)/);
+    if(m) return {fecha:m[1],hora:m[2],consulta:m[3]||''};
+    m=txt.match(/quickNewCita\(['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\)/);
+    if(m) return {fecha:m[1],hora:m[2],consulta:''};
+    return null;
+  }
+
+  // Captura el día/hora antes de que cualquier capa antigua cambie de vista o abra modales.
+  document.addEventListener('click',function(ev){
+    const cell=ev.target && ev.target.closest ? ev.target.closest('#weekTable td.slot, #weekTable [onclick*="quickNewCita"]') : null;
+    if(!cell) return;
+    const info=parseOnclick(cell.getAttribute('onclick')||'');
+    if(info) guardarSlot(info.fecha,info.hora,info.consulta);
+  },true);
+
+  function wrapQuick(name){
+    const base=window[name];
+    if(typeof base!=='function' || base.__yneaSlotFix) return;
+    window[name]=function(fecha,hora,consulta){
+      guardarSlot(fecha,hora,consulta);
+      const r=base.apply(this,arguments);
+      setTimeout(()=>restaurarSlot(true),30);
+      setTimeout(()=>restaurarSlot(true),180);
+      return r;
+    };
+    window[name].__yneaSlotFix=true;
+  }
+  wrapQuick('quickNewCita');
+  wrapQuick('quickNewCitaConsulta');
+
+  const abrirPacienteBase=window.abrirNuevoPaciente;
+  if(typeof abrirPacienteBase==='function' && !abrirPacienteBase.__yneaSlotFix){
+    window.abrirNuevoPaciente=function(){
+      conservarCamposActuales();
+      const r=abrirPacienteBase.apply(this,arguments);
+      setTimeout(()=>restaurarSlot(false),50);
+      return r;
+    };
+    window.abrirNuevoPaciente.__yneaSlotFix=true;
+  }
+
+  const guardarPacienteBase=window.guardarNuevoPacienteModal;
+  if(typeof guardarPacienteBase==='function' && !guardarPacienteBase.__yneaSlotFix){
+    window.guardarNuevoPacienteModal=async function(){
+      conservarCamposActuales();
+      const r=await guardarPacienteBase.apply(this,arguments);
+      // Al guardar paciente desde el desplegable de una cita, algunas capas repintan y vacían fecha/hora.
+      // Las restauramos para que el siguiente Guardar Cita no diga que faltan día u hora.
+      setTimeout(()=>restaurarSlot(true),30);
+      setTimeout(()=>restaurarSlot(true),250);
+      return r;
+    };
+    window.guardarNuevoPacienteModal.__yneaSlotFix=true;
+  }
+
+  const addCitaBase=window.addCita;
+  if(typeof addCitaBase==='function' && !addCitaBase.__yneaSlotFix){
+    window.addCita=function(){
+      restaurarSlot(false);
+      if(!validFecha(val('fechaCita')) || !validHora(val('horaCita'))){
+        // Última recuperación: si la app conserva la semana visible pero perdió campos del formulario.
+        const s=leerSlot();
+        if(s) restaurarSlot(true);
+      }
+      const r=addCitaBase.apply(this,arguments);
+      return r;
+    };
+    window.addCita.__yneaSlotFix=true;
+  }
+
+  // Si el usuario toca el formulario manualmente, actualizamos la cita pendiente.
+  ['fechaCita','horaCita','consultaCita'].forEach(id=>{
+    document.addEventListener('change',function(ev){if(ev.target && ev.target.id===id) conservarCamposActuales();},true);
+  });
+})();
+</script>
+
 </body>
 </html>
