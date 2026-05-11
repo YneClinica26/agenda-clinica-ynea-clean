@@ -892,12 +892,12 @@ header{position:sticky;}
     <div class="card">
       <h2>Calendario por consulta / semana</h2>
       <div class="weekbar ynea-calendar-bar">
-        <div id="weekField" class="ynea-cal-field"><label>Semana</label><button type="button" id="yneaWeekDisplay" class="ynea-range-display" onclick="yneaOpenHiddenPicker('weekPicker')">Semana actual</button><input type="date" id="weekPicker" class="ynea-hidden-picker" onchange="setWeekFromDate(this.value)"></div>
+        <div id="weekField" class="ynea-cal-field"><label>Semana</label><button type="button" id="yneaWeekDisplay" class="ynea-range-display" onclick="yneaOpenHiddenPicker('weekPicker')">Semana actual</button><input type="date" id="weekPicker" class="ynea-hidden-picker" onchange="return yneaSemanaSet(this.value,event)"></div>
         <div id="weekConsultaField" class="ynea-cal-field"><label>Consulta</label><select id="weekConsulta" onchange="renderAll()"></select></div>
         <div id="weekProfField" class="ynea-cal-field"><label>Profesional</label><select id="weekProf" onchange="renderAll()"><option value="">Todos</option></select></div>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="moveWeek(-1)">Anterior</button>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="goThisWeek()">Actual</button>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="moveWeek(1)">Siguiente</button>
+        <button class="secondary ynea-calendar-nav" type="button" onclick="return yneaSemanaAnterior(event)">Anterior</button>
+        <button class="secondary ynea-calendar-nav" type="button" onclick="return yneaSemanaActual(event)">Actual</button>
+        <button class="secondary ynea-calendar-nav" type="button" onclick="return yneaSemanaSiguiente(event)">Siguiente</button>
       </div>
       <p class="small" id="weekTitle"></p><p class="small"><b>Uso rápido:</b> elige una consulta y haz clic en cualquier hueco vacío para crear una cita en ese día y hora.</p>
       <div class="tableWrap"><table id="weekTable"></table></div>
@@ -6829,5 +6829,325 @@ header{padding-right:150px !important;}
 })();
 </script>
 
+
+
+<!-- YNEA FIX 2026-05-08: buscador pacientes móvil/PC estable -->
+<style id="ynea-fix-buscador-pacientes-20260508-css">
+#pacientesSearchWrap{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:#fff;
+  padding-bottom:8px;
+}
+#buscadorPacientes{
+  width:100% !important;
+  display:block !important;
+  pointer-events:auto !important;
+  opacity:1 !important;
+}
+#pacientesSearchInfo{
+  display:block;
+  margin-top:6px;
+  font-size:12px;
+  color:#64748b;
+}
+@media(max-width:900px){
+  #pacientesView #pacientesSearchWrap{
+    top:54px;
+    margin-bottom:8px;
+    border-bottom:1px solid #f3cfe0;
+  }
+}
+</style>
+<script id="ynea-fix-buscador-pacientes-20260508-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  const esc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  function pacienteCoincide(p,q){
+    if(!q) return true;
+    const texto=norm([p.nombre,p.telefono,p.email,p.obs].join(' '));
+    return texto.includes(q);
+  }
+
+  window.renderPatients=function(){
+    const table=$('pacientesTable');
+    if(!table || !window.data) return;
+    const q=norm($('buscadorPacientes') ? $('buscadorPacientes').value : '');
+    const pacientes=(data.pacientes||[]).filter(p=>pacienteCoincide(p,q));
+    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+
+      pacientes.map(p=>`<tr data-paciente-id="${esc(p.id)}"><td><b>${esc(p.nombre)}</b></td><td>${esc(p.telefono)}</td><td>${esc(p.email)}</td><td>${esc(p.obs)}</td></tr>`).join('')+
+      (pacientes.length?'':'<tr><td colspan="4" style="text-align:center;color:#64748b;padding:14px">No hay pacientes que coincidan con la búsqueda.</td></tr>')+
+      '</tbody>';
+    const info=$('pacientesSearchInfo');
+    if(info){
+      info.textContent=q ? `${pacientes.length} de ${(data.pacientes||[]).length} pacientes` : `${(data.pacientes||[]).length} pacientes`;
+    }
+  };
+
+  function conectarBuscador(){
+    const input=$('buscadorPacientes');
+    if(!input || input.dataset.yneaSearchConnected==='1') return;
+    input.dataset.yneaSearchConnected='1';
+    ['input','keyup','search','change'].forEach(ev=>input.addEventListener(ev,()=>window.renderPatients(),{passive:true}));
+  }
+
+  const oldSetView=window.setView;
+  window.setView=function(view,btn){
+    const r=typeof oldSetView==='function' ? oldSetView.apply(this,arguments) : undefined;
+    if(view==='pacientes') setTimeout(()=>{conectarBuscador(); window.renderPatients(); const i=$('buscadorPacientes'); if(i) i.style.pointerEvents='auto';},50);
+    return r;
+  };
+
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){
+    const r=typeof oldRenderAll==='function' ? oldRenderAll.apply(this,arguments) : undefined;
+    conectarBuscador();
+    window.renderPatients();
+    return r;
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{conectarBuscador(); setTimeout(()=>window.renderPatients(),80);},true);
+  setTimeout(()=>{conectarBuscador(); window.renderPatients();},300);
+})();
+</script>
+
+
+
+<!-- YNEA FIX FINAL 2026-05-08: buscador pacientes móvil independiente por tarjetas -->
+<style id="ynea-fix-buscador-pacientes-movil-final-css">
+#pacientesCardsMobile{display:none;}
+@media(max-width:900px){
+  #pacientesSearchWrap{
+    position:sticky !important;
+    top:52px !important;
+    z-index:5000 !important;
+    background:#fff !important;
+    padding:8px 0 10px 0 !important;
+    margin-bottom:8px !important;
+    border-bottom:1px solid #f3cfe0 !important;
+  }
+  #buscadorPacientes{
+    display:block !important;
+    width:100% !important;
+    min-height:42px !important;
+    height:42px !important;
+    font-size:16px !important;
+    padding:9px 12px !important;
+    border:1px solid #dbe3ee !important;
+    border-radius:14px !important;
+    background:#fff !important;
+    color:#111827 !important;
+    opacity:1 !important;
+    pointer-events:auto !important;
+    -webkit-user-select:text !important;
+    user-select:text !important;
+    touch-action:auto !important;
+  }
+  #pacientesView .tableWrap{display:none !important;}
+  #pacientesCardsMobile{display:block !important;}
+  .pacienteMobileCard{
+    display:block !important;
+    width:100% !important;
+    border:1px solid #f3cfe0 !important;
+    border-radius:14px !important;
+    background:#fff !important;
+    padding:10px !important;
+    margin:0 0 8px 0 !important;
+    box-shadow:0 3px 12px rgba(15,23,42,.05) !important;
+    overflow-wrap:anywhere !important;
+  }
+  .pacienteMobileCard b{display:block;color:#111827;font-size:14px;margin-bottom:4px;}
+  .pacienteMobileCard span{display:block;color:#475569;font-size:12px;margin-top:2px;}
+  .pacienteMobileEmpty{padding:16px;text-align:center;color:#64748b;background:#fff;border:1px dashed #f3cfe0;border-radius:14px;}
+}
+</style>
+<script id="ynea-fix-buscador-pacientes-movil-final-js">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  function datos(){return window.data || (window.agendaData) || {pacientes:[]};}
+  function ensureCards(){
+    let wrap=$('pacientesCardsMobile');
+    const table=$('pacientesTable');
+    if(!wrap){
+      wrap=document.createElement('div');
+      wrap.id='pacientesCardsMobile';
+      const tableWrap=table ? table.closest('.tableWrap') : null;
+      if(tableWrap && tableWrap.parentNode) tableWrap.parentNode.insertBefore(wrap, tableWrap.nextSibling);
+      else ($('pacientesView')||document.body).appendChild(wrap);
+    }
+    return wrap;
+  }
+  function coincide(p,q){
+    if(!q) return true;
+    return norm([p.nombre,p.telefono,p.email,p.obs].join(' ')).includes(q);
+  }
+  function pintarPacientesFinal(){
+    const d=datos();
+    const q=norm($('buscadorPacientes')?.value||'');
+    const lista=(d.pacientes||[]).filter(p=>coincide(p,q));
+    const total=(d.pacientes||[]).length;
+
+    const table=$('pacientesTable');
+    if(table){
+      table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+
+        lista.map(p=>`<tr data-paciente-id="${esc(p.id)}"><td><b>${esc(p.nombre)}</b></td><td>${esc(p.telefono||'')}</td><td>${esc(p.email||'')}</td><td>${esc(p.obs||'')}</td></tr>`).join('')+
+        (lista.length?'':`<tr><td colspan="4" style="text-align:center;color:#64748b;padding:14px">No hay pacientes que coincidan.</td></tr>`)+
+        '</tbody>';
+    }
+
+    const cards=ensureCards();
+    cards.innerHTML=lista.length ? lista.map(p=>`<div class="pacienteMobileCard" data-paciente-id="${esc(p.id)}"><b>${esc(p.nombre||'Sin nombre')}</b><span>Teléfono: ${esc(p.telefono||'')}</span><span>Email: ${esc(p.email||'')}</span>${p.obs?`<span>Obs.: ${esc(p.obs)}</span>`:''}</div>`).join('') : '<div class="pacienteMobileEmpty">No hay pacientes que coincidan con la búsqueda.</div>';
+
+    const info=$('pacientesSearchInfo');
+    if(info) info.textContent = q ? `${lista.length} de ${total} pacientes` : `${total} pacientes`;
+  }
+  window.renderPatients=pintarPacientesFinal;
+
+  function conectar(){
+    const input=$('buscadorPacientes');
+    if(!input) return;
+    input.removeAttribute('disabled');
+    input.style.setProperty('pointer-events','auto','important');
+    input.style.setProperty('opacity','1','important');
+    if(input.dataset.yneaMobileFinalSearch==='1') return;
+    input.dataset.yneaMobileFinalSearch='1';
+    const handler=function(){ window.renderPatients(); };
+    ['input','keyup','change','search','paste','touchend'].forEach(ev=>input.addEventListener(ev,()=>setTimeout(handler,0),false));
+  }
+
+  document.addEventListener('click',function(e){
+    const card=e.target.closest('.pacienteMobileCard');
+    const row=e.target.closest('#pacientesTable tbody tr');
+    const el=card||row;
+    if(!el || !el.dataset.pacienteId) return;
+    if(typeof window.editarPacienteYnea==='function'){
+      e.preventDefault();
+      window.editarPacienteYnea(el.dataset.pacienteId);
+    }
+  },true);
+
+  const oldSetView=window.setView;
+  window.setView=function(view,btn){
+    const r=typeof oldSetView==='function' ? oldSetView.apply(this,arguments) : undefined;
+    if(view==='pacientes') setTimeout(()=>{conectar(); pintarPacientesFinal();},80);
+    return r;
+  };
+  const oldRenderAll=window.renderAll;
+  window.renderAll=function(){
+    const r=typeof oldRenderAll==='function' ? oldRenderAll.apply(this,arguments) : undefined;
+    conectar();
+    if($('pacientesView')) pintarPacientesFinal();
+    return r;
+  };
+  function init(){conectar(); ensureCards(); pintarPacientesFinal();}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  setTimeout(init,300);
+  setTimeout(init,1000);
+})();
+</script>
+
+
+
+
+
+<!-- YNEA FIX LIMPIO 2026-05-11: semana real sin parches acumulados -->
+<style id="ynea-fix-limpio-semana-css">
+#weekTitle.ynea-week-clean-ok{background:#fff1f7!important;border:1px solid #f3cfe0!important;border-radius:10px!important;padding:6px 8px!important;color:#9f244f!important;font-weight:700!important;}
+#weekTable[data-ynea-week-clean="1"] th{background:#fff1f7!important;color:#9f244f!important;text-align:center!important;}
+#weekTable[data-ynea-week-clean="1"] td.time{color:#9f244f!important;font-weight:800!important;}
+</style>
+<script id="ynea-fix-limpio-semana-js">
+(function(){
+  'use strict';
+  function byId(id){return document.getElementById(id)}
+  function stop(ev){try{if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}}catch(e){}}
+  function pad(n){return String(n).padStart(2,'0')}
+  function safeIso(d){try{return iso(d)}catch(e){var x=new Date(d);return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate())}}
+  function safeMonday(d){try{return monday(new Date(d))}catch(e){var x=new Date(d);var day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(12,0,0,0);return x}}
+  function safeAddDays(d,n){try{return addDays(new Date(d),n)}catch(e){var x=new Date(d);x.setDate(x.getDate()+n);return x}}
+  function getCurrentWeek(){
+    try{ if(typeof weekStart !== 'undefined' && weekStart) return safeMonday(weekStart); }catch(e){}
+    var wp=byId('weekPicker');
+    return safeMonday(wp && wp.value ? wp.value : new Date());
+  }
+  function setCurrentWeek(d){
+    var m=safeMonday(d);
+    try{ weekStart = new Date(m); }catch(e){ window.weekStart = new Date(m); }
+    var wp=byId('weekPicker'); if(wp) wp.value=safeIso(m);
+    var display=byId('yneaWeekDisplay');
+    if(display){
+      var end=safeAddDays(m,4);
+      display.textContent=pad(m.getDate())+'/'+pad(m.getMonth()+1)+' - '+pad(end.getDate())+'/'+pad(end.getMonth()+1);
+    }
+    try{localStorage.setItem('yneaSemanaVisible',safeIso(m))}catch(e){}
+    return m;
+  }
+  function paint(){
+    try{ refreshAllSelects && refreshAllSelects(); }catch(e){}
+    try{ renderWeek(); }catch(e){ try{ renderAll(); }catch(_){} }
+    var t=byId('weekTable'); if(t) t.setAttribute('data-ynea-week-clean','1');
+    var title=byId('weekTitle'); if(title) title.classList.add('ynea-week-clean-ok');
+    var m=getCurrentWeek();
+    var display=byId('yneaWeekDisplay');
+    if(display){var end=safeAddDays(m,4);display.textContent=pad(m.getDate())+'/'+pad(m.getMonth()+1)+' - '+pad(end.getDate())+'/'+pad(end.getMonth()+1);}
+  }
+  function moveWeeks(n,ev){
+    stop(ev);
+    var current=getCurrentWeek();
+    setCurrentWeek(safeAddDays(current,Number(n||0)*7));
+    paint();
+    setTimeout(paint,60);
+    return false;
+  }
+  window.yneaSemanaAnterior=function(ev){return moveWeeks(-1,ev)};
+  window.yneaSemanaSiguiente=function(ev){return moveWeeks(1,ev)};
+  window.yneaSemanaActual=function(ev){stop(ev);setCurrentWeek(new Date());paint();setTimeout(paint,60);return false};
+  window.yneaSemanaSet=function(value,ev){stop(ev);setCurrentWeek(value||new Date());paint();setTimeout(paint,60);return false};
+  try{ moveWeek=function(n){return moveWeeks(n)}; goThisWeek=function(){return window.yneaSemanaActual()}; setWeekFromDate=function(v){return window.yneaSemanaSet(v)}; }catch(e){}
+  function bind(){
+    var btns=document.querySelectorAll('#semanaView button.ynea-calendar-nav');
+    if(btns[0]) btns[0].onclick=function(ev){return moveWeeks(-1,ev)};
+    if(btns[1]) btns[1].onclick=function(ev){return window.yneaSemanaActual(ev)};
+    if(btns[2]) btns[2].onclick=function(ev){return moveWeeks(1,ev)};
+    var wp=byId('weekPicker'); if(wp) wp.onchange=function(ev){return window.yneaSemanaSet(wp.value,ev)};
+    var wc=byId('weekConsulta'); if(wc) wc.onchange=function(){paint();return false};
+    var wf=byId('weekProf'); if(wf) wf.onchange=function(){paint();return false};
+  }
+  document.addEventListener('click',function(ev){
+    var b=ev.target && ev.target.closest && ev.target.closest('#semanaView button.ynea-calendar-nav');
+    if(!b) return;
+    var arr=[].slice.call(document.querySelectorAll('#semanaView button.ynea-calendar-nav'));
+    var i=arr.indexOf(b);
+    if(i===0) return moveWeeks(-1,ev);
+    if(i===2) return moveWeeks(1,ev);
+    return window.yneaSemanaActual(ev);
+  },true);
+  var originalSetView=window.setView;
+  window.setView=function(view,btn){
+    var r;
+    try{ if(typeof originalSetView==='function') r=originalSetView.apply(this,arguments); }catch(e){}
+    bind();
+    if(view==='semana') setTimeout(paint,30);
+    return r;
+  };
+  function init(){
+    bind();
+    var saved=null; try{saved=localStorage.getItem('yneaSemanaVisible')}catch(e){}
+    var wp=byId('weekPicker');
+    if(saved) setCurrentWeek(saved); else if(wp && wp.value) setCurrentWeek(wp.value); else setCurrentWeek(new Date());
+    paint();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,true); else init();
+  setTimeout(init,250);
+  setTimeout(function(){bind();paint();},1200);
+})();
+</script>
 </body>
 </html>
