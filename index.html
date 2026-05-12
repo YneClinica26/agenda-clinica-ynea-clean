@@ -5566,5 +5566,105 @@ function pastelColorProfesional(nombre){
 })();
 </script>
 
+
+
+<!-- YNEA FIX NAVEGACION Y SINCRONIZACION 2026-05-12 -->
+<script id="ynea-fix-nav-sync-20260512">
+(function(){
+  'use strict';
+  function $(id){ return document.getElementById(id); }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function isoLocal(d){
+    const x=new Date(d); x.setHours(12,0,0,0);
+    return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate());
+  }
+  function mondayLocal(d){
+    const x=new Date(d); if(isNaN(x)) return mondayLocal(new Date());
+    const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x;
+  }
+  function addDaysLocal(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); x.setHours(0,0,0,0); return x; }
+  function renderNow(){
+    try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){ console.error('renderWeek',e); }
+    try{ if(typeof renderMonthView==='function') renderMonthView(); }catch(e){ console.error('renderMonthView',e); }
+    try{ if(typeof renderLists==='function') renderLists(); }catch(e){}
+    try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
+  }
+  function updateWeekUI(){
+    try{
+      const wp=$('weekPicker');
+      if(wp) wp.value=isoLocal(weekStart);
+      const wd=$('yneaWeekDisplay');
+      if(wd){
+        const a=weekStart, b=addDaysLocal(weekStart,4);
+        wd.textContent='Semana '+a.toLocaleDateString('es-ES')+' - '+b.toLocaleDateString('es-ES');
+      }
+    }catch(e){}
+  }
+
+  window.setWeekFromDate=function(value){
+    try{ weekStart=mondayLocal(new Date(value || Date.now())); }catch(e){ console.error(e); }
+    updateWeekUI();
+    renderNow();
+  };
+  window.moveWeek=function(n){
+    try{ weekStart=addDaysLocal(mondayLocal(weekStart || new Date()), Number(n||0)*7); }catch(e){ console.error(e); }
+    updateWeekUI();
+    renderNow();
+  };
+  window.goThisWeek=function(){
+    try{ weekStart=mondayLocal(new Date()); }catch(e){ console.error(e); }
+    updateWeekUI();
+    renderNow();
+  };
+
+  window.moveMonth=function(n){
+    const mp=$('monthPicker'); if(!mp) return;
+    const val=mp.value || (new Date().getFullYear()+'-'+pad(new Date().getMonth()+1));
+    const parts=val.split('-').map(Number);
+    const d=new Date(parts[0], (parts[1]||1)-1+Number(n||0), 1);
+    mp.value=d.getFullYear()+'-'+pad(d.getMonth()+1);
+    renderNow();
+  };
+  window.goThisMonth=function(){
+    const mp=$('monthPicker'); if(mp){ const n=new Date(); mp.value=n.getFullYear()+'-'+pad(n.getMonth()+1); }
+    renderNow();
+  };
+
+  // Sincronización más ágil entre PC y móvil sin tocar la lógica de guardado existente.
+  let fastTimer=null;
+  function fastCloudLoad(){
+    try{
+      if(document.visibilityState && document.visibilityState!=='visible') return;
+      if(window.yneaLocalPendingUntil && Date.now()<window.yneaLocalPendingUntil) return;
+      if(typeof window.yneaForceCloudLoad==='function') window.yneaForceCloudLoad();
+    }catch(e){ console.warn('sync rápida',e); }
+  }
+  function startFastSync(){
+    if(fastTimer) clearInterval(fastTimer);
+    fastTimer=setInterval(fastCloudLoad,1000);
+    setTimeout(fastCloudLoad,300);
+    setTimeout(fastCloudLoad,1200);
+  }
+  document.addEventListener('DOMContentLoaded',function(){ updateWeekUI(); renderNow(); startFastSync(); },true);
+  window.addEventListener('focus',function(){ setTimeout(fastCloudLoad,150); });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') setTimeout(fastCloudLoad,150); });
+
+  // Repintar después de cualquier guardado online/local importante.
+  ['addCita','guardarCitaDesdeEditor','eliminarCitaDesdeEditor','guardarEdicionCita','eliminarCita','guardarNuevoPacienteModal'].forEach(function(name){
+    const fn=window[name];
+    if(typeof fn==='function' && !fn.__yneaNavSyncFix){
+      window[name]=function(){
+        const r=fn.apply(this,arguments);
+        setTimeout(renderNow,80);
+        setTimeout(renderNow,500);
+        try{ if(typeof window.yneaForceCloudSave==='function') setTimeout(function(){window.yneaForceCloudSave().catch(function(){});},120); }catch(e){}
+        return r;
+      };
+      window[name].__yneaNavSyncFix=true;
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
