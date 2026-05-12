@@ -5929,5 +5929,116 @@ header{padding-right:112px!important;}
 })();
 </script>
 
+
+<!-- YNEA FIX: texto del botón Semana coincide con calendario mostrado -->
+<script id="ynea-fix-texto-semana-coincide-calendario-20260512">
+(function(){
+  function el(id){ return document.getElementById(id); }
+
+  function parseDateLocal(v){
+    if(v instanceof Date){
+      return new Date(v.getFullYear(), v.getMonth(), v.getDate());
+    }
+    if(typeof v === 'string' && v){
+      var m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+    }
+    return new Date();
+  }
+
+  function isoLocal(d){
+    var x = parseDateLocal(d);
+    return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0');
+  }
+
+  function mondayLocal(d){
+    var x = parseDateLocal(d);
+    var day = x.getDay();
+    var diff = day === 0 ? -6 : 1 - day;
+    x.setDate(x.getDate() + diff);
+    x.setHours(0,0,0,0);
+    return x;
+  }
+
+  function fmtDate(d){
+    return parseDateLocal(d).toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+
+  function semanaActualTabla(){
+    var wp = el('weekPicker');
+    var base = wp && wp.value ? mondayLocal(wp.value) : mondayLocal(new Date());
+    var end = parseDateLocal(base);
+    end.setDate(end.getDate() + 4);
+    return {start:base, end:end};
+  }
+
+  function actualizarTextoSemana(){
+    var wp = el('weekPicker');
+    var btn = el('yneaWeekDisplay');
+    var title = el('weekTitle');
+    var s = semanaActualTabla();
+
+    if(wp) wp.value = isoLocal(s.start);
+
+    var texto = fmtDate(s.start) + ' - ' + fmtDate(s.end);
+
+    if(btn){
+      btn.textContent = texto;
+      btn.title = texto;
+    }
+
+    if(title && title.textContent){
+      /* Si el título tiene rango antiguo, lo dejamos sincronizado con el mismo rango */
+      title.textContent = title.textContent.replace(
+        /Semana del .*?(?=$| ·)/,
+        'Semana del ' + fmtDate(s.start) + ' al ' + fmtDate(s.end)
+      );
+    }
+  }
+
+  var oldRenderWeek = typeof renderWeek === 'function' ? renderWeek : null;
+  if(oldRenderWeek){
+    renderWeek = function(){
+      var r = oldRenderWeek.apply(this, arguments);
+      actualizarTextoSemana();
+      return r;
+    };
+    window.renderWeek = renderWeek;
+  }
+
+  ['moveWeek','goThisWeek','setWeekFromDate'].forEach(function(fn){
+    var old = window[fn];
+    if(typeof old === 'function'){
+      window[fn] = function(){
+        var r = old.apply(this, arguments);
+        actualizarTextoSemana();
+        setTimeout(actualizarTextoSemana, 40);
+        return r;
+      };
+    }
+  });
+
+  var oldUpdate = typeof updateRangeDisplays === 'function' ? updateRangeDisplays : null;
+  if(oldUpdate){
+    updateRangeDisplays = function(){
+      var r = oldUpdate.apply(this, arguments);
+      actualizarTextoSemana();
+      return r;
+    };
+    window.updateRangeDisplays = updateRangeDisplays;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    actualizarTextoSemana();
+    setTimeout(actualizarTextoSemana, 250);
+    setTimeout(actualizarTextoSemana, 800);
+  });
+  window.addEventListener('load', function(){
+    actualizarTextoSemana();
+    setTimeout(actualizarTextoSemana, 300);
+  });
+})();
+</script>
+
 </body>
 </html>
