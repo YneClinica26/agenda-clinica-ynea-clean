@@ -4521,7 +4521,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
     if(code && saved.codigo) code.value=saved.codigo;
   }
   window.yneaOlvidarLogin=function(){clearRememberedLogin(); const c=$('yneaLoginCode'); if(c)c.value=''; const chk=$('yneaRememberLogin'); if(chk) chk.checked=false; const e=$('yneaLoginError'); if(e){e.textContent='Datos recordados eliminados de este dispositivo.'; e.style.display='block';}};
-  function renderLoginSelect(){const sel=$('yneaLoginUser'), d=dataObj(); if(!sel||!d) return; ensureAccess(); const old=sel.value; sel.innerHTML=(d.profesionales||[]).map(p=>`<option value="${esc(p)}">${esc(p)} · ${esc(ROLE_LABELS[d.accesosProfesionales[p]?.rol||'usuario'])}</option>`).join(''); if([...sel.options].some(o=>o.value===old)) sel.value=old;}
+  function renderLoginSelect(){const sel=$('yneaLoginUser'), d=dataObj(); if(!sel||!d) return; ensureAccess(); const old=sel.value; sel.innerHTML=(d.profesionales||[]).map(p=>`<option value=\"${esc(p)}\">${esc(p)}</option>`).join(''); if([...sel.options].some(o=>o.value===old)) sel.value=old;}
   async function makeLogin(){
     document.querySelectorAll('#yneaLoginOverlay').forEach(x=>x.remove());
     const div=document.createElement('div');
@@ -5567,49 +5567,47 @@ function pastelColorProfesional(nombre){
 </script>
 
 
-<!-- YNEA FIX FINAL: ocultar rol/tipo de acceso en acreditación -->
-<style id="ynea-fix-acreditacion-sin-rol-final">
-#yneaLoginOverlay option,
-#yneaLoginOverlay select option{
-  white-space:nowrap !important;
-}
-#yneaLoginOverlay .rol,
-#yneaLoginOverlay .role,
-#yneaLoginOverlay .tipoAcceso,
-#yneaLoginOverlay .accessType,
-#yneaLoginOverlay .badge,
-#yneaLoginOverlay small{
-  display:none !important;
-}
-</style>
-<script id="ynea-fix-acreditacion-sin-rol-final-js">
+
+<!-- YNEA FIX REAL: acreditación sin rol/tipo de acceso -->
+<script id="ynea-fix-real-acreditacion-solo-nombre">
 (function(){
-  function limpiarTextoRol(txt){
-    if(!txt) return txt;
-    return String(txt)
-      .replace(/\s*\((administrador|admin|recepcion|recepción|profesional|movil|móvil|usuario|total|limitado)[^)]*\)\s*$/i,'')
-      .replace(/\s*[-–—|]\s*(administrador|admin|recepcion|recepción|profesional|movil|móvil|usuario|total|limitado).*$/i,'')
+  function limpiarRolTexto(t){
+    return String(t||'')
+      .replace(/\s*[·•]\s*(Administrador|Admin|Recepción|Recepcion|Profesional|Usuario|Móvil|Movil|Limitado|Total).*$/i,'')
+      .replace(/\s*[-–—|]\s*(Administrador|Admin|Recepción|Recepcion|Profesional|Usuario|Móvil|Movil|Limitado|Total).*$/i,'')
+      .replace(/\s*\((Administrador|Admin|Recepción|Recepcion|Profesional|Usuario|Móvil|Movil|Limitado|Total)[^)]*\)\s*$/i,'')
       .trim();
   }
-  function limpiarAcreditacion(){
-    var root = document.getElementById('yneaLoginOverlay');
-    if(!root) return;
-    root.querySelectorAll('option').forEach(function(opt){
-      var limpio = limpiarTextoRol(opt.textContent);
-      if(limpio && limpio !== opt.textContent) opt.textContent = limpio;
-    });
-    root.querySelectorAll('[data-profesional-nombre], .profesionalLoginItem, .loginProfessional, .professionalOption').forEach(function(el){
-      Array.from(el.childNodes).forEach(function(n){
-        if(n.nodeType === 3){
-          var limpio = limpiarTextoRol(n.nodeValue);
-          if(limpio !== n.nodeValue) n.nodeValue = limpio;
-        }
-      });
+
+  function limpiarSelectAcreditacion(){
+    var sel=document.getElementById('yneaLoginUser');
+    if(!sel) return;
+    Array.prototype.forEach.call(sel.options,function(opt){
+      var limpio=limpiarRolTexto(opt.textContent);
+      if(limpio) opt.textContent=limpio;
     });
   }
-  document.addEventListener('DOMContentLoaded', limpiarAcreditacion);
-  window.addEventListener('load', limpiarAcreditacion);
-  setInterval(limpiarAcreditacion, 1200);
+
+  var original=window.renderLoginSelect;
+  if(typeof original==='function'){
+    window.renderLoginSelect=function(){
+      var r=original.apply(this, arguments);
+      limpiarSelectAcreditacion();
+      setTimeout(limpiarSelectAcreditacion, 50);
+      return r;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    limpiarSelectAcreditacion();
+    setTimeout(limpiarSelectAcreditacion, 300);
+    setTimeout(limpiarSelectAcreditacion, 1000);
+  });
+  window.addEventListener('load', function(){
+    limpiarSelectAcreditacion();
+    setTimeout(limpiarSelectAcreditacion, 500);
+  });
+  setInterval(limpiarSelectAcreditacion, 1000);
 })();
 </script>
 
