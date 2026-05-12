@@ -4520,7 +4520,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
     if(has) sel.value=saved.profesional;
     if(code && saved.codigo) code.value=saved.codigo;
   }
-  window.yneaOlvidarLogin=function(){clearRememberedLogin(); const c=$('yneaLoginCode'); if(c)c.value=''; const chk=$('yneaRememberLogin'); if(chk) chk.checked=false; const e=$('yneaLoginError'); if(e){e.textContent='Datos recordados eliminados de este dispositivo.'; e.style.display='block';}};
+  window.yneaOlvidarLogin=function(){clearRememberedLogin(); const c=$('yneaLoginCode'); if(c)c.value=''; const chk=$('yneaRememberLogin'); if(chk) chk.checked=false; const e=$('yneaLoginError'); if(e){e.textContent='Datos recordados eliminados.'; e.style.display='block';}};
   function renderLoginSelect(){const sel=$('yneaLoginUser'), d=dataObj(); if(!sel||!d) return; ensureAccess(); const old=sel.value; sel.innerHTML=(d.profesionales||[]).map(p=>`<option value="${esc(p)}">${esc(p)} · ${esc(ROLE_LABELS[d.accesosProfesionales[p]?.rol||'usuario'])}</option>`).join(''); if([...sel.options].some(o=>o.value===old)) sel.value=old;}
   async function makeLogin(){
     document.querySelectorAll('#yneaLoginOverlay').forEach(x=>x.remove());
@@ -4533,11 +4533,11 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
       <select id="yneaLoginUser" disabled><option value="">Cargando profesionales...</option></select>
       <label>Código de acceso</label>
       <input id="yneaLoginCode" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Código de acceso">
-      <label class="ynea-login-remember"><input id="yneaRememberLogin" type="checkbox" checked> Recordar profesional y código en este dispositivo</label>
-      <div class="ynea-login-hint">Al abrir la app quedarán preparados estos datos y solo habrá que pulsar Entrar.</div>
+      <label class="ynea-login-remember"><input id="yneaRememberLogin" type="checkbox" checked> Recordar acceso</label>
+      
       <div id="yneaLoginError" class="ynea-login-error"></div>
       <button type="button" class="ynea-login-button" id="yneaLoginBtn" disabled>Entrar</button>
-      <div class="ynea-login-mini"><span class="ynea-login-foot">Acceso privado para profesionales autorizados</span><button type="button" class="ynea-login-link" onclick="yneaOlvidarLogin()">Olvidar este dispositivo</button></div>
+      <div class="ynea-login-mini"><span class="ynea-login-foot">Acceso privado para profesionales autorizados</span><button type="button" class="ynea-login-link" onclick="yneaOlvidarLogin()">Olvidar acceso</button></div>
     </div>`;
     document.body.appendChild(div);
     const err=$('yneaLoginError');
@@ -5663,6 +5663,132 @@ function pastelColorProfesional(nombre){
       window[name].__yneaNavSyncFix=true;
     }
   });
+})();
+</script>
+
+
+
+<!-- ===== YNEA FIX UI 2026-05-12: cerrar PC/móvil, modal editar y acreditación limpia ===== -->
+<style id="ynea-fix-ui-cerrar-editor-acreditacion-20260512">
+/* Botón Cerrar siempre en esquina superior derecha, sin tapar logo/título */
+#yneaTopLogoutBackup{
+  position:fixed !important;
+  top:calc(env(safe-area-inset-top, 0px) + 10px) !important;
+  right:calc(env(safe-area-inset-right, 0px) + 10px) !important;
+  left:auto !important;
+  bottom:auto !important;
+  z-index:2147483000 !important;
+  min-width:auto !important;
+  width:auto !important;
+  max-width:92px !important;
+  min-height:34px !important;
+  height:34px !important;
+  padding:6px 10px !important;
+  border-radius:12px !important;
+  background:#ffffff !important;
+  color:#db2777 !important;
+  border:1px solid #f3cfe0 !important;
+  box-shadow:0 6px 18px rgba(15,23,42,.16) !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+header{padding-right:118px !important;}
+@media(max-width:900px){
+  header{padding-right:74px !important;}
+  #yneaTopLogoutBackup{
+    top:calc(env(safe-area-inset-top, 0px) + 6px) !important;
+    right:calc(env(safe-area-inset-right, 0px) + 6px) !important;
+    height:28px !important;
+    min-height:28px !important;
+    max-width:60px !important;
+    padding:4px 7px !important;
+    font-size:10px !important;
+    border-radius:9px !important;
+  }
+  .yneaBrandTitle .brandText{max-width:calc(100vw - 145px) !important;}
+
+  /* Modificar cita: fecha/hora nunca se solapan */
+  #editorCitaOverlay.editorCitaOverlay{
+    z-index:70000 !important;
+    padding:6px !important;
+    align-items:flex-end !important;
+  }
+  #editorCitaOverlay .editorCitaModal,
+  .editorCitaModal{
+    width:100% !important;
+    max-width:100% !important;
+    max-height:calc(100dvh - 12px) !important;
+    overflow:auto !important;
+    padding:12px 12px 112px 12px !important;
+    border-radius:18px 18px 0 0 !important;
+    box-sizing:border-box !important;
+  }
+  .editorCitaHeader{margin-bottom:8px !important;}
+  .editorCitaHeader h2{font-size:18px !important;line-height:1.15 !important;}
+  .editorCitaHeader p{display:none !important;}
+  .editorCitaGrid{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+    width:100% !important;
+  }
+  .editorCitaGrid > div,
+  .editorCitaGrid input,
+  .editorCitaGrid select,
+  #editCitaFecha,
+  #editCitaHora{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    display:block !important;
+  }
+  #editCitaFecha,#editCitaHora,#editCitaDuracion,#editCitaEstado,#editCitaPaciente,#editCitaProfesional,#editCitaConsulta,#editCitaTipo{
+    height:36px !important;
+    min-height:36px !important;
+    font-size:13px !important;
+    padding:6px 8px !important;
+  }
+  .editorCitaActions{
+    position:fixed !important;
+    left:8px !important;
+    right:8px !important;
+    bottom:8px !important;
+    z-index:71000 !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:6px !important;
+    background:#fff !important;
+    border:1px solid #ead5df !important;
+    border-radius:14px !important;
+    padding:7px !important;
+    box-shadow:0 8px 28px rgba(15,23,42,.24) !important;
+  }
+  .editorCitaActions button{width:100% !important;min-height:34px !important;}
+}
+/* Acreditación: ocultar líneas de ayuda no deseadas aunque exista caché */
+.ynea-login-hint{display:none !important;}
+</style>
+<script id="ynea-fix-ui-cerrar-editor-acreditacion-20260512-js">
+(function(){
+  function limpiarAcreditacion(){
+    try{
+      var hint=document.querySelector('.ynea-login-hint');
+      if(hint) hint.remove();
+      var remember=document.querySelector('.ynea-login-remember');
+      if(remember){
+        remember.childNodes.forEach(function(n){ if(n.nodeType===3) n.nodeValue=' Recordar acceso'; });
+      }
+      document.querySelectorAll('.ynea-login-link').forEach(function(b){
+        if((b.textContent||'').toLowerCase().includes('dispositivo')) b.textContent='Olvidar acceso';
+      });
+    }catch(e){}
+  }
+  document.addEventListener('DOMContentLoaded', limpiarAcreditacion);
+  setInterval(limpiarAcreditacion, 1200);
 })();
 </script>
 
