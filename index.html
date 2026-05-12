@@ -1276,7 +1276,7 @@ function addDays(d,n){const x=new Date(d); x.setDate(x.getDate()+n); return x}
 function fmt(d){return d.toLocaleDateString('es-ES',{weekday:'short',day:'2-digit',month:'2-digit'})}
 
 function init(){
- $("fechaCita").value=today; $("weekPicker").value=today;
+ $("fechaCita").value=today; if($("weekPicker")) $("weekPicker").value=iso(weekStart);
  if($("filtroMes")) $("filtroMes").value=today.slice(0,7);
  if($("filtroDia")) $("filtroDia").value=today;
  if($("filtroSemana")) $("filtroSemana").value=today;
@@ -1309,9 +1309,24 @@ function setView(view,btn){
  if(btn) btn.classList.add("active");
  renderAll();
 }
-function setWeekFromDate(value){weekStart=monday(new Date(value)); renderAll()}
-function moveWeek(n){weekStart=addDays(weekStart,n*7); $("weekPicker").value=iso(weekStart); renderAll()}
-function goThisWeek(){weekStart=monday(new Date()); $("weekPicker").value=today; renderAll()}
+function setWeekFromDate(value){
+ const base = value ? new Date(value + "T00:00:00") : new Date();
+ weekStart = monday(base);
+ if($("weekPicker")) $("weekPicker").value = iso(weekStart);
+ renderAll();
+}
+function moveWeek(n){
+ const picker = $("weekPicker");
+ const base = picker && picker.value ? monday(new Date(picker.value + "T00:00:00")) : weekStart;
+ weekStart = addDays(base, Number(n||0)*7);
+ if(picker) picker.value = iso(weekStart);
+ renderAll();
+}
+function goThisWeek(){
+ weekStart = monday(new Date());
+ if($("weekPicker")) $("weekPicker").value = iso(weekStart);
+ renderAll();
+}
 
 function addPaciente(){
  const nombre=$("pacNombre").value.trim(); if(!nombre){alert("Escribe el nombre del paciente.");return}
@@ -5612,260 +5627,29 @@ function pastelColorProfesional(nombre){
 </script>
 
 
-<!-- YNEA FIX UI/NAVEGACION 2026-05-12: cerrar fijo, fecha móvil, navegación semanal/mensual -->
-<style id="ynea-fix-ui-nav-20260512">
-/* Botón cerrar siempre en esquina superior derecha, sin depender del header */
-#yneaTopLogoutBackup,
-button#yneaTopLogoutBackup{
-  position:fixed !important;
-  top:calc(env(safe-area-inset-top, 0px) + 8px) !important;
-  right:calc(env(safe-area-inset-right, 0px) + 8px) !important;
-  left:auto !important;
-  bottom:auto !important;
-  z-index:2147482500 !important;
-  transform:none !important;
-  margin:0 !important;
-  width:auto !important;
-  max-width:92px !important;
-  min-width:0 !important;
-  min-height:30px !important;
-  height:auto !important;
-  padding:6px 9px !important;
-  font-size:12px !important;
-  line-height:1.1 !important;
-  white-space:nowrap !important;
-  border-radius:10px !important;
-  background:#fff !important;
-  color:#db2777 !important;
-  border:1px solid #f3cfe0 !important;
-  box-shadow:0 6px 18px rgba(15,23,42,.14) !important;
-}
 
-/* Dejar hueco al cerrar en cabecera para que no tape el título */
-header{
-  padding-right:112px !important;
+<!-- YNEA FIX CIERRE + FECHA MOVIL + SEMANA REAL 2026-05-12 -->
+<style id="ynea-fix-cierre-fecha-semana-real-20260512">
+#yneaTopLogoutBackup,button#yneaTopLogoutBackup{
+  position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 8px)!important;right:calc(env(safe-area-inset-right,0px) + 8px)!important;left:auto!important;bottom:auto!important;z-index:2147482500!important;margin:0!important;transform:none!important;width:auto!important;max-width:90px!important;min-width:0!important;min-height:30px!important;padding:6px 9px!important;font-size:12px!important;line-height:1.1!important;white-space:nowrap!important;border-radius:10px!important;background:#fff!important;color:#db2777!important;border:1px solid #f3cfe0!important;box-shadow:0 6px 18px rgba(15,23,42,.14)!important;
 }
+header{padding-right:112px!important;}
+.ynea-range-display,#yneaMonthDisplay,#yneaWeekDisplay{overflow:hidden!important;text-overflow:ellipsis!important;white-space:normal!important;line-height:1.1!important;word-break:break-word!important;min-width:0!important;max-width:100%!important;}
 @media(max-width:900px){
-  header{
-    padding-right:96px !important;
-  }
-  #yneaTopLogoutBackup,
-  button#yneaTopLogoutBackup{
-    max-width:78px !important;
-    font-size:11px !important;
-    padding:5px 7px !important;
-    top:calc(env(safe-area-inset-top, 0px) + 6px) !important;
-    right:calc(env(safe-area-inset-right, 0px) + 6px) !important;
-  }
-
-  /* Nueva/modificar cita: nada se sale de la pantalla */
-  .editorCitaOverlay,
-  #editorCitaOverlay{
-    padding:6px !important;
-    align-items:flex-end !important;
-    overflow:hidden !important;
-  }
-  .editorCitaModal,
-  #editorCitaModal,
-  #editorCitaModal .modal-content,
-  #editorCitaModal .modalCard{
-    width:100% !important;
-    max-width:100vw !important;
-    min-width:0 !important;
-    max-height:calc(100dvh - 12px) !important;
-    overflow:auto !important;
-    box-sizing:border-box !important;
-    padding-left:10px !important;
-    padding-right:10px !important;
-    padding-bottom:96px !important;
-  }
-  .editorCitaGrid,
-  #editorCitaModal .editorCitaGrid,
-  #editorCitaModal .row,
-  #editorCitaModal [class*="grid"]{
-    display:grid !important;
-    grid-template-columns:minmax(0,1fr) !important;
-    gap:8px !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-  }
-  .editorCitaModal input,
-  .editorCitaModal select,
-  .editorCitaModal textarea,
-  #editorCitaModal input,
-  #editorCitaModal select,
-  #editorCitaModal textarea{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-  }
-  .editorCitaActions,
-  #editorCitaModal .editorCitaActions{
-    position:sticky !important;
-    bottom:0 !important;
-    z-index:2147482000 !important;
-    background:#fff !important;
-    padding:8px 0 0 !important;
-    display:grid !important;
-    grid-template-columns:1fr !important;
-    gap:6px !important;
-  }
-
-  /* Botones largos del mes: que no se salga el texto */
-  .ynea-range-display,
-  #yneaMonthDisplay,
-  #yneaWeekDisplay,
-  .weekbar button{
-    min-width:0 !important;
-    max-width:100% !important;
-    width:100% !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    white-space:normal !important;
-    line-height:1.08 !important;
-    word-break:break-word !important;
-  }
-  #yneaMonthDisplay,
-  #yneaWeekDisplay{
-    font-size:10.5px !important;
-    padding:5px 4px !important;
-  }
+  header{padding-right:96px!important;}
+  #yneaTopLogoutBackup,button#yneaTopLogoutBackup{top:calc(env(safe-area-inset-top,0px) + 6px)!important;right:calc(env(safe-area-inset-right,0px) + 6px)!important;max-width:78px!important;font-size:11px!important;padding:5px 7px!important;}
+  #agendaView .grid{display:block!important;width:100%!important;max-width:100%!important;overflow:hidden!important;}
+  #agendaView .card{width:100%!important;max-width:100%!important;overflow:hidden!important;box-sizing:border-box!important;}
+  #agendaView .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:100%!important;gap:8px!important;}
+  #agendaView input,#agendaView select,#agendaView textarea,#fechaCita,#horaCita,#duracionCita{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;display:block!important;}
+  #fechaCita{font-size:16px!important;padding:8px 6px!important;}
+  .editorCitaOverlay,#editorCitaOverlay{padding:6px!important;align-items:flex-end!important;overflow:hidden!important;}
+  .editorCitaModal,#editorCitaModal{width:100%!important;max-width:100vw!important;min-width:0!important;box-sizing:border-box!important;overflow:auto!important;padding-left:10px!important;padding-right:10px!important;padding-bottom:96px!important;}
+  .editorCitaGrid,#editorCitaModal .editorCitaGrid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:100%!important;gap:8px!important;}
+  .editorCitaModal input,.editorCitaModal select,.editorCitaModal textarea,#editorCitaModal input,#editorCitaModal select,#editorCitaModal textarea{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
+  #yneaMonthDisplay,#yneaWeekDisplay{font-size:10.5px!important;padding:5px 4px!important;}
 }
 </style>
-
-<script id="ynea-fix-nav-semanal-mensual-20260512">
-(function(){
-  function $(id){return document.getElementById(id);}
-  function toDate(value){
-    if(value instanceof Date) return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-    if(typeof value === 'string' && value){
-      var m=value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if(m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
-    }
-    return new Date();
-  }
-  function isoLocal(d){
-    var x=toDate(d);
-    var y=x.getFullYear();
-    var m=String(x.getMonth()+1).padStart(2,'0');
-    var day=String(x.getDate()).padStart(2,'0');
-    return y+'-'+m+'-'+day;
-  }
-  function mondayOf(d){
-    var x=toDate(d);
-    var wd=x.getDay();
-    var diff=(wd===0 ? -6 : 1-wd);
-    x.setDate(x.getDate()+diff);
-    x.setHours(0,0,0,0);
-    return x;
-  }
-  function ensureWeekPicker(dateObj){
-    var picker=$('weekPicker');
-    var monday=mondayOf(dateObj || (picker && picker.value) || new Date());
-    if(picker) picker.value=isoLocal(monday);
-    window.currentWeekStart = monday;
-    window.weekStart = monday;
-    window.yneaCurrentWeekStart = monday;
-    try{ localStorage.setItem('yneaWeekStart', isoLocal(monday)); }catch(e){}
-    return monday;
-  }
-  function ensureMonthPicker(dateObj){
-    var picker=$('monthPicker');
-    var d=toDate(dateObj || new Date());
-    var ym=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-    if(picker) picker.value=ym;
-    return ym;
-  }
-  function callRender(){
-    var beforeWeek = $('weekPicker') ? $('weekPicker').value : '';
-    var beforeMonth = $('monthPicker') ? $('monthPicker').value : '';
-    try{
-      if(typeof window.renderAll === 'function') window.renderAll();
-    }catch(e){ console.error('renderAll error', e); }
-    /* Algunas capas antiguas pisan la fecha; la restauramos y renderizamos funciones concretas si existen */
-    if($('weekPicker') && beforeWeek) $('weekPicker').value=beforeWeek;
-    if($('monthPicker') && beforeMonth) $('monthPicker').value=beforeMonth;
-    try{ if(typeof window.renderWeek === 'function') window.renderWeek(); }catch(e){}
-    try{ if(typeof window.renderWeekly === 'function') window.renderWeekly(); }catch(e){}
-    try{ if(typeof window.renderMonth === 'function') window.renderMonth(); }catch(e){}
-    try{ if(typeof window.renderMensual === 'function') window.renderMensual(); }catch(e){}
-    try{ if(typeof window.updateRangeDisplays === 'function') window.updateRangeDisplays(); }catch(e){}
-    setTimeout(function(){
-      if($('weekPicker') && beforeWeek) $('weekPicker').value=beforeWeek;
-      if($('monthPicker') && beforeMonth) $('monthPicker').value=beforeMonth;
-      try{ if(typeof window.renderWeek === 'function') window.renderWeek(); }catch(e){}
-      try{ if(typeof window.renderAll === 'function') window.renderAll(); }catch(e){}
-      if($('weekPicker') && beforeWeek) $('weekPicker').value=beforeWeek;
-      if($('monthPicker') && beforeMonth) $('monthPicker').value=beforeMonth;
-      try{ if(typeof window.updateRangeDisplays === 'function') window.updateRangeDisplays(); }catch(e){}
-    }, 30);
-  }
-
-  window.moveWeek = function(delta){
-    var picker=$('weekPicker');
-    var base=picker && picker.value ? toDate(picker.value) : (window.currentWeekStart || window.weekStart || new Date());
-    var monday=mondayOf(base);
-    monday.setDate(monday.getDate() + (Number(delta)||0)*7);
-    ensureWeekPicker(monday);
-    callRender();
-  };
-  window.goThisWeek = function(){
-    ensureWeekPicker(new Date());
-    callRender();
-  };
-  window.setWeekFromDate = function(value){
-    ensureWeekPicker(value || new Date());
-    callRender();
-  };
-
-  window.moveMonth = function(delta){
-    var picker=$('monthPicker');
-    var base;
-    if(picker && picker.value){
-      var parts=picker.value.split('-');
-      base=new Date(Number(parts[0]), Number(parts[1])-1, 1);
-    }else{
-      base=new Date();
-    }
-    base.setMonth(base.getMonth() + (Number(delta)||0));
-    ensureMonthPicker(base);
-    callRender();
-  };
-  window.goThisMonth = function(){
-    ensureMonthPicker(new Date());
-    callRender();
-  };
-
-  document.addEventListener('click', function(ev){
-    var btn=ev.target.closest && ev.target.closest('button');
-    if(!btn) return;
-    var txt=(btn.textContent||'').trim().toLowerCase();
-    var on=(btn.getAttribute('onclick')||'').toLowerCase();
-    var inWeek=!!btn.closest('#semanaView');
-    var inMonth=!!btn.closest('#mensualView');
-    if(inWeek && (on.includes('moveweek') || on.includes('gothisweek') || txt==='anterior' || txt==='actual' || txt==='siguiente')){
-      ev.preventDefault(); ev.stopImmediatePropagation();
-      if(txt.includes('anterior') || on.includes('-1')) window.moveWeek(-1);
-      else if(txt.includes('siguiente') || on.includes('1')) window.moveWeek(1);
-      else window.goThisWeek();
-    }
-    if(inMonth && (on.includes('movemonth') || on.includes('gothismonth') || txt==='anterior' || txt==='actual' || txt==='siguiente')){
-      ev.preventDefault(); ev.stopImmediatePropagation();
-      if(txt.includes('anterior') || on.includes('-1')) window.moveMonth(-1);
-      else if(txt.includes('siguiente') || on.includes('1')) window.moveMonth(1);
-      else window.goThisMonth();
-    }
-  }, true);
-
-  document.addEventListener('DOMContentLoaded', function(){
-    ensureWeekPicker(($('weekPicker') && $('weekPicker').value) || new Date());
-    ensureMonthPicker(new Date());
-    setTimeout(function(){ try{ if(typeof window.updateRangeDisplays === 'function') window.updateRangeDisplays(); }catch(e){} }, 200);
-  });
-})();
-</script>
 
 </body>
 </html>
