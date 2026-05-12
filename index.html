@@ -4520,7 +4520,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
     if(has) sel.value=saved.profesional;
     if(code && saved.codigo) code.value=saved.codigo;
   }
-  window.yneaOlvidarLogin=function(){clearRememberedLogin(); const c=$('yneaLoginCode'); if(c)c.value=''; const chk=$('yneaRememberLogin'); if(chk) chk.checked=false; const e=$('yneaLoginError'); if(e){e.textContent='Datos recordados eliminados.'; e.style.display='block';}};
+  window.yneaOlvidarLogin=function(){clearRememberedLogin(); const c=$('yneaLoginCode'); if(c)c.value=''; const chk=$('yneaRememberLogin'); if(chk) chk.checked=false; const e=$('yneaLoginError'); if(e){e.textContent='Datos recordados eliminados de este dispositivo.'; e.style.display='block';}};
   function renderLoginSelect(){const sel=$('yneaLoginUser'), d=dataObj(); if(!sel||!d) return; ensureAccess(); const old=sel.value; sel.innerHTML=(d.profesionales||[]).map(p=>`<option value="${esc(p)}">${esc(p)} · ${esc(ROLE_LABELS[d.accesosProfesionales[p]?.rol||'usuario'])}</option>`).join(''); if([...sel.options].some(o=>o.value===old)) sel.value=old;}
   async function makeLogin(){
     document.querySelectorAll('#yneaLoginOverlay').forEach(x=>x.remove());
@@ -4533,11 +4533,11 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
       <select id="yneaLoginUser" disabled><option value="">Cargando profesionales...</option></select>
       <label>Código de acceso</label>
       <input id="yneaLoginCode" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Código de acceso">
-      <label class="ynea-login-remember"><input id="yneaRememberLogin" type="checkbox" checked> Recordar acceso</label>
-      
+      <label class="ynea-login-remember"><input id="yneaRememberLogin" type="checkbox" checked> Recordar profesional y código en este dispositivo</label>
+      <div class="ynea-login-hint">Al abrir la app quedarán preparados estos datos y solo habrá que pulsar Entrar.</div>
       <div id="yneaLoginError" class="ynea-login-error"></div>
       <button type="button" class="ynea-login-button" id="yneaLoginBtn" disabled>Entrar</button>
-      <div class="ynea-login-mini"><span class="ynea-login-foot">Acceso privado para profesionales autorizados</span><button type="button" class="ynea-login-link" onclick="yneaOlvidarLogin()">Olvidar acceso</button></div>
+      <div class="ynea-login-mini"><span class="ynea-login-foot">Acceso privado para profesionales autorizados</span><button type="button" class="ynea-login-link" onclick="yneaOlvidarLogin()">Olvidar este dispositivo</button></div>
     </div>`;
     document.body.appendChild(div);
     const err=$('yneaLoginError');
@@ -5567,227 +5567,48 @@ function pastelColorProfesional(nombre){
 </script>
 
 
-
-<!-- YNEA FIX NAVEGACION Y SINCRONIZACION 2026-05-12 -->
-<script id="ynea-fix-nav-sync-20260512">
-(function(){
-  'use strict';
-  function $(id){ return document.getElementById(id); }
-  function pad(n){ return String(n).padStart(2,'0'); }
-  function isoLocal(d){
-    const x=new Date(d); x.setHours(12,0,0,0);
-    return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate());
-  }
-  function mondayLocal(d){
-    const x=new Date(d); if(isNaN(x)) return mondayLocal(new Date());
-    const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x;
-  }
-  function addDaysLocal(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); x.setHours(0,0,0,0); return x; }
-  function renderNow(){
-    try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){ console.error('renderWeek',e); }
-    try{ if(typeof renderMonthView==='function') renderMonthView(); }catch(e){ console.error('renderMonthView',e); }
-    try{ if(typeof renderLists==='function') renderLists(); }catch(e){}
-    try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
-  }
-  function updateWeekUI(){
-    try{
-      const wp=$('weekPicker');
-      if(wp) wp.value=isoLocal(weekStart);
-      const wd=$('yneaWeekDisplay');
-      if(wd){
-        const a=weekStart, b=addDaysLocal(weekStart,4);
-        wd.textContent='Semana '+a.toLocaleDateString('es-ES')+' - '+b.toLocaleDateString('es-ES');
-      }
-    }catch(e){}
-  }
-
-  window.setWeekFromDate=function(value){
-    try{ weekStart=mondayLocal(new Date(value || Date.now())); }catch(e){ console.error(e); }
-    updateWeekUI();
-    renderNow();
-  };
-  window.moveWeek=function(n){
-    try{ weekStart=addDaysLocal(mondayLocal(weekStart || new Date()), Number(n||0)*7); }catch(e){ console.error(e); }
-    updateWeekUI();
-    renderNow();
-  };
-  window.goThisWeek=function(){
-    try{ weekStart=mondayLocal(new Date()); }catch(e){ console.error(e); }
-    updateWeekUI();
-    renderNow();
-  };
-
-  window.moveMonth=function(n){
-    const mp=$('monthPicker'); if(!mp) return;
-    const val=mp.value || (new Date().getFullYear()+'-'+pad(new Date().getMonth()+1));
-    const parts=val.split('-').map(Number);
-    const d=new Date(parts[0], (parts[1]||1)-1+Number(n||0), 1);
-    mp.value=d.getFullYear()+'-'+pad(d.getMonth()+1);
-    renderNow();
-  };
-  window.goThisMonth=function(){
-    const mp=$('monthPicker'); if(mp){ const n=new Date(); mp.value=n.getFullYear()+'-'+pad(n.getMonth()+1); }
-    renderNow();
-  };
-
-  // Sincronización más ágil entre PC y móvil sin tocar la lógica de guardado existente.
-  let fastTimer=null;
-  function fastCloudLoad(){
-    try{
-      if(document.visibilityState && document.visibilityState!=='visible') return;
-      if(window.yneaLocalPendingUntil && Date.now()<window.yneaLocalPendingUntil) return;
-      if(typeof window.yneaForceCloudLoad==='function') window.yneaForceCloudLoad();
-    }catch(e){ console.warn('sync rápida',e); }
-  }
-  function startFastSync(){
-    if(fastTimer) clearInterval(fastTimer);
-    fastTimer=setInterval(fastCloudLoad,1000);
-    setTimeout(fastCloudLoad,300);
-    setTimeout(fastCloudLoad,1200);
-  }
-  document.addEventListener('DOMContentLoaded',function(){ updateWeekUI(); renderNow(); startFastSync(); },true);
-  window.addEventListener('focus',function(){ setTimeout(fastCloudLoad,150); });
-  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') setTimeout(fastCloudLoad,150); });
-
-  // Repintar después de cualquier guardado online/local importante.
-  ['addCita','guardarCitaDesdeEditor','eliminarCitaDesdeEditor','guardarEdicionCita','eliminarCita','guardarNuevoPacienteModal'].forEach(function(name){
-    const fn=window[name];
-    if(typeof fn==='function' && !fn.__yneaNavSyncFix){
-      window[name]=function(){
-        const r=fn.apply(this,arguments);
-        setTimeout(renderNow,80);
-        setTimeout(renderNow,500);
-        try{ if(typeof window.yneaForceCloudSave==='function') setTimeout(function(){window.yneaForceCloudSave().catch(function(){});},120); }catch(e){}
-        return r;
-      };
-      window[name].__yneaNavSyncFix=true;
-    }
-  });
-})();
-</script>
-
-
-
-<!-- ===== YNEA FIX UI 2026-05-12: cerrar PC/móvil, modal editar y acreditación limpia ===== -->
-<style id="ynea-fix-ui-cerrar-editor-acreditacion-20260512">
-/* Botón Cerrar siempre en esquina superior derecha, sin tapar logo/título */
-#yneaTopLogoutBackup{
-  position:fixed !important;
-  top:calc(env(safe-area-inset-top, 0px) + 10px) !important;
-  right:calc(env(safe-area-inset-right, 0px) + 10px) !important;
-  left:auto !important;
-  bottom:auto !important;
-  z-index:2147483000 !important;
-  min-width:auto !important;
-  width:auto !important;
-  max-width:92px !important;
-  min-height:34px !important;
-  height:34px !important;
-  padding:6px 10px !important;
-  border-radius:12px !important;
-  background:#ffffff !important;
-  color:#db2777 !important;
-  border:1px solid #f3cfe0 !important;
-  box-shadow:0 6px 18px rgba(15,23,42,.16) !important;
-  font-size:12px !important;
-  line-height:1 !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
+<!-- YNEA FIX FINAL: ocultar rol/tipo de acceso en acreditación -->
+<style id="ynea-fix-acreditacion-sin-rol-final">
+#yneaLoginOverlay option,
+#yneaLoginOverlay select option{
+  white-space:nowrap !important;
 }
-header{padding-right:118px !important;}
-@media(max-width:900px){
-  header{padding-right:74px !important;}
-  #yneaTopLogoutBackup{
-    top:calc(env(safe-area-inset-top, 0px) + 6px) !important;
-    right:calc(env(safe-area-inset-right, 0px) + 6px) !important;
-    height:28px !important;
-    min-height:28px !important;
-    max-width:60px !important;
-    padding:4px 7px !important;
-    font-size:10px !important;
-    border-radius:9px !important;
-  }
-  .yneaBrandTitle .brandText{max-width:calc(100vw - 145px) !important;}
-
-  /* Modificar cita: fecha/hora nunca se solapan */
-  #editorCitaOverlay.editorCitaOverlay{
-    z-index:70000 !important;
-    padding:6px !important;
-    align-items:flex-end !important;
-  }
-  #editorCitaOverlay .editorCitaModal,
-  .editorCitaModal{
-    width:100% !important;
-    max-width:100% !important;
-    max-height:calc(100dvh - 12px) !important;
-    overflow:auto !important;
-    padding:12px 12px 112px 12px !important;
-    border-radius:18px 18px 0 0 !important;
-    box-sizing:border-box !important;
-  }
-  .editorCitaHeader{margin-bottom:8px !important;}
-  .editorCitaHeader h2{font-size:18px !important;line-height:1.15 !important;}
-  .editorCitaHeader p{display:none !important;}
-  .editorCitaGrid{
-    display:grid !important;
-    grid-template-columns:1fr !important;
-    gap:8px !important;
-    width:100% !important;
-  }
-  .editorCitaGrid > div,
-  .editorCitaGrid input,
-  .editorCitaGrid select,
-  #editCitaFecha,
-  #editCitaHora{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-    display:block !important;
-  }
-  #editCitaFecha,#editCitaHora,#editCitaDuracion,#editCitaEstado,#editCitaPaciente,#editCitaProfesional,#editCitaConsulta,#editCitaTipo{
-    height:36px !important;
-    min-height:36px !important;
-    font-size:13px !important;
-    padding:6px 8px !important;
-  }
-  .editorCitaActions{
-    position:fixed !important;
-    left:8px !important;
-    right:8px !important;
-    bottom:8px !important;
-    z-index:71000 !important;
-    display:grid !important;
-    grid-template-columns:1fr !important;
-    gap:6px !important;
-    background:#fff !important;
-    border:1px solid #ead5df !important;
-    border-radius:14px !important;
-    padding:7px !important;
-    box-shadow:0 8px 28px rgba(15,23,42,.24) !important;
-  }
-  .editorCitaActions button{width:100% !important;min-height:34px !important;}
+#yneaLoginOverlay .rol,
+#yneaLoginOverlay .role,
+#yneaLoginOverlay .tipoAcceso,
+#yneaLoginOverlay .accessType,
+#yneaLoginOverlay .badge,
+#yneaLoginOverlay small{
+  display:none !important;
 }
-/* Acreditación: ocultar líneas de ayuda no deseadas aunque exista caché */
-.ynea-login-hint{display:none !important;}
 </style>
-<script id="ynea-fix-ui-cerrar-editor-acreditacion-20260512-js">
+<script id="ynea-fix-acreditacion-sin-rol-final-js">
 (function(){
+  function limpiarTextoRol(txt){
+    if(!txt) return txt;
+    return String(txt)
+      .replace(/\s*\((administrador|admin|recepcion|recepción|profesional|movil|móvil|usuario|total|limitado)[^)]*\)\s*$/i,'')
+      .replace(/\s*[-–—|]\s*(administrador|admin|recepcion|recepción|profesional|movil|móvil|usuario|total|limitado).*$/i,'')
+      .trim();
+  }
   function limpiarAcreditacion(){
-    try{
-      var hint=document.querySelector('.ynea-login-hint');
-      if(hint) hint.remove();
-      var remember=document.querySelector('.ynea-login-remember');
-      if(remember){
-        remember.childNodes.forEach(function(n){ if(n.nodeType===3) n.nodeValue=' Recordar acceso'; });
-      }
-      document.querySelectorAll('.ynea-login-link').forEach(function(b){
-        if((b.textContent||'').toLowerCase().includes('dispositivo')) b.textContent='Olvidar acceso';
+    var root = document.getElementById('yneaLoginOverlay');
+    if(!root) return;
+    root.querySelectorAll('option').forEach(function(opt){
+      var limpio = limpiarTextoRol(opt.textContent);
+      if(limpio && limpio !== opt.textContent) opt.textContent = limpio;
+    });
+    root.querySelectorAll('[data-profesional-nombre], .profesionalLoginItem, .loginProfessional, .professionalOption').forEach(function(el){
+      Array.from(el.childNodes).forEach(function(n){
+        if(n.nodeType === 3){
+          var limpio = limpiarTextoRol(n.nodeValue);
+          if(limpio !== n.nodeValue) n.nodeValue = limpio;
+        }
       });
-    }catch(e){}
+    });
   }
   document.addEventListener('DOMContentLoaded', limpiarAcreditacion);
+  window.addEventListener('load', limpiarAcreditacion);
   setInterval(limpiarAcreditacion, 1200);
 })();
 </script>
