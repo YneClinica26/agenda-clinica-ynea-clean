@@ -8165,5 +8165,176 @@ header{padding-right:150px !important;}
 })();
 </script>
 
+
+
+<!-- YNEA FIX REAL EDITAR / ELIMINAR CITAS 2026-05-12: usa la variable global real `data`, no window.data -->
+<style id="ynea-fix-real-editor-citas-css-20260512">
+#editorCitaOverlay{z-index:950000!important;}
+#editorCitaOverlay .editorCitaModal{z-index:950001!important;}
+#editorCitaOverlay .editorCitaActions{z-index:950002!important;}
+@media(max-width:900px){
+  #editorCitaOverlay{align-items:flex-end!important;padding:8px!important;}
+  #editorCitaOverlay .editorCitaModal{width:100%!important;max-height:calc(100dvh - 16px)!important;overflow:auto!important;padding-bottom:110px!important;border-radius:20px 20px 0 0!important;}
+  #editorCitaOverlay .editorCitaActions{position:sticky!important;bottom:0!important;background:#fff!important;padding:10px 0!important;display:grid!important;grid-template-columns:1fr!important;gap:8px!important;}
+  #editorCitaOverlay .editorCitaActions button{width:100%!important;min-height:42px!important;}
+}
+</style>
+<script id="ynea-fix-real-editor-citas-js-20260512">
+(function(){
+  'use strict';
+  function $(id){return document.getElementById(id);}
+  function D(){
+    try{
+      if(typeof data === 'undefined' || !data){ window.data = window.data || {citas:[],pacientes:[],profesionales:[],consultas:[],tipos:[],tiposPorProfesional:{},duracionesTipo:{}}; return window.data; }
+      if(!Array.isArray(data.citas)) data.citas=[];
+      if(!Array.isArray(data.pacientes)) data.pacientes=[];
+      if(!Array.isArray(data.profesionales)) data.profesionales=[];
+      if(!Array.isArray(data.consultas)) data.consultas=[];
+      if(!Array.isArray(data.tipos)) data.tipos=[];
+      data.tiposPorProfesional=data.tiposPorProfesional||{};
+      data.duracionesTipo=data.duracionesTipo||{};
+      return data;
+    }catch(e){ window.data = window.data || {citas:[],pacientes:[],profesionales:[],consultas:[],tipos:[],tiposPorProfesional:{},duracionesTipo:{}}; return window.data; }
+  }
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});}
+  function setVal(id,v){var x=$(id); if(x) x.value = v==null ? '' : String(v);}
+  function setOptions(id, arr, valFn, labFn){
+    var s=$(id); if(!s) return;
+    s.innerHTML=(arr||[]).map(function(x){var v=valFn?valFn(x):x; var l=labFn?labFn(x):x; return '<option value="'+esc(v)+'">'+esc(l)+'</option>';}).join('');
+  }
+  function horasDisponibles(){
+    try{ if(Array.isArray(horas) && horas.length) return horas; }catch(e){}
+    var out=[]; for(var h=8;h<=21;h++){ for(var m=0;m<60;m+=10){ out.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')); } } return out;
+  }
+  function tiposPermitidos(prof){
+    var d=D(), todos=(d.tipos||[]).filter(Boolean), mapa=d.tiposPorProfesional||{};
+    if(prof && Object.prototype.hasOwnProperty.call(mapa,prof) && Array.isArray(mapa[prof]) && mapa[prof].length){
+      var permitidos=mapa[prof].filter(function(t){return !todos.length || todos.indexOf(t)>=0;});
+      return permitidos.length ? permitidos : todos;
+    }
+    return todos;
+  }
+  function mostrarError(msg){var b=$('editorCitaError'); if(b){b.textContent=msg;b.style.display='block';} else alert(msg);}
+  function limpiarError(){var b=$('editorCitaError'); if(b){b.textContent='';b.style.display='none';}}
+  function citaById(id){return (D().citas||[]).find(function(c){return String(c.id)===String(id);});}
+  function refrescarTipos(tipoPreferido){
+    var prof=$('editCitaProfesional') ? $('editCitaProfesional').value : '';
+    var tipos=tiposPermitidos(prof);
+    setOptions('editCitaTipo', tipos);
+    var sel=$('editCitaTipo'); if(!sel) return;
+    if(tipoPreferido && tipos.indexOf(tipoPreferido)>=0) sel.value=tipoPreferido;
+    else if(sel.options.length) sel.selectedIndex=0;
+    aplicarDuracion();
+  }
+  function aplicarDuracion(){
+    var d=D(), sel=$('editCitaTipo'), dur=$('editCitaDuracion');
+    if(sel && dur && d.duracionesTipo && d.duracionesTipo[sel.value]) dur.value=String(d.duracionesTipo[sel.value]);
+  }
+  async function guardarTodo(){
+    var d=D();
+    try{ localStorage.setItem('agendaClinicaSemanal', JSON.stringify(d)); }catch(e){console.warn(e);}
+    try{ if(typeof save==='function') save(); }catch(e){console.warn(e);}
+    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){console.warn('Supabase:',e);}
+  }
+  function repintar(){
+    try{ if(typeof renderAll==='function') renderAll(); }catch(e){console.warn(e);}
+    try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){}
+    try{ if(typeof renderMonth==='function') renderMonth(); }catch(e){}
+    try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
+  }
+  window.refrescarTiposEditorCita=function(tipoActual){refrescarTipos(tipoActual);};
+  window.aplicarDuracionTipoEditor=function(){aplicarDuracion();};
+  window.cerrarEditorCita=function(){var ov=$('editorCitaOverlay'); if(ov) ov.style.display='none'; document.body.classList.remove('ynea-editor-open');};
+  window.abrirEditorCita=function(id){
+    var d=D(), c=citaById(id);
+    if(!c){ alert('No se ha encontrado la cita seleccionada.'); return; }
+    limpiarError();
+    setOptions('editCitaHora', horasDisponibles());
+    setOptions('editCitaPaciente', d.pacientes||[], function(p){return p.id;}, function(p){return p.nombre || ('Paciente '+p.id);});
+    setOptions('editCitaProfesional', d.profesionales||[]);
+    setOptions('editCitaConsulta', d.consultas||[]);
+    setVal('editCitaId', c.id);
+    setVal('editCitaFecha', c.fecha);
+    setVal('editCitaHora', c.hora);
+    setVal('editCitaDuracion', c.duracion || '10');
+    setVal('editCitaEstado', c.estado || 'Pendiente');
+    setVal('editCitaPaciente', c.pacienteId);
+    setVal('editCitaProfesional', c.profesional);
+    setVal('editCitaConsulta', c.consulta);
+    refrescarTipos(c.tipo);
+    setVal('editCitaTipo', c.tipo);
+    aplicarDuracion();
+    setVal('editCitaObs', c.obs || c.observaciones || '');
+    var ov=$('editorCitaOverlay'); if(ov) ov.style.display='flex';
+    document.body.classList.add('ynea-editor-open');
+  };
+  window.editCita=function(id){window.abrirEditorCita(id);};
+  window.guardarCitaDesdeEditor=async function(){
+    limpiarError();
+    var id=$('editCitaId') ? $('editCitaId').value : '';
+    var c=citaById(id);
+    if(!c){mostrarError('No se ha encontrado la cita para guardar.');return;}
+    var nueva={
+      id:c.id,
+      fecha:($('editCitaFecha')||{}).value||'',
+      hora:($('editCitaHora')||{}).value||'',
+      duracion:($('editCitaDuracion')||{}).value||'10',
+      estado:($('editCitaEstado')||{}).value||'Pendiente',
+      pacienteId:($('editCitaPaciente')||{}).value||'',
+      profesional:($('editCitaProfesional')||{}).value||'',
+      consulta:($('editCitaConsulta')||{}).value||'',
+      tipo:($('editCitaTipo')||{}).value||'',
+      obs:($('editCitaObs')||{}).value||'',
+      updatedAt:new Date().toISOString()
+    };
+    if(!nueva.fecha || !nueva.hora || !nueva.pacienteId || !nueva.profesional){mostrarError('Faltan datos obligatorios: fecha, hora, paciente o profesional.');return;}
+    Object.assign(c,nueva);
+    await guardarTodo();
+    window.cerrarEditorCita();
+    repintar(); setTimeout(repintar,120); setTimeout(repintar,500);
+  };
+  window.guardarEdicionCita=window.guardarCitaDesdeEditor;
+  window.eliminarCitaDesdeEditor=async function(){
+    var id=$('editCitaId') ? $('editCitaId').value : '';
+    if(!id){alert('No se ha encontrado la cita para eliminar.');return;}
+    if(!confirm('¿Eliminar esta cita?')) return;
+    var d=D();
+    var antes=(d.citas||[]).length;
+    d.citas=(d.citas||[]).filter(function(c){return String(c.id)!==String(id);});
+    if(d.citas.length===antes){alert('No se pudo eliminar: la cita no aparece en la lista actual.');return;}
+    await guardarTodo();
+    window.cerrarEditorCita();
+    repintar(); setTimeout(repintar,120); setTimeout(repintar,500);
+  };
+  window.eliminarCita=window.eliminarCitaDesdeEditor;
+  function idDesdeElemento(ap){
+    if(!ap) return '';
+    var id=ap.getAttribute('data-cita-id') || (ap.dataset && ap.dataset.citaId) || '';
+    if(id) return id;
+    var oc=ap.getAttribute('onclick')||'';
+    var m=oc.match(/abrirEditorCita\(([^)]+)\)/) || oc.match(/editCita\(([^)]+)\)/);
+    if(m) return String(m[1]).replace(/["'`]/g,'').trim();
+    return '';
+  }
+  function instalar(){
+    var prof=$('editCitaProfesional');
+    if(prof && !prof.__yneaRealFix){prof.__yneaRealFix=true;prof.addEventListener('change',function(){refrescarTipos('');});}
+    var tipo=$('editCitaTipo');
+    if(tipo && !tipo.__yneaRealFix){tipo.__yneaRealFix=true;tipo.addEventListener('change',aplicarDuracion);}
+    if(!document.__yneaClickEditorRealFix){
+      document.__yneaClickEditorRealFix=true;
+      document.addEventListener('click',function(ev){
+        var ap=ev.target && ev.target.closest && ev.target.closest('.appt,[data-cita-id]');
+        if(!ap) return;
+        var id=idDesdeElemento(ap);
+        if(id){ev.preventDefault();ev.stopPropagation();window.abrirEditorCita(id);}
+      },true);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',instalar); else instalar();
+  setTimeout(instalar,300); setTimeout(instalar,1200); setTimeout(instalar,2500);
+})();
+</script>
+
 </body>
 </html>
