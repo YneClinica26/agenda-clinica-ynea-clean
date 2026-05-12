@@ -4398,7 +4398,7 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   const STORAGE_URL='yneaSupabaseUrl';
   const STORAGE_KEY='yneaSupabaseAnonKey';
   const ACCESS_FLAG='yneaAccessConfigured';
-  const DEFAULT_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const DEFAULT_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const DEFAULT_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const ROLE_LABELS={usuario:'Usuario profesional',recepcion:'Recepción',admin:'Administrador'};
   const ROLE_ALLOWED={usuario:['semana','mensual','pacientes','agenda'],recepcion:['semana','mensual','pacientes','agenda','bloqueos'],admin:['semana','mensual','pacientes','agenda','config','bloqueos','listados','infoDiaria','avisos','copias']};
@@ -4959,7 +4959,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 <script id="ynea-sync-duro-final">
 (function(){
   'use strict';
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLE='agenda_online';
   const ID='main';
@@ -6043,7 +6043,7 @@ function pastelColorProfesional(nombre){
 (function(){
   'use strict';
 
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLE='agenda_online';
   const ID='main';
@@ -7529,7 +7529,7 @@ header{padding-right:150px !important;}
 <script id="ynea-fix-real-pacientes-supabase-url-20260511">
 (function(){
   'use strict';
-  const CORRECT_SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const CORRECT_SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const TABLE='agenda_online';
   const ID='main';
   const KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
@@ -7657,7 +7657,7 @@ header{padding-right:150px !important;}
 <script id="ynea-pacientes-rescate-final-20260511">
 (function(){
   'use strict';
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const $=id=>document.getElementById(id);
   const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -7808,7 +7808,7 @@ header{padding-right:150px !important;}
 <script id="ynea-fix-error-supabase-pacientes-js-20260511">
 (function(){
   'use strict';
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLES=['agenda_online','ynea_app_state','pacientes'];
   const $=id=>document.getElementById(id);
@@ -8378,7 +8378,7 @@ header{padding-right:150px !important;}
 <script id="ynea-fix-final-edicion-sync-20260512">
 (function(){
   'use strict';
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLE='agenda_online';
   const ID='main';
@@ -8480,6 +8480,158 @@ header{padding-right:150px !important;}
   }
   const mo=new MutationObserver(markModals); document.addEventListener('DOMContentLoaded',function(){['editorCitaOverlay','nuevoPacienteOverlay'].forEach(id=>{const el=$(id); if(el)mo.observe(el,{attributes:true,attributeFilter:['style','class']});}); markModals(); setInterval(markModals,500); setInterval(()=>loadCloudNow(false),3500);},true);
   window.addEventListener('focus',()=>setTimeout(()=>loadCloudNow(false),250)); document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(()=>loadCloudNow(false),250)});
+})();
+</script>
+
+
+
+<!-- YNEA FIX DEFINITIVO 2026-05-12: edición/eliminación estable + Supabase correcto + modal móvil visible -->
+<style id="ynea-final-real-fix-css-20260512">
+#yneaTopLogoutBackup{position:fixed!important;top:10px!important;right:10px!important;left:auto!important;z-index:2147482000!important;}
+@media(max-width:900px){
+  body.ynea-modal-paciente-open, body.ynea-modal-cita-open{overflow:hidden!important;}
+  body.ynea-modal-paciente-open .mobileBottomNav,
+  body.ynea-modal-paciente-open .weekbar,
+  body.ynea-modal-cita-open .mobileBottomNav,
+  body.ynea-modal-cita-open .weekbar{display:none!important;pointer-events:none!important;}
+  #nuevoPacienteOverlay,#editorCitaOverlay{position:fixed!important;inset:0!important;z-index:2147483000!important;padding:0!important;background:rgba(15,23,42,.55)!important;align-items:flex-end!important;justify-content:center!important;}
+  #nuevoPacienteOverlay .nuevoPacienteModal,#editorCitaOverlay .editorCitaModal{width:100vw!important;max-width:100vw!important;height:calc(100dvh - 8px)!important;max-height:calc(100dvh - 8px)!important;overflow:auto!important;border-radius:18px 18px 0 0!important;padding:12px 12px 126px 12px!important;background:#fff!important;position:relative!important;}
+  #nuevoPacienteOverlay .nuevoPacienteActions,#editorCitaOverlay .editorCitaActions{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:2147483600!important;background:#fff!important;border-top:1px solid #ead5df!important;box-shadow:0 -10px 30px rgba(15,23,42,.22)!important;margin:0!important;padding:10px calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left))!important;display:grid!important;gap:8px!important;}
+  #nuevoPacienteOverlay .nuevoPacienteActions{grid-template-columns:1fr 1fr!important;}
+  #editorCitaOverlay .editorCitaActions{grid-template-columns:1fr 1fr 1fr!important;}
+  #nuevoPacienteOverlay .nuevoPacienteActions button,#editorCitaOverlay .editorCitaActions button{width:100%!important;min-width:0!important;height:48px!important;min-height:48px!important;font-size:14px!important;padding:6px!important;border-radius:12px!important;}
+}
+</style>
+<script id="ynea-final-real-fix-js-20260512">
+(function(){
+  'use strict';
+  const SUPABASE_URL='https://vadovhwjoxghubceffpn.supabase.co';
+  const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
+  const TABLE='ynea_app_state';
+  const ROW_ID='ynea-main';
+  function $(id){return document.getElementById(id);}
+  function txt(v){return String(v==null?'':v).trim();}
+  function escapeHtml(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function D(){
+    let d;
+    try{ d=data; }catch(e){ d=window.data; }
+    if(!d || typeof d!=='object') d={};
+    ['profesionales','consultas','tipos','pacientes','citas','bloqueos'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];});
+    if(!d.duracionesTipo || typeof d.duracionesTipo!=='object')d.duracionesTipo={};
+    if(!d.tiposPorProfesional || typeof d.tiposPorProfesional!=='object')d.tiposPorProfesional={};
+    try{ data=d; }catch(e){} window.data=d;
+    return d;
+  }
+  function setD(d){try{data=d;}catch(e){} window.data=d; return d;}
+  function saveLocal(){const d=D(); try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d));localStorage.setItem('agendaData',JSON.stringify(d));}catch(e){} return d;}
+  async function saveCloud(){
+    const d=saveLocal();
+    const headers={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=representation','Cache-Control':'no-cache'};
+    const body=JSON.stringify({id:ROW_ID,datos:d,updated_at:new Date().toISOString()});
+    const res=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?on_conflict=id',{method:'POST',headers,cache:'no-store',body});
+    if(!res.ok){throw new Error(await res.text().catch(()=>String(res.status)));}
+    return true;
+  }
+  async function loadCloud(){
+    const headers={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Cache-Control':'no-cache'};
+    const res=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(ROW_ID)+'&select=datos,updated_at',{method:'GET',headers,cache:'no-store'});
+    if(!res.ok)return false;
+    const rows=await res.json().catch(()=>[]);
+    if(Array.isArray(rows)&&rows[0]&&rows[0].datos){setD(rows[0].datos); saveLocal(); repaint(); return true;}
+    return false;
+  }
+  let saveTimer=null;
+  function saveFast(){clearTimeout(saveTimer); saveLocal(); saveTimer=setTimeout(()=>saveCloud().catch(e=>console.warn('[YNEA Supabase]',e)),100);}
+  function repaint(){
+    try{if(typeof refreshAllSelects==='function')refreshAllSelects();}catch(e){}
+    try{if(typeof renderAll==='function')renderAll();}catch(e){}
+    try{if(typeof renderPatients==='function')renderPatients();}catch(e){}
+  }
+  function fill(id, arr, value, label){
+    const el=$(id); if(!el)return;
+    const old=el.value;
+    el.innerHTML=(arr||[]).map(x=>{const v=typeof x==='object'?x[value]:x; const l=typeof x==='object'?x[label]:x; return '<option value="'+escapeHtml(v)+'">'+escapeHtml(l)+'</option>';}).join('');
+    if(old && Array.from(el.options).some(o=>o.value===old)) el.value=old;
+  }
+  function tiposParaProf(prof){
+    const d=D(); const todos=d.tipos||[]; const mapa=d.tiposPorProfesional||{};
+    if(prof && Object.prototype.hasOwnProperty.call(mapa,prof)){const a=Array.isArray(mapa[prof])?mapa[prof]:[]; return a.length?a:todos;}
+    return todos;
+  }
+  function duracionPorTipo(tipo){const d=D(); return d.duracionesTipo&&d.duracionesTipo[tipo]?d.duracionesTipo[tipo]:null;}
+  function setModalClasses(){
+    const np=$('nuevoPacienteOverlay'), ed=$('editorCitaOverlay');
+    document.body.classList.toggle('ynea-modal-paciente-open',!!(np && getComputedStyle(np).display!=='none'));
+    document.body.classList.toggle('ynea-modal-cita-open',!!(ed && getComputedStyle(ed).display!=='none'));
+  }
+  window.refrescarTiposEditorCita=function(tipoActual){
+    const prof=$('editCitaProfesional')?$('editCitaProfesional').value:'';
+    fill('editCitaTipo',tiposParaProf(prof));
+    if(tipoActual && Array.from(($('editCitaTipo')||{}).options||[]).some(o=>o.value===tipoActual)) $('editCitaTipo').value=tipoActual;
+    const tipo=$('editCitaTipo')?$('editCitaTipo').value:''; const dur=duracionPorTipo(tipo); if(dur && $('editCitaDuracion'))$('editCitaDuracion').value=dur;
+  };
+  window.aplicarDuracionTipoEditor=function(){const tipo=$('editCitaTipo')?$('editCitaTipo').value:''; const dur=duracionPorTipo(tipo); if(dur && $('editCitaDuracion'))$('editCitaDuracion').value=dur;};
+  window.abrirEditorCita=function(id){
+    const d=D(); const c=(d.citas||[]).find(x=>String(x.id)===String(id)); if(!c){alert('No se encuentra la cita.');return;}
+    fill('editCitaHora',typeof horas!=='undefined'?horas:[]); fill('editCitaPaciente',d.pacientes||[],'id','nombre'); fill('editCitaProfesional',d.profesionales||[]); fill('editCitaConsulta',d.consultas||[]);
+    if($('editCitaId'))$('editCitaId').value=c.id; if($('editCitaFecha'))$('editCitaFecha').value=c.fecha||''; if($('editCitaHora'))$('editCitaHora').value=c.hora||''; if($('editCitaDuracion'))$('editCitaDuracion').value=c.duracion||'10'; if($('editCitaEstado'))$('editCitaEstado').value=c.estado||'Pendiente'; if($('editCitaPaciente'))$('editCitaPaciente').value=c.pacienteId||''; if($('editCitaProfesional'))$('editCitaProfesional').value=c.profesional||''; if($('editCitaConsulta'))$('editCitaConsulta').value=c.consulta||''; window.refrescarTiposEditorCita(c.tipo||''); if($('editCitaTipo'))$('editCitaTipo').value=c.tipo||$('editCitaTipo').value; if($('editCitaObs'))$('editCitaObs').value=c.obs||c.observaciones||'';
+    const ov=$('editorCitaOverlay'); if(ov)ov.style.display='flex'; setTimeout(setModalClasses,0);
+  };
+  window.editCita=window.abrirEditorCita;
+  function editorCitaObj(){return {id:txt($('editCitaId')&&$('editCitaId').value)||Date.now(),fecha:txt($('editCitaFecha')&&$('editCitaFecha').value),hora:txt($('editCitaHora')&&$('editCitaHora').value),duracion:txt($('editCitaDuracion')&&$('editCitaDuracion').value)||'10',estado:txt($('editCitaEstado')&&$('editCitaEstado').value)||'Pendiente',pacienteId:txt($('editCitaPaciente')&&$('editCitaPaciente').value),profesional:txt($('editCitaProfesional')&&$('editCitaProfesional').value),consulta:txt($('editCitaConsulta')&&$('editCitaConsulta').value),tipo:txt($('editCitaTipo')&&$('editCitaTipo').value),obs:txt($('editCitaObs')&&$('editCitaObs').value)};}
+  function minutes(h){const p=String(h||'0:0').split(':').map(Number); return (p[0]||0)*60+(p[1]||0);}
+  function solapa(c){const d=D(); const s=minutes(c.hora), e=s+Number(c.duracion||10); return (d.citas||[]).some(x=>String(x.id)!==String(c.id)&&x.fecha===c.fecha&&x.profesional===c.profesional&&s<minutes(x.hora)+Number(x.duracion||10)&&e>minutes(x.hora));}
+  window.guardarCitaDesdeEditor=async function(){
+    const d=D(); const c=editorCitaObj();
+    if(!c.fecha||!c.hora||!c.pacienteId||!c.profesional){alert('Faltan datos obligatorios: fecha, hora, paciente o profesional.');return;}
+    if(solapa(c) && !confirm('Existe otra cita solapada para ese profesional. ¿Guardar igualmente?'))return;
+    const i=d.citas.findIndex(x=>String(x.id)===String(c.id)); if(i>=0)d.citas[i]=Object.assign({},d.citas[i],c); else d.citas.push(c);
+    setD(d); saveLocal(); const ov=$('editorCitaOverlay'); if(ov)ov.style.display='none'; setModalClasses(); repaint();
+    try{await saveCloud();}catch(e){alert('Guardado local realizado, pero Supabase no ha confirmado todavía: '+(e.message||e));}
+    repaint();
+  };
+  window.eliminarCitaDesdeEditor=async function(){
+    const id=txt($('editCitaId')&&$('editCitaId').value); if(!id){alert('No se ha encontrado la cita.');return;} if(!confirm('¿Eliminar esta cita?'))return;
+    const d=D(); d.citas=(d.citas||[]).filter(c=>String(c.id)!==String(id)); setD(d); saveLocal(); const ov=$('editorCitaOverlay'); if(ov)ov.style.display='none'; setModalClasses(); repaint();
+    try{await saveCloud();}catch(e){alert('Eliminada en este dispositivo, pero Supabase no ha confirmado todavía: '+(e.message||e));}
+    repaint();
+  };
+  window.cerrarEditorCita=function(){const ov=$('editorCitaOverlay'); if(ov)ov.style.display='none'; setTimeout(setModalClasses,0);};
+  window.abrirNuevoPaciente=function(){const ov=$('nuevoPacienteOverlay'); if(ov)ov.style.display='flex'; setTimeout(setModalClasses,0);};
+  window.cerrarNuevoPaciente=function(){const ov=$('nuevoPacienteOverlay'); if(ov)ov.style.display='none'; setTimeout(setModalClasses,0);};
+  window.guardarNuevoPacienteModal=async function(){
+    const d=D(); const nombre=txt($('npNombre')&&$('npNombre').value), telefono=txt($('npTelefono')&&$('npTelefono').value), email=txt($('npEmail')&&$('npEmail').value), obs=txt($('npObs')&&$('npObs').value);
+    if(!nombre){alert('El nombre del paciente es obligatorio.');return false;} if(!telefono){alert('El teléfono es obligatorio.');return false;} if(!email){alert('El email es obligatorio.');return false;}
+    const n=nombre.toLowerCase(), t=telefono.replace(/\s+/g,''), em=email.toLowerCase();
+    const dup=(d.pacientes||[]).find(p=>String(p.nombre||'').trim().toLowerCase()===n || String(p.telefono||'').replace(/\s+/g,'')===t || String(p.email||'').trim().toLowerCase()===em);
+    if(dup){alert('No se puede duplicar paciente. Ya existe: '+(dup.nombre||'Sin nombre')+'\nTeléfono: '+(dup.telefono||'-')+'\nEmail: '+(dup.email||'-'));return false;}
+    const p={id:'p'+Date.now(),nombre,telefono,email,obs}; d.pacientes.push(p); setD(d); saveLocal();
+    try{if(typeof refreshAllSelects==='function')refreshAllSelects();}catch(e){} if($('pacienteCita'))$('pacienteCita').value=p.id; try{if(typeof seleccionarPacienteCita==='function')seleccionarPacienteCita(p.id);}catch(e){}
+    ['npNombre','npTelefono','npEmail','npObs'].forEach(id=>{if($(id))$(id).value='';}); window.cerrarNuevoPaciente(); repaint();
+    try{await saveCloud();}catch(e){alert('Paciente guardado localmente, pero Supabase no ha confirmado todavía: '+(e.message||e));}
+    return true;
+  };
+  function pacienteSeleccionado(){try{if(typeof pacienteSeleccionadoParaCita==='function')return pacienteSeleccionadoParaCita();}catch(e){} return txt($('pacienteCita')&&$('pacienteCita').value);}
+  window.addCita=async function(){
+    const d=D(); const c={id:Date.now(),fecha:txt($('fechaCita')&&$('fechaCita').value),hora:txt($('horaCita')&&$('horaCita').value),duracion:txt($('duracionCita')&&$('duracionCita').value)||'10',pacienteId:pacienteSeleccionado(),profesional:txt($('profesionalCita')&&$('profesionalCita').value),consulta:txt($('consultaCita')&&$('consultaCita').value),tipo:txt($('tipoCita')&&$('tipoCita').value),estado:txt($('estadoCita')&&$('estadoCita').value)||'Pendiente',obs:txt($('obsCita')&&$('obsCita').value)};
+    if(!c.fecha||!c.hora||!c.pacienteId||c.pacienteId==='__nuevo__'){alert('Falta fecha, hora o paciente.');return false;} if(!c.profesional){alert('Falta profesional.');return false;}
+    if(solapa(c)&&!confirm('Existe otra cita solapada para ese profesional. ¿Guardar igualmente?'))return false;
+    d.citas.push(c); setD(d); saveLocal(); try{weekStart=monday(new Date(c.fecha)); if($('weekPicker'))$('weekPicker').value=c.fecha;}catch(e){} repaint();
+    try{if(typeof setView==='function')setView('semana');}catch(e){}
+    try{await saveCloud();}catch(e){alert('Cita guardada localmente, pero Supabase no ha confirmado todavía: '+(e.message||e));}
+    return true;
+  };
+  window.renderWeek=function(){
+    const d=D(); const prof=$('weekProf')?$('weekProf').value:''; const consulta=$('weekConsulta')?$('weekConsulta').value:'';
+    let ws; try{ws=weekStart;}catch(e){ws=new Date();} const days=[0,1,2,3,4].map(n=>addDays(ws,n));
+    if($('weekTitle'))$('weekTitle').textContent=(consulta?('Consulta: '+consulta):'Todas las consultas')+' · Semana del '+days[0].toLocaleDateString('es-ES')+' al '+days[4].toLocaleDateString('es-ES');
+    let html='<thead><tr><th>Hora</th>'+days.map(x=>'<th>'+escapeHtml(fmt(x))+'</th>').join('')+'</tr></thead><tbody>';
+    (typeof horas!=='undefined'?horas:[]).forEach(h=>{html+='<tr><td class="time">'+escapeHtml(h)+'</td>'; days.forEach(day=>{const fecha=iso(day); const citas=(d.citas||[]).filter(c=>c.fecha===fecha&&c.hora===h&&(!prof||c.profesional===prof)&&(!consulta||c.consulta===consulta)); if(citas[0]){const c=citas[0]; const p=(d.pacientes||[]).find(x=>String(x.id)===String(c.pacienteId))||{}; html+='<td class="slot"><div class="appt" data-cita-id="'+escapeHtml(c.id)+'" onclick="event.stopPropagation();abrirEditorCita(\''+escapeHtml(String(c.id))+'\')"><strong>'+escapeHtml(p.nombre||'')+'</strong><span>'+escapeHtml(c.profesional||'')+'</span><span>'+escapeHtml((c.tipo||'')+' · '+(c.duracion||'')+' min · '+(c.consulta||''))+'</span><span class="badge">'+escapeHtml(c.estado||'')+'</span></div></td>'; }else{html+='<td class="slot" onclick="quickNewCitaConsulta(\''+fecha+'\',\''+h+'\',\''+escapeHtml(consulta)+'\')" style="cursor:pointer;color:#94a3b8;text-align:center;vertical-align:middle">+ Añadir</td>';}}); html+='</tr>';}); html+='</tbody>'; if($('weekTable'))$('weekTable').innerHTML=html;
+  };
+  window.yneaForceCloudSave=saveCloud; window.yneaForceCloudLoad=loadCloud;
+  document.addEventListener('change',function(ev){if(ev.target&&ev.target.id==='editCitaProfesional')window.refrescarTiposEditorCita(''); if(ev.target&&ev.target.id==='editCitaTipo')window.aplicarDuracionTipoEditor();},true);
+  document.addEventListener('click',function(ev){const ap=ev.target&&ev.target.closest&&ev.target.closest('[data-cita-id]'); if(ap){ev.preventDefault();ev.stopPropagation();window.abrirEditorCita(ap.getAttribute('data-cita-id'));}},true);
+  document.addEventListener('DOMContentLoaded',function(){setInterval(setModalClasses,300); loadCloud().catch(()=>{});},true);
 })();
 </script>
 
