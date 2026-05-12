@@ -6198,5 +6198,223 @@ header{padding-right:112px!important;}
 })();
 </script>
 
+
+<!-- YNEA FIX FINAL: buscador móvil pacientes real + semana sin año PC/móvil -->
+<style id="ynea-fix-pacientes-search-real-css">
+@media(max-width:900px){
+  #pacientesView input,
+  #pacientesView input[type="search"],
+  #pacientesView input[type="text"]{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+  }
+  #pacientesTable tbody tr.yneaPacienteOculto,
+  #pacientesView .yneaPacienteOculto{
+    display:none !important;
+  }
+  #yneaWeekDisplay{
+    white-space:nowrap !important;
+    font-size:11px !important;
+  }
+}
+#yneaWeekDisplay{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+</style>
+
+<script id="ynea-fix-pacientes-search-real-js">
+(function(){
+  function norm(v){
+    return String(v||'')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .trim();
+  }
+
+  function q(sel, root){ return (root||document).querySelector(sel); }
+  function qa(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+
+  function getPacientesView(){ return document.getElementById('pacientesView'); }
+
+  function getSearchInput(){
+    var view = getPacientesView();
+    if(!view) return null;
+
+    var exact = document.getElementById('buscadorPacientes')
+      || document.getElementById('pacientesSearch')
+      || document.getElementById('pacientesSearchInput')
+      || document.getElementById('buscarPaciente')
+      || document.getElementById('pacienteSearch');
+
+    if(exact && view.contains(exact)) return exact;
+
+    var inputs = qa('input', view).filter(function(inp){
+      var id = norm(inp.id);
+      var ph = norm(inp.getAttribute('placeholder'));
+      var type = norm(inp.type);
+      return type !== 'hidden' && (
+        id.includes('busc') || id.includes('search') || ph.includes('buscar') || ph.includes('paciente')
+      );
+    });
+
+    return inputs[0] || null;
+  }
+
+  function filaTexto(row){
+    var raw = row.getAttribute('data-ynea-search-text') || row.textContent || '';
+    return norm(raw);
+  }
+
+  function filtrarPacientes(){
+    var view = getPacientesView();
+    if(!view) return;
+
+    var input = getSearchInput();
+    if(!input) return;
+
+    var term = norm(input.value);
+    var rows = qa('#pacientesTable tbody tr', view);
+    var cards = qa('.pacienteCard, .paciente-card, [data-paciente-card]', view);
+
+    rows.forEach(function(row){
+      var visible = !term || filaTexto(row).includes(term);
+      row.classList.toggle('yneaPacienteOculto', !visible);
+      row.style.display = visible ? '' : 'none';
+    });
+
+    cards.forEach(function(card){
+      var visible = !term || filaTexto(card).includes(term);
+      card.classList.toggle('yneaPacienteOculto', !visible);
+      card.style.display = visible ? '' : 'none';
+    });
+  }
+
+  function conectar(){
+    var input = getSearchInput();
+    if(!input) return;
+
+    input.removeEventListener('input', filtrarPacientes);
+    input.removeEventListener('keyup', filtrarPacientes);
+    input.removeEventListener('change', filtrarPacientes);
+    input.removeEventListener('search', filtrarPacientes);
+
+    input.addEventListener('input', filtrarPacientes);
+    input.addEventListener('keyup', filtrarPacientes);
+    input.addEventListener('change', filtrarPacientes);
+    input.addEventListener('search', filtrarPacientes);
+
+    filtrarPacientes();
+  }
+
+  function fmtNoYear(d){
+    return d.toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'});
+  }
+
+  function parseLocal(v){
+    if(v instanceof Date) return new Date(v.getFullYear(), v.getMonth(), v.getDate());
+    if(typeof v === 'string'){
+      var m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+    }
+    return new Date();
+  }
+
+  function monday(d){
+    var x = parseLocal(d);
+    var day = x.getDay();
+    var diff = day === 0 ? -6 : 1-day;
+    x.setDate(x.getDate()+diff);
+    x.setHours(0,0,0,0);
+    return x;
+  }
+
+  function semanaSinAnio(){
+    var btn = document.getElementById('yneaWeekDisplay');
+    var picker = document.getElementById('weekPicker');
+    if(!btn) return;
+
+    var base = picker && picker.value ? monday(picker.value) : monday(new Date());
+    var fin = new Date(base.getFullYear(), base.getMonth(), base.getDate()+4);
+    var texto = fmtNoYear(base) + ' - ' + fmtNoYear(fin);
+
+    btn.textContent = texto;
+    btn.title = texto;
+  }
+
+  function postRender(){
+    conectar();
+    filtrarPacientes();
+    semanaSinAnio();
+  }
+
+  var oldRenderAll = window.renderAll;
+  if(typeof oldRenderAll === 'function'){
+    window.renderAll = function(){
+      var r = oldRenderAll.apply(this, arguments);
+      setTimeout(postRender, 30);
+      setTimeout(postRender, 200);
+      return r;
+    };
+  }
+
+  var oldRenderLists = window.renderLists;
+  if(typeof oldRenderLists === 'function'){
+    window.renderLists = function(){
+      var r = oldRenderLists.apply(this, arguments);
+      setTimeout(postRender, 30);
+      return r;
+    };
+  }
+
+  ['renderPacientes','moveWeek','goThisWeek','setWeekFromDate','updateRangeDisplays','renderWeek'].forEach(function(name){
+    var old = window[name] || (typeof window[name] === 'function' ? window[name] : null);
+    if(typeof old === 'function'){
+      window[name] = function(){
+        var r = old.apply(this, arguments);
+        setTimeout(postRender, 20);
+        setTimeout(semanaSinAnio, 120);
+        return r;
+      };
+      try{
+        if(name in window) eval(name + ' = window[name]');
+      }catch(e){}
+    }
+  });
+
+  document.addEventListener('input', function(e){
+    var input = getSearchInput();
+    if(input && e.target === input) filtrarPacientes();
+  }, true);
+
+  document.addEventListener('click', function(){
+    setTimeout(postRender, 80);
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(postRender, 100);
+    setTimeout(postRender, 500);
+    setTimeout(postRender, 1200);
+  });
+
+  window.addEventListener('load', function(){
+    postRender();
+    setTimeout(postRender, 500);
+    setTimeout(postRender, 1500);
+  });
+
+  setInterval(function(){
+    conectar();
+    semanaSinAnio();
+  }, 1000);
+
+  window.yneaFiltrarPacientes = filtrarPacientes;
+})();
+</script>
+
 </body>
 </html>
