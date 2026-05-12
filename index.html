@@ -5651,5 +5651,190 @@ header{padding-right:112px!important;}
 }
 </style>
 
+
+<!-- YNEA FIX DEFINITIVO: semanal usa weekStart real + fecha móvil no se sale -->
+<style id="ynea-fix-fecha-movil-definitivo-20260512">
+@media(max-width:900px){
+  html, body{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:hidden !important;
+  }
+
+  #agendaView,
+  #agendaView .grid,
+  #agendaView .card,
+  #editorCitaOverlay,
+  #editorCitaOverlay .editorCitaModal,
+  .editorCitaOverlay,
+  .editorCitaModal{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    overflow-x:hidden !important;
+  }
+
+  #agendaView .row,
+  #editorCitaOverlay .row,
+  .editorCitaGrid{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    gap:8px !important;
+  }
+
+  #fechaCita,
+  #editCitaFecha,
+  input[type="date"],
+  input[type="month"],
+  select,
+  textarea{
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  #agendaView input[type="date"],
+  #editorCitaOverlay input[type="date"]{
+    max-width:calc(100vw - 38px) !important;
+    -webkit-appearance:none !important;
+    appearance:none !important;
+  }
+
+  #agendaView .card{
+    padding-left:10px !important;
+    padding-right:10px !important;
+  }
+
+  #agendaView label,
+  #editorCitaOverlay label{
+    max-width:100% !important;
+    overflow:hidden !important;
+  }
+}
+</style>
+
+<script id="ynea-fix-semanal-weekstart-real-definitivo-20260512">
+(function(){
+  function el(id){ return document.getElementById(id); }
+
+  function parseLocalDate(v){
+    if(v instanceof Date){
+      return new Date(v.getFullYear(), v.getMonth(), v.getDate());
+    }
+    if(typeof v === 'string' && v){
+      var m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+    }
+    return new Date();
+  }
+
+  function isoLocal(d){
+    var x = parseLocalDate(d);
+    return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0');
+  }
+
+  function mondayLocal(d){
+    var x = parseLocalDate(d);
+    var day = x.getDay();
+    var diff = day === 0 ? -6 : 1 - day;
+    x.setDate(x.getDate() + diff);
+    x.setHours(0,0,0,0);
+    return x;
+  }
+
+  function setRealWeekStart(d){
+    var m = mondayLocal(d);
+    /*
+      IMPORTANTE:
+      La tabla semanal original NO usa window.weekStart.
+      Usa la variable global interna weekStart.
+      Por eso asignamos a weekStart directamente y también a window.weekStart.
+    */
+    try { weekStart = m; } catch(e) {}
+    try { window.weekStart = m; } catch(e) {}
+    try { window.currentWeekStart = m; } catch(e) {}
+    var picker = el('weekPicker');
+    if(picker) picker.value = isoLocal(m);
+    return m;
+  }
+
+  function repintarSemana(){
+    try{
+      if(typeof renderWeek === 'function') renderWeek();
+      else if(typeof window.renderWeek === 'function') window.renderWeek();
+    }catch(e){ console.error('renderWeek', e); }
+
+    try{
+      if(typeof updateRangeDisplays === 'function') updateRangeDisplays();
+      else if(typeof window.updateRangeDisplays === 'function') window.updateRangeDisplays();
+    }catch(e){}
+
+    try{
+      if(typeof renderMonthView === 'function') renderMonthView();
+    }catch(e){}
+
+    setTimeout(function(){
+      try{
+        if(typeof renderWeek === 'function') renderWeek();
+        else if(typeof window.renderWeek === 'function') window.renderWeek();
+      }catch(e){}
+      try{
+        if(typeof updateRangeDisplays === 'function') updateRangeDisplays();
+        else if(typeof window.updateRangeDisplays === 'function') window.updateRangeDisplays();
+      }catch(e){}
+    }, 40);
+  }
+
+  window.moveWeek = function(n){
+    var picker = el('weekPicker');
+    var base;
+    try { base = typeof weekStart !== 'undefined' ? weekStart : null; } catch(e) { base = null; }
+    if(picker && picker.value) base = parseLocalDate(picker.value);
+    if(!base) base = new Date();
+    var m = mondayLocal(base);
+    m.setDate(m.getDate() + (Number(n)||0) * 7);
+    setRealWeekStart(m);
+    repintarSemana();
+  };
+
+  window.goThisWeek = function(){
+    setRealWeekStart(new Date());
+    repintarSemana();
+  };
+
+  window.setWeekFromDate = function(value){
+    setRealWeekStart(value || new Date());
+    repintarSemana();
+  };
+
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest && ev.target.closest('button');
+    if(!btn || !btn.closest('#semanaView')) return;
+    var txt = (btn.textContent || '').trim().toLowerCase();
+    var onclick = (btn.getAttribute('onclick') || '').toLowerCase();
+    if(!(onclick.includes('moveweek') || onclick.includes('gothisweek') || txt === 'anterior' || txt === 'actual' || txt === 'siguiente')) return;
+
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
+    if(txt.includes('anterior') || onclick.includes('-1')) window.moveWeek(-1);
+    else if(txt.includes('siguiente') || onclick.includes('1')) window.moveWeek(1);
+    else window.goThisWeek();
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var picker = el('weekPicker');
+    setRealWeekStart((picker && picker.value) ? picker.value : new Date());
+    setTimeout(repintarSemana, 150);
+  });
+})();
+</script>
+
 </body>
 </html>
