@@ -4970,30 +4970,22 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 
 
 
-<!-- YNEA SYNC SEGURA ANTI-BORRADO 2026-05-13: Supabase primero, nunca sobrescribir con datos vacíos -->
-<script id="ynea-sync-segura-anti-borrado">
+<!-- YNEA SYNC DURO FINAL 2026-05-07: Supabase manda siempre -->
+<script id="ynea-sync-duro-final">
 (function(){
   'use strict';
   const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLE='agenda_online';
   const ID='main';
-
   let applying=false;
   let saving=false;
-  let cloudLoaded=false;
   let lastJson='';
-  let lastRemoteUpdatedAt='';
   let timer=null;
 
   function $(id){return document.getElementById(id)}
   function clone(x){try{return JSON.parse(JSON.stringify(x||{}))}catch(e){return {}}}
   function uniq(a){return Array.from(new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean)))}
-  function hasRealData(d){
-    d=d||{};
-    return (Array.isArray(d.pacientes) && d.pacientes.length>0) ||
-           (Array.isArray(d.citas) && d.citas.length>0);
-  }
   function normalize(d){
     d=d&&typeof d==='object'?clone(d):{};
     d.profesionales=uniq(d.profesionales||[]);
@@ -5010,10 +5002,7 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
     Object.keys(d.tiposPorProfesional).forEach(p=>{if(!d.profesionales.includes(p))delete d.tiposPorProfesional[p]});
     return d;
   }
-  function localData(){
-    try{return normalize(window.data||data||{})}catch(e){}
-    try{return normalize(JSON.parse(localStorage.getItem('agendaClinicaSemanal')||'{}'))}catch(e){return normalize({})}
-  }
+  function localData(){try{return normalize(window.data||data||{})}catch(e){} try{return normalize(JSON.parse(localStorage.getItem('agendaClinicaSemanal')||'{}'))}catch(e){return normalize({})}}
   function applyData(d){
     d=normalize(d); applying=true;
     try{window.data=d; data=d}catch(e){window.data=d}
@@ -5034,71 +5023,21 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
     let url=SUPABASE_URL+'/rest/v1/'+TABLE;
     let opt={method,headers,cache:'no-store'};
     if(method==='GET'){url+='?id=eq.'+encodeURIComponent(ID)+'&select=id,datos,updated_at';}
+    else if(method==='PATCH'){url+='?id=eq.'+encodeURIComponent(ID); headers['Prefer']='return=representation'; opt.body=JSON.stringify(body);}
     else {headers['Prefer']='resolution=merge-duplicates,return=representation'; url+='?on_conflict=id'; opt.body=JSON.stringify(body);}
     const r=await fetch(url,opt); const txt=await r.text(); let j=null; try{j=txt?JSON.parse(txt):null}catch(e){}
     if(!r.ok)throw new Error((j&&(j.message||j.error))||txt||('HTTP '+r.status));
     return j;
   }
-  async function readCloudRow(){
+  async function loadCloud(){
     const rows=await req('GET');
-    if(Array.isArray(rows)&&rows[0]){
-      return {data:normalize(rows[0].datos||{}), updated_at:rows[0].updated_at||''};
-    }
-    return null;
+    if(Array.isArray(rows)&&rows[0])return normalize(rows[0].datos||{});
+    const d=localData(); await saveCloud(d,true); return d;
   }
-  async function initialCloudLoad(){
+  async function saveCloud(d,silent){
+    if(applying)return;
+    d=normalize(d||localData()); saving=true;
     try{
-      const row=await readCloudRow();
-      const local=localData();
-      if(row){
-        cloudLoaded=true;
-        lastRemoteUpdatedAt=row.updated_at||'';
-        lastJson=JSON.stringify(row.data);
-        // Supabase manda al abrir. Así un móvil nuevo no pisa la nube con datos vacíos.
-        applyData(row.data);
-        render();
-        status('Sincronizado online · '+new Date().toLocaleTimeString('es-ES'),false);
-        return;
-      }
-      // Si todavía no existe fila online, solo se crea si este dispositivo tiene pacientes o citas reales.
-      cloudLoaded=true;
-      if(hasRealData(local)){
-        await saveCloud(local,true,{allowCreate:true});
-        status('Datos iniciales subidos a Supabase',false);
-      }else{
-        status('Online preparado. No se suben datos vacíos.',false);
-      }
-    }catch(e){
-      cloudLoaded=false;
-      status('ERROR online: '+(e.message||e),true);
-    }
-  }
-  async function saveCloud(d,silent,opts){
-    opts=opts||{};
-    if(applying || saving)return;
-    d=normalize(d||localData());
-
-    // PROTECCIÓN 1: antes de leer Supabase, no se permite guardar.
-    if(!cloudLoaded && !opts.allowCreate){
-      console.warn('[YNEA ONLINE] Guardado bloqueado: aún no se ha leído Supabase.');
-      return;
-    }
-    // PROTECCIÓN 2: nunca subir pacientes/citas vacíos.
-    if(!hasRealData(d)){
-      console.warn('[YNEA ONLINE] Guardado bloqueado: pacientes/citas vacíos.');
-      status('Guardado bloqueado: datos vacíos',true);
-      return;
-    }
-
-    saving=true;
-    try{
-      // PROTECCIÓN 3: comprobar remoto justo antes de escribir.
-      const row=await readCloudRow();
-      if(row && hasRealData(row.data) && !hasRealData(d)){
-        applyData(row.data); render();
-        status('Protegido: no se sobrescribió Supabase con datos vacíos',true);
-        return;
-      }
       await req('POST',{id:ID,datos:d,updated_at:new Date().toISOString()});
       lastJson=JSON.stringify(d);
       window.yneaLocalPendingUntil=0;
@@ -5109,44 +5048,34 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
   function schedule(){
     if(applying)return; clearTimeout(timer);
     window.yneaLocalPendingUntil=Date.now()+8000;
-    timer=setTimeout(()=>{
-      if(!cloudLoaded){console.warn('[YNEA ONLINE] Guardado pospuesto hasta leer Supabase.'); return;}
-      const d=localData(); const j=JSON.stringify(d); if(j!==lastJson)saveCloud(d,false).catch(()=>{});
-    },350);
+    timer=setTimeout(()=>{const d=localData(); const j=JSON.stringify(d); if(j!==lastJson)saveCloud(d,false).catch(()=>{});},250);
   }
   async function refreshFromCloud(){
     if(saving)return;
-    if(!cloudLoaded){await initialCloudLoad(); return;}
     if(window.yneaLocalPendingUntil && Date.now()<window.yneaLocalPendingUntil) return;
-    try{
-      const row=await readCloudRow();
-      if(!row)return;
-      const remote=row.data; const rj=JSON.stringify(remote);
-      if(rj!==lastJson || rj!==JSON.stringify(localData())){lastRemoteUpdatedAt=row.updated_at||''; lastJson=rj; applyData(remote); render();}
-      status('Sincronizado online · '+new Date().toLocaleTimeString('es-ES'),false);
-    }catch(e){status('ERROR online: '+(e.message||e),true)}
+    try{const remote=await loadCloud(); const rj=JSON.stringify(remote); if(rj!==lastJson || rj!==JSON.stringify(localData())){lastJson=rj; applyData(remote); render();} status('Sincronizado online · '+new Date().toLocaleTimeString('es-ES'),false);}catch(e){status('ERROR online: '+(e.message||e),true)}
   }
 
-  // Cualquier guardado local queda protegido: primero debe haberse leído Supabase.
+  // Forzar que cualquier guardado local dispare guardado online.
   const oldSave=window.save;
   window.save=function(){let r; try{if(typeof oldSave==='function')r=oldSave.apply(this,arguments)}catch(e){console.warn(e)} schedule(); return r;};
-  if(!Storage.prototype.setItem.__yneaSafeSync){
+  if(!Storage.prototype.setItem.__yneaHardSync){
     const oldSet=Storage.prototype.setItem;
     Storage.prototype.setItem=function(k,v){const r=oldSet.apply(this,arguments); if(!applying && (k==='agendaClinicaSemanal'||k==='agendaData')) schedule(); return r;};
-    Storage.prototype.setItem.__yneaSafeSync=true;
+    Storage.prototype.setItem.__yneaHardSync=true;
   }
   ['addCita','guardarCitaDesdeEditor','eliminarCitaDesdeEditor','guardarCitaEnlazada','addPaciente','guardarNuevoPacienteModal','saveMapTipos','guardarTipoConsultaEditado','addTipo','removeItem','renameItemDirect','addItem','deleteBloqueo','guardarEdicionCita','eliminarCita'].forEach(n=>{
-    const fn=window[n]; if(typeof fn==='function'&&!fn.__yneaSafeSync){window[n]=function(){const r=fn.apply(this,arguments); setTimeout(schedule,120); return r}; window[n].__yneaSafeSync=true;}
+    const fn=window[n]; if(typeof fn==='function'&&!fn.__yneaHardSync){window[n]=function(){const r=fn.apply(this,arguments); setTimeout(schedule,100); return r}; window[n].__yneaHardSync=true;}
   });
   window.yneaForceCloudLoad=refreshFromCloud;
   window.yneaForceCloudSave=function(){return saveCloud(localData(),false)};
   window.yneaSubirEsteDispositivo=function(){return saveCloud(localData(),false)};
-  window.yneaSalirConCopia=async function(){try{await saveCloud(localData(),true)}catch(e){} try{sessionStorage.removeItem('yneaCurrentUser')}catch(e){} };
+  window.yneaSalirConCopia=async function(){try{await saveCloud(localData(),true)}catch(e){} try{sessionStorage.removeItem('yneaCurrentUser')}catch(e){} /* reload eliminado */};
 
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(initialCloudLoad,700),true);
-  window.addEventListener('focus',()=>setTimeout(refreshFromCloud,250));
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(refreshFromCloud,900),true);
+  window.addEventListener('focus',()=>setTimeout(refreshFromCloud,200));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshFromCloud()});
-  setInterval(()=>{if(document.visibilityState==='visible')refreshFromCloud()},4000);
+  setInterval(()=>{if(document.visibilityState==='visible')refreshFromCloud()},2500);
 })();
 </script>
 
@@ -6677,6 +6606,164 @@ header{padding-right:112px!important;}
     mergePending();
     window.renderPatients();
   });
+})();
+</script>
+
+
+<!-- YNEA FIX 2026-05-13: eliminar citas + bloquear pacientes duplicados -->
+<script id="ynea-fix-eliminar-citas-y-duplicados-final">
+(function(){
+  'use strict';
+
+  function getData(){
+    try{return window.data || data;}catch(e){return window.data || {};}
+  }
+  function setData(d){
+    try{window.data=d; data=d;}catch(e){window.data=d;}
+  }
+  function normText(v){
+    return String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+  }
+  function normPhone(v){
+    return String(v||'').replace(/[^0-9+]/g,'').replace(/^00/,'+').trim();
+  }
+  function normEmail(v){
+    return String(v||'').trim().toLowerCase();
+  }
+  function pacienteDuplicado(datos, excluirId){
+    const d=getData();
+    const nombre=normText(datos && datos.nombre);
+    const tel=normPhone(datos && datos.telefono);
+    const email=normEmail(datos && datos.email);
+    return (d.pacientes||[]).find(function(p){
+      if(excluirId && String(p.id)===String(excluirId)) return false;
+      const pn=normText(p.nombre);
+      const pt=normPhone(p.telefono);
+      const pe=normEmail(p.email);
+      return (nombre && pn===nombre) || (tel && pt===tel) || (email && pe===email);
+    }) || null;
+  }
+  function mensajeDuplicado(p, datos){
+    const motivos=[];
+    if(normText(p.nombre)===normText(datos.nombre)) motivos.push('nombre');
+    if(normPhone(p.telefono)===normPhone(datos.telefono)) motivos.push('teléfono');
+    if(normEmail(p.email)===normEmail(datos.email)) motivos.push('email');
+    return 'No se puede guardar. Ya existe un paciente con el mismo '+motivos.join(', ')+':\n\n'+(p.nombre||'Paciente')+(p.telefono?'\nTel: '+p.telefono:'')+(p.email?'\nEmail: '+p.email:'');
+  }
+  function deduplicarPacientes(){
+    const d=getData();
+    if(!Array.isArray(d.pacientes)) d.pacientes=[];
+    const vistosNombre={}, vistosTel={}, vistosEmail={}, limpios=[];
+    let cambiado=false;
+    d.pacientes.forEach(function(p){
+      if(!p) return;
+      const n=normText(p.nombre), t=normPhone(p.telefono), e=normEmail(p.email);
+      const dup=(n&&vistosNombre[n])||(t&&vistosTel[t])||(e&&vistosEmail[e]);
+      if(dup){
+        cambiado=true;
+        const keep=dup;
+        (d.citas||[]).forEach(function(c){ if(String(c.pacienteId)===String(p.id)) c.pacienteId=keep.id; });
+        if(!keep.telefono && p.telefono) keep.telefono=p.telefono;
+        if(!keep.email && p.email) keep.email=p.email;
+        if(!keep.obs && p.obs) keep.obs=p.obs;
+        return;
+      }
+      limpios.push(p);
+      if(n) vistosNombre[n]=p;
+      if(t) vistosTel[t]=p;
+      if(e) vistosEmail[e]=p;
+    });
+    if(cambiado){d.pacientes=limpios; setData(d);}
+    return cambiado;
+  }
+  function persistirYRepintar(){
+    try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(getData()));}catch(e){}
+    try{if(typeof save==='function') save();}catch(e){}
+    try{if(typeof window.yneaForceCloudSave==='function') window.yneaForceCloudSave();}catch(e){}
+    try{if(typeof refreshAllSelects==='function') refreshAllSelects();}catch(e){}
+    try{if(typeof renderAll==='function') renderAll();}catch(e){}
+    try{if(typeof window.renderPatients==='function') window.renderPatients();}catch(e){}
+  }
+
+  // Sustituye alta de paciente del listado: exige nombre, teléfono e email, y bloquea duplicados.
+  window.addPaciente=function(){
+    const nombre=document.getElementById('pacNombre')?.value.trim()||'';
+    const telefono=document.getElementById('pacTelefono')?.value.trim()||'';
+    const email=document.getElementById('pacEmail')?.value.trim()||'';
+    const obs=document.getElementById('pacObs')?.value||'';
+    if(!nombre){alert('Escribe el nombre del paciente.');return;}
+    if(!telefono){alert('El teléfono es obligatorio.');return;}
+    if(!email){alert('El email es obligatorio.');return;}
+    const datos={nombre:nombre,telefono:telefono,email:email,obs:obs};
+    const dup=pacienteDuplicado(datos);
+    if(dup){alert(mensajeDuplicado(dup,datos));return;}
+    const d=getData();
+    d.pacientes=d.pacientes||[];
+    const p={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs};
+    d.pacientes.push(p); setData(d);
+    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){const el=document.getElementById(id); if(el) el.value='';});
+    try{if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(p.id);}catch(e){}
+    window.yneaLocalPendingUntil=Date.now()+8000;
+    persistirYRepintar();
+    alert('Paciente guardado.');
+  };
+
+  // Sustituye alta de paciente desde la ventana de nueva cita: bloquea duplicados.
+  window.guardarNuevoPacienteModal=function(){
+    try{if(typeof limpiarErrorNuevoPaciente==='function') limpiarErrorNuevoPaciente();}catch(e){}
+    const nombre=document.getElementById('npNombre')?.value.trim()||'';
+    const telefono=document.getElementById('npTelefono')?.value.trim()||'';
+    const email=document.getElementById('npEmail')?.value.trim()||'';
+    const obs=document.getElementById('npObs')?.value.trim()||'';
+    function err(m){try{if(typeof mostrarErrorNuevoPaciente==='function') mostrarErrorNuevoPaciente(m); else alert(m);}catch(e){alert(m);}}
+    if(!nombre) return err('El nombre del paciente es obligatorio.');
+    if(!telefono) return err('El teléfono es obligatorio.');
+    if(!email) return err('El email es obligatorio.');
+    if(typeof validarTelefonoYnea==='function' && !validarTelefonoYnea(telefono)) return err('Introduce un teléfono válido. Usa solo números y, si quieres, el prefijo +.');
+    if(typeof validarEmailYnea==='function' && !validarEmailYnea(email)) return err('Introduce un email válido.');
+    const datos={nombre:nombre,telefono:telefono,email:email,obs:obs};
+    const dup=pacienteDuplicado(datos);
+    if(dup) return err(mensajeDuplicado(dup,datos));
+    const d=getData(); d.pacientes=d.pacientes||[];
+    const nuevo={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs};
+    d.pacientes.push(nuevo); setData(d);
+    const sel=document.getElementById('pacienteCita');
+    window.yneaLocalPendingUntil=Date.now()+8000;
+    persistirYRepintar();
+    if(sel) sel.value=nuevo.id;
+    try{if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(nuevo.id);}catch(e){}
+    const ov=document.getElementById('nuevoPacienteOverlay'); if(ov) ov.style.display='none';
+  };
+
+  // Eliminar cita de forma firme: borra local, guarda online y repinta sin que vuelva a aparecer.
+  window.eliminarCitaDesdeEditor=async function(){
+    const id=document.getElementById('editCitaId')?.value;
+    const fecha=document.getElementById('editCitaFecha')?.value;
+    if(!id){alert('No se ha encontrado la cita para eliminar.');return;}
+    if(!confirm('¿Eliminar esta cita?')) return;
+    const d=getData();
+    const antes=(d.citas||[]).length;
+    d.citas=(d.citas||[]).filter(function(c){return String(c.id)!==String(id);});
+    if((d.citas||[]).length===antes){alert('No se encontró la cita en la agenda.');return;}
+    setData(d);
+    try{localStorage.removeItem('ultimaCitaTemporal');}catch(e){}
+    const ov=document.getElementById('editorCitaOverlay'); if(ov) ov.style.display='none';
+    try{document.body.classList.remove('ynea-editor-open');}catch(e){}
+    window.yneaLocalPendingUntil=Date.now()+10000;
+    try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d));}catch(e){}
+    try{if(typeof save==='function') save();}catch(e){}
+    try{if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave();}catch(e){console.warn(e); alert('La cita se ha eliminado en este dispositivo, pero no se pudo confirmar el guardado online. Revisa la conexión.');}
+    try{if(fecha){weekStart=monday(new Date(fecha+'T00:00:00')); const wp=document.getElementById('weekPicker'); if(wp) wp.value=fecha;}}catch(e){}
+    try{if(typeof setView==='function') setView('semana');}catch(e){}
+    persistirYRepintar();
+    setTimeout(persistirYRepintar,250);
+  };
+  window.eliminarCita=window.eliminarCitaDesdeEditor;
+
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(function(){if(deduplicarPacientes()) persistirYRepintar();},600);
+  },true);
+  window.addEventListener('load',function(){setTimeout(function(){if(deduplicarPacientes()) persistirYRepintar();},1200);});
 })();
 </script>
 
