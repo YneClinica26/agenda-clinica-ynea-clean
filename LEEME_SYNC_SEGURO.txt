@@ -1,0 +1,21 @@
+AGENDA CLÍNICA YNEA - INDEX CON SINCRONIZACIÓN SEGURA
+
+Este paquete contiene el index.html corregido para evitar que un móvil o PC nuevo borre las citas/pacientes al abrir la app.
+
+Cambio principal aplicado:
+- La app lee primero Supabase.
+- No sube datos si todavía no ha terminado la lectura remota.
+- No sube un estado vacío.
+- Si Supabase tiene datos, un dispositivo vacío no puede sobrescribirlos.
+- Se bloquea el guardado peligroso durante el arranque.
+
+Pasos:
+1. En GitHub abre tu repositorio.
+2. Sustituye el index.html actual por este index.html.
+3. Pulsa Commit changes.
+4. Espera a que Vercel termine.
+5. En PC abre la app con Ctrl + F5.
+6. En móvil cierra la app completamente y vuelve a abrirla.
+
+IMPORTANTE:
+Haz primero una copia JSON desde el PC donde todavía tengas los datos buenos.

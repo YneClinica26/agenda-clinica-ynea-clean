@@ -4970,22 +4970,33 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
 
 
 
-<!-- YNEA SYNC DURO FINAL 2026-05-07: Supabase manda siempre -->
+<!-- YNEA SYNC SEGURO ANTI-BORRADO 2026-05-14: Supabase primero, nunca subir vacío -->
 <script id="ynea-sync-duro-final">
 (function(){
   'use strict';
+
   const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
   const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
   const TABLE='agenda_online';
   const ID='main';
+
   let applying=false;
   let saving=false;
-  let lastJson='';
-  let timer=null;
+  let remoteLoaded=false;
+  let remoteHadData=false;
+  let lastRemoteJson='';
+  let lastSavedJson='';
+  let saveTimer=null;
+  let startupLock=true;
 
-  function $(id){return document.getElementById(id)}
-  function clone(x){try{return JSON.parse(JSON.stringify(x||{}))}catch(e){return {}}}
-  function uniq(a){return Array.from(new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean)))}
+  function clone(x){try{return JSON.parse(JSON.stringify(x||{}));}catch(e){return {};}}
+  function uniq(a){return Array.from(new Set((a||[]).map(x=>String(x||'').trim()).filter(Boolean)));}
+  function hasRealData(d){
+    d=d||{};
+    return (Array.isArray(d.pacientes)&&d.pacientes.length>0) ||
+           (Array.isArray(d.citas)&&d.citas.length>0) ||
+           (Array.isArray(d.profesionales)&&d.profesionales.length>0);
+  }
   function normalize(d){
     d=d&&typeof d==='object'?clone(d):{};
     d.profesionales=uniq(d.profesionales||[]);
@@ -4997,85 +5008,249 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
     d.duracionesTipo=d.duracionesTipo&&typeof d.duracionesTipo==='object'?d.duracionesTipo:{};
     d.caracteristicasTipo=d.caracteristicasTipo&&typeof d.caracteristicasTipo==='object'?d.caracteristicasTipo:{};
     d.tiposPorProfesional=d.tiposPorProfesional&&typeof d.tiposPorProfesional==='object'?d.tiposPorProfesional:{};
-    d.tipos.forEach(t=>{if(!d.duracionesTipo[t])d.duracionesTipo[t]='10'; if(!d.caracteristicasTipo[t])d.caracteristicasTipo[t]={descripcion:'',color:'',activo:true}});
+    d.tipos.forEach(t=>{if(!d.duracionesTipo[t])d.duracionesTipo[t]='10'; if(!d.caracteristicasTipo[t])d.caracteristicasTipo[t]={descripcion:'',color:'',activo:true};});
     d.profesionales.forEach(p=>{let arr=Array.isArray(d.tiposPorProfesional[p])?d.tiposPorProfesional[p]:[]; arr=uniq(arr).filter(t=>d.tipos.includes(t)); d.tiposPorProfesional[p]=arr.length?arr:d.tipos.slice();});
-    Object.keys(d.tiposPorProfesional).forEach(p=>{if(!d.profesionales.includes(p))delete d.tiposPorProfesional[p]});
+    Object.keys(d.tiposPorProfesional).forEach(p=>{if(!d.profesionales.includes(p))delete d.tiposPorProfesional[p];});
     return d;
   }
-  function localData(){try{return normalize(window.data||data||{})}catch(e){} try{return normalize(JSON.parse(localStorage.getItem('agendaClinicaSemanal')||'{}'))}catch(e){return normalize({})}}
+  function localData(){
+    try{return normalize(window.data||data||{});}catch(e){}
+    try{return normalize(JSON.parse(localStorage.getItem('agendaClinicaSemanal')||'{}'));}catch(e){return normalize({});}
+  }
   function applyData(d){
-    d=normalize(d); applying=true;
-    try{window.data=d; data=d}catch(e){window.data=d}
-    try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d));localStorage.setItem('agendaData',JSON.stringify(d))}catch(e){}
+    d=normalize(d);
+    applying=true;
+    try{window.data=d; data=d;}catch(e){window.data=d;}
+    try{
+      localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d));
+      localStorage.setItem('agendaData',JSON.stringify(d));
+    }catch(e){}
     applying=false;
   }
   function render(){
-    ['refreshAllSelects','renderMapTipos','renderConfig','renderPatients','actualizarSelectTiposCita','renderAll'].forEach(n=>{try{if(typeof window[n]==='function')window[n]()}catch(e){console.warn(n,e)}});
+    ['refreshAllSelects','renderMapTipos','renderConfig','renderPatients','actualizarSelectTiposCita','renderAll'].forEach(n=>{
+      try{if(typeof window[n]==='function')window[n]();}catch(e){console.warn(n,e);}
+    });
   }
   function status(msg,bad){
-    console[bad?'error':'log']('[YNEA ONLINE]',msg);
-    let el=$('yneaSyncStatusFinal');
-    if(!el){el=document.createElement('div');el.id='yneaSyncStatusFinal';el.style.cssText='position:fixed;left:10px;bottom:10px;z-index:999999;background:#fff;border:1px solid #bbf7d0;border-radius:12px;padding:6px 9px;font-size:12px;color:#166534;box-shadow:0 6px 18px rgba(0,0,0,.10);max-width:85vw'; if(document.body)document.body.appendChild(el);}
-    el.textContent=msg; el.style.color=bad?'#991b1b':'#166534'; el.style.borderColor=bad?'#fecaca':'#bbf7d0';
+    console[bad?'error':'log']('[YNEA ONLINE SEGURO]',msg);
+    let el=document.getElementById('yneaSyncStatusFinal');
+    if(!el){
+      el=document.createElement('div');
+      el.id='yneaSyncStatusFinal';
+      el.style.cssText='position:fixed;left:10px;bottom:10px;z-index:999999;background:#fff;border:1px solid #bbf7d0;border-radius:12px;padding:6px 9px;font-size:12px;color:#166534;box-shadow:0 6px 18px rgba(0,0,0,.10);max-width:85vw';
+      if(document.body)document.body.appendChild(el);
+    }
+    el.textContent=msg;
+    el.style.color=bad?'#991b1b':'#166534';
+    el.style.borderColor=bad?'#fecaca':'#bbf7d0';
   }
   async function req(method,body){
     const headers={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Cache-Control':'no-cache','Pragma':'no-cache'};
     let url=SUPABASE_URL+'/rest/v1/'+TABLE;
     let opt={method,headers,cache:'no-store'};
-    if(method==='GET'){url+='?id=eq.'+encodeURIComponent(ID)+'&select=id,datos,updated_at';}
-    else if(method==='PATCH'){url+='?id=eq.'+encodeURIComponent(ID); headers['Prefer']='return=representation'; opt.body=JSON.stringify(body);}
-    else {headers['Prefer']='resolution=merge-duplicates,return=representation'; url+='?on_conflict=id'; opt.body=JSON.stringify(body);}
-    const r=await fetch(url,opt); const txt=await r.text(); let j=null; try{j=txt?JSON.parse(txt):null}catch(e){}
+    if(method==='GET'){
+      url+='?id=eq.'+encodeURIComponent(ID)+'&select=id,datos,updated_at';
+    }else if(method==='PATCH'){
+      url+='?id=eq.'+encodeURIComponent(ID);
+      headers['Prefer']='return=representation';
+      opt.body=JSON.stringify(body);
+    }else{
+      headers['Prefer']='resolution=merge-duplicates,return=representation';
+      url+='?on_conflict=id';
+      opt.body=JSON.stringify(body);
+    }
+    const r=await fetch(url,opt);
+    const txt=await r.text();
+    let j=null; try{j=txt?JSON.parse(txt):null;}catch(e){}
     if(!r.ok)throw new Error((j&&(j.message||j.error))||txt||('HTTP '+r.status));
     return j;
   }
-  async function loadCloud(){
+  async function readRemote(){
     const rows=await req('GET');
-    if(Array.isArray(rows)&&rows[0])return normalize(rows[0].datos||{});
-    const d=localData(); await saveCloud(d,true); return d;
+    if(Array.isArray(rows)&&rows[0]) return normalize(rows[0].datos||{});
+    return null;
   }
-  async function saveCloud(d,silent){
-    if(applying)return;
-    d=normalize(d||localData()); saving=true;
+  async function writeRemote(d,silent){
+    d=normalize(d);
+    await req('POST',{id:ID,datos:d,updated_at:new Date().toISOString()});
+    const j=JSON.stringify(d);
+    lastRemoteJson=j;
+    lastSavedJson=j;
+    remoteLoaded=true;
+    remoteHadData=hasRealData(d);
+    window.yneaLocalPendingUntil=0;
+    if(!silent) status('Guardado online seguro · '+new Date().toLocaleTimeString('es-ES'),false);
+  }
+  async function firstLoad(){
+    if(saving) return;
+    startupLock=true;
     try{
-      await req('POST',{id:ID,datos:d,updated_at:new Date().toISOString()});
-      lastJson=JSON.stringify(d);
-      window.yneaLocalPendingUntil=0;
-      if(!silent)status('Guardado online · '+new Date().toLocaleTimeString('es-ES'),false);
-    }catch(e){status('ERROR online: '+(e.message||e),true); alert('No se ha guardado online. Error Supabase: '+(e.message||e)); throw e;}
-    finally{saving=false;}
+      status('Cargando datos de Supabase...',false);
+      const remote=await readRemote();
+      const local=localData();
+
+      if(remote && hasRealData(remote)){
+        const rj=JSON.stringify(remote);
+        remoteLoaded=true;
+        remoteHadData=true;
+        lastRemoteJson=rj;
+        lastSavedJson=rj;
+        applyData(remote);
+        render();
+        status('Datos descargados de Supabase · protegido',false);
+        return;
+      }
+
+      if(remote && !hasRealData(remote)){
+        remoteLoaded=true;
+        remoteHadData=false;
+        lastRemoteJson=JSON.stringify(remote);
+        if(hasRealData(local)){
+          await writeRemote(local,true);
+          status('Supabase estaba vacío: se subió este equipo',false);
+        }else{
+          applyData(remote);
+          render();
+          status('Agenda vacía sincronizada',false);
+        }
+        return;
+      }
+
+      // No existe fila remota: solo se crea si este dispositivo tiene datos reales.
+      remoteLoaded=true;
+      remoteHadData=false;
+      if(hasRealData(local)){
+        await writeRemote(local,true);
+        status('Base online creada desde este equipo',false);
+      }else{
+        status('No hay datos online todavía. Guardado vacío bloqueado.',true);
+      }
+    }catch(e){
+      remoteLoaded=false;
+      status('ERROR cargando Supabase: '+(e.message||e),true);
+    }finally{
+      startupLock=false;
+    }
   }
-  function schedule(){
-    if(applying)return; clearTimeout(timer);
+  async function safeSaveCloud(d,silent){
+    if(applying) return;
+    d=normalize(d||localData());
+
+    // Regla 1: nunca subir antes de haber leído Supabase.
+    if(!remoteLoaded || startupLock){
+      status('Guardado online bloqueado hasta terminar la carga de Supabase',true);
+      return;
+    }
+
+    // Regla 2: nunca subir estado vacío.
+    if(!hasRealData(d)){
+      status('Guardado bloqueado: este dispositivo está vacío',true);
+      return;
+    }
+
+    saving=true;
+    try{
+      // Regla 3: leer Supabase justo antes de escribir.
+      const remote=await readRemote();
+      const remoteReal=hasRealData(remote);
+      if(remoteReal) remoteHadData=true;
+
+      // Si Supabase tiene datos y este equipo perdió pacientes/citas/profesionales, no machacar.
+      if(remoteReal && !hasRealData(d)){
+        status('Bloqueado: Supabase tiene datos y este dispositivo no',true);
+        return;
+      }
+
+      // Si es la primera operación de un dispositivo con caché antigua distinta, gana Supabase.
+      const currentJson=JSON.stringify(d);
+      const remoteJson=remote?JSON.stringify(remote):'';
+      if(remoteReal && lastRemoteJson && remoteJson!==lastRemoteJson && !(window.yneaLocalPendingUntil && Date.now()<window.yneaLocalPendingUntil)){
+        lastRemoteJson=remoteJson;
+        applyData(remote);
+        render();
+        status('Se detectaron cambios remotos. Se descargaron antes de guardar.',false);
+        return;
+      }
+
+      await writeRemote(d,!!silent);
+    }catch(e){
+      status('ERROR guardando online: '+(e.message||e),true);
+      if(!silent) alert('No se ha guardado online. Error Supabase: '+(e.message||e));
+      throw e;
+    }finally{
+      saving=false;
+    }
+  }
+  function scheduleSave(){
+    if(applying || startupLock || !remoteLoaded) return;
+    clearTimeout(saveTimer);
     window.yneaLocalPendingUntil=Date.now()+8000;
-    timer=setTimeout(()=>{const d=localData(); const j=JSON.stringify(d); if(j!==lastJson)saveCloud(d,false).catch(()=>{});},250);
+    saveTimer=setTimeout(()=>{
+      const d=localData();
+      const j=JSON.stringify(d);
+      if(j!==lastSavedJson) safeSaveCloud(d,false).catch(()=>{});
+    },450);
   }
   async function refreshFromCloud(){
-    if(saving)return;
+    if(saving || startupLock) return;
     if(window.yneaLocalPendingUntil && Date.now()<window.yneaLocalPendingUntil) return;
-    try{const remote=await loadCloud(); const rj=JSON.stringify(remote); if(rj!==lastJson || rj!==JSON.stringify(localData())){lastJson=rj; applyData(remote); render();} status('Sincronizado online · '+new Date().toLocaleTimeString('es-ES'),false);}catch(e){status('ERROR online: '+(e.message||e),true)}
+    try{
+      const remote=await readRemote();
+      if(!remote) return;
+      const rj=JSON.stringify(remote);
+      remoteLoaded=true;
+      remoteHadData=hasRealData(remote)||remoteHadData;
+      if(hasRealData(remote) && rj!==JSON.stringify(localData())){
+        lastRemoteJson=rj;
+        lastSavedJson=rj;
+        applyData(remote);
+        render();
+      }
+      status('Sincronizado online seguro · '+new Date().toLocaleTimeString('es-ES'),false);
+    }catch(e){status('ERROR online: '+(e.message||e),true);}
   }
 
-  // Forzar que cualquier guardado local dispare guardado online.
-  const oldSave=window.save;
-  window.save=function(){let r; try{if(typeof oldSave==='function')r=oldSave.apply(this,arguments)}catch(e){console.warn(e)} schedule(); return r;};
-  if(!Storage.prototype.setItem.__yneaHardSync){
-    const oldSet=Storage.prototype.setItem;
-    Storage.prototype.setItem=function(k,v){const r=oldSet.apply(this,arguments); if(!applying && (k==='agendaClinicaSemanal'||k==='agendaData')) schedule(); return r;};
-    Storage.prototype.setItem.__yneaHardSync=true;
-  }
+  // Sustituye el guardado de la app: local primero, online solo si ya se cargó Supabase.
+  const originalSave=window.save;
+  window.save=function(){
+    let r;
+    try{ if(typeof originalSave==='function') r=originalSave.apply(this,arguments); }
+    catch(e){console.warn(e);}
+    try{ localStorage.setItem('agendaClinicaSemanal',JSON.stringify(localData())); }
+    catch(e){}
+    scheduleSave();
+    return r;
+  };
+
   ['addCita','guardarCitaDesdeEditor','eliminarCitaDesdeEditor','guardarCitaEnlazada','addPaciente','guardarNuevoPacienteModal','saveMapTipos','guardarTipoConsultaEditado','addTipo','removeItem','renameItemDirect','addItem','deleteBloqueo','guardarEdicionCita','eliminarCita'].forEach(n=>{
-    const fn=window[n]; if(typeof fn==='function'&&!fn.__yneaHardSync){window[n]=function(){const r=fn.apply(this,arguments); setTimeout(schedule,100); return r}; window[n].__yneaHardSync=true;}
+    const fn=window[n];
+    if(typeof fn==='function'&&!fn.__yneaSafeSync){
+      window[n]=function(){
+        const r=fn.apply(this,arguments);
+        setTimeout(scheduleSave,120);
+        return r;
+      };
+      window[n].__yneaSafeSync=true;
+    }
   });
-  window.yneaForceCloudLoad=refreshFromCloud;
-  window.yneaForceCloudSave=function(){return saveCloud(localData(),false)};
-  window.yneaSubirEsteDispositivo=function(){return saveCloud(localData(),false)};
-  window.yneaSalirConCopia=async function(){try{await saveCloud(localData(),true)}catch(e){} try{sessionStorage.removeItem('yneaCurrentUser')}catch(e){} /* reload eliminado */};
 
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(refreshFromCloud,900),true);
-  window.addEventListener('focus',()=>setTimeout(refreshFromCloud,200));
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshFromCloud()});
-  setInterval(()=>{if(document.visibilityState==='visible')refreshFromCloud()},2500);
+  window.yneaForceCloudLoad=refreshFromCloud;
+  window.yneaForceCloudSave=function(){return safeSaveCloud(localData(),false);};
+  window.yneaSubirEsteDispositivo=function(){return safeSaveCloud(localData(),false);};
+  window.yneaEstadoSyncSeguro=function(){return {remoteLoaded,remoteHadData,startupLock,saving,lastRemoteJson,lastSavedJson};};
+  window.yneaSalirConCopia=async function(){
+    try{await safeSaveCloud(localData(),true);}catch(e){}
+    try{sessionStorage.removeItem('yneaCurrentUser');}catch(e){}
+    try{document.documentElement.classList.add('ynea-locked');}catch(e){}
+  };
+
+  // Cargar cuanto antes, y repetir al estar el DOM listo.
+  firstLoad();
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(firstLoad,250),true);
+  window.addEventListener('focus',()=>setTimeout(refreshFromCloud,300));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshFromCloud();});
+  setInterval(()=>{if(document.visibilityState==='visible')refreshFromCloud();},5000);
 })();
 </script>
 
@@ -6609,251 +6784,191 @@ header{padding-right:112px!important;}
 })();
 </script>
 
-<script id="ynea-fix-final-pacientes-duplicados-bloqueo-2026-05-14">
+<script id="ynea-fix-final-verificado-2026-05-14">
 (function(){
   'use strict';
-
-  function byId(id){return document.getElementById(id);}
-  function getData(){
-    try{ if(window.data && typeof window.data==='object') return window.data; }catch(e){}
-    try{ if(typeof data!=='undefined' && data && typeof data==='object') return data; }catch(e){}
-    return {pacientes:[], citas:[]};
-  }
-  function ensure(){
-    const d=getData();
-    d.pacientes=Array.isArray(d.pacientes)?d.pacientes:[];
-    d.citas=Array.isArray(d.citas)?d.citas:[];
-    return d;
-  }
-  function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function normText(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+  function $(id){return document.getElementById(id);}
+  function esc(v){return String(v ?? '').replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
+  function sinAcentos(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function normNombre(s){return sinAcentos(s).toLowerCase().replace(/\s+/g,' ').trim();}
   function normTel(s){return String(s||'').replace(/[^0-9+]/g,'').trim();}
-  function normEmail(s){return String(s||'').trim().toLowerCase();}
-  function pacienteLabel(p){return (p&&p.nombre?p.nombre:'Paciente sin nombre')+' · Tel: '+(p&&p.telefono?p.telefono:'sin teléfono')+' · Email: '+(p&&p.email?p.email:'sin email');}
-
-  function findDuplicatePaciente(nuevo, excludeId){
-    const d=ensure();
-    const n=normText(nuevo.nombre);
-    const t=normTel(nuevo.telefono);
-    const e=normEmail(nuevo.email);
-    for(const p of d.pacientes){
-      if(excludeId && String(p.id)===String(excludeId)) continue;
-      if(n && normText(p.nombre)===n) return {campo:'nombre', existente:p};
-      if(t && normTel(p.telefono)===t) return {campo:'teléfono', existente:p};
-      if(e && normEmail(p.email)===e) return {campo:'email', existente:p};
+  function normEmail(s){return String(s||'').toLowerCase().trim();}
+  function d(){ window.data=window.data||{}; data.pacientes=data.pacientes||[]; data.citas=data.citas||[]; return data; }
+  function persist(){
+    window.yneaLocalPendingUntil=Date.now()+15000;
+    try{ if(typeof window.save==='function') window.save(); }catch(e){ console.warn(e); }
+    try{ localStorage.setItem('agendaClinicaSemanal', JSON.stringify(d())); }catch(e){}
+    try{ localStorage.setItem('agendaData', JSON.stringify(d())); }catch(e){}
+    try{ if(typeof window.yneaForceCloudSave==='function') setTimeout(function(){window.yneaForceCloudSave();},80); }catch(e){ console.warn(e); }
+  }
+  function repaint(){
+    try{ if(typeof window.refreshAllSelects==='function') window.refreshAllSelects(); }catch(e){}
+    try{ if(typeof window.actualizarBuscadorPacienteCita==='function') window.actualizarBuscadorPacienteCita(); }catch(e){}
+    try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
+    try{ if(typeof window.renderPatients==='function') window.renderPatients(); }catch(e){}
+  }
+  function pacienteNombre(p){return String(p?.nombre||'Sin nombre');}
+  function buscarDuplicadoPaciente(nuevo, excluirId){
+    const n=normNombre(nuevo.nombre), t=normTel(nuevo.telefono), e=normEmail(nuevo.email);
+    for(const p of (d().pacientes||[])){
+      if(excluirId && String(p.id)===String(excluirId)) continue;
+      if(n && normNombre(p.nombre)===n) return {campo:'nombre', valor:nuevo.nombre, paciente:p};
+      if(t && normTel(p.telefono)===t) return {campo:'teléfono', valor:nuevo.telefono, paciente:p};
+      if(e && normEmail(p.email)===e) return {campo:'email', valor:nuevo.email, paciente:p};
     }
     return null;
   }
-
-  function avisoDuplicado(dup){
-    const msg='No se puede guardar porque el '+dup.campo+' ya existe.\n\nLo tiene este paciente:\n'+pacienteLabel(dup.existente);
-    try{
-      const box=byId('nuevoPacienteError');
-      if(box){box.textContent=msg; box.style.display='block';}
-    }catch(e){}
-    alert(msg);
+  function mensajeDuplicado(dup){
+    const p=dup.paciente||{};
+    return 'Dato duplicado: el '+dup.campo+' "'+dup.valor+'" ya está en el paciente: '+pacienteNombre(p)+
+      (p.telefono?' / Tel: '+p.telefono:'')+(p.email?' / Email: '+p.email:'');
   }
-
-  async function persistir(){
-    try{ if(typeof window.save==='function') window.save(); }catch(e){console.warn(e);}
-    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){console.warn(e);}
-    try{ if(typeof window.refreshAllSelects==='function') window.refreshAllSelects(); }catch(e){}
-    try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
-    try{ window.renderPatients && window.renderPatients(); }catch(e){}
-  }
-
-  function pacienteBloqueado(p){return !!(p && (p.bloqueado===true || p.bloqueado==='true' || p.bloqueadoPaciente===true));}
-  function motivoBloqueo(p){return String((p&&(p.motivoBloqueo||p.motivo_bloqueo||p.bloqueoMotivo))||'Paciente bloqueado');}
-  function obtenerPaciente(id){return ensure().pacientes.find(p=>String(p.id)===String(id));}
-  function impedirPacienteBloqueado(p){
-    if(!pacienteBloqueado(p)) return false;
-    alert('Paciente bloqueado.\n\nMotivo: '+motivoBloqueo(p));
+  function validarPaciente(nuevo, excluirId, mostrar){
+    if(!String(nuevo.nombre||'').trim()){ mostrar('Escribe el nombre del paciente.'); return false; }
+    if(!String(nuevo.telefono||'').trim()){ mostrar('El teléfono es obligatorio.'); return false; }
+    if(!String(nuevo.email||'').trim()){ mostrar('El email es obligatorio.'); return false; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(nuevo.email).trim())){ mostrar('Introduce un email válido.'); return false; }
+    const dup=buscarDuplicadoPaciente(nuevo, excluirId);
+    if(dup){ mostrar(mensajeDuplicado(dup)); return false; }
     return true;
   }
+  function mostrarModalPaciente(msg){
+    if(typeof window.mostrarErrorNuevoPaciente==='function') window.mostrarErrorNuevoPaciente(msg);
+    else alert(msg);
+  }
 
-  function instalarBotonNuevoPacienteCita(){
-    const hidden=byId('pacienteCita');
-    if(!hidden) return;
-    const box=hidden.closest('.pacienteSearchBox') || hidden.parentElement;
-    if(!box) return;
-    if(!byId('btnNuevoPacienteCitaFinal')){
-      const b=document.createElement('button');
-      b.id='btnNuevoPacienteCitaFinal';
-      b.type='button';
-      b.className='secondary';
-      b.style.cssText='display:block!important;width:100%;margin-top:8px;position:relative;z-index:20;';
-      b.textContent='➕ Nuevo paciente';
-      b.onclick=function(){ if(typeof window.abrirNuevoPaciente==='function') window.abrirNuevoPaciente(); else if(typeof window.abrirNuevoPacienteDesdeBusqueda==='function') window.abrirNuevoPacienteDesdeBusqueda(); };
-      box.appendChild(b);
+  window.addPaciente=function(){
+    const nuevo={id:'p'+Date.now(), nombre:($('pacNombre')?.value||'').trim(), telefono:($('pacTelefono')?.value||'').trim(), email:($('pacEmail')?.value||'').trim(), obs:($('pacObs')?.value||'').trim()};
+    if(!validarPaciente(nuevo, null, alert)) return;
+    d().pacientes.push(nuevo);
+    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){ if($(id)) $(id).value=''; });
+    try{ if(typeof window.seleccionarPacienteCita==='function') window.seleccionarPacienteCita(nuevo.id); }catch(e){}
+    persist(); repaint(); alert('Paciente guardado.');
+  };
+
+  window.guardarNuevoPacienteModal=function(){
+    try{ if(typeof window.limpiarErrorNuevoPaciente==='function') window.limpiarErrorNuevoPaciente(); }catch(e){}
+    const nuevo={id:'p'+Date.now(), nombre:($('npNombre')?.value||'').trim(), telefono:($('npTelefono')?.value||'').trim(), email:($('npEmail')?.value||'').trim(), obs:($('npObs')?.value||'').trim()};
+    if(!validarPaciente(nuevo, null, mostrarModalPaciente)) return;
+    d().pacientes.push(nuevo);
+    persist();
+    try{ if(typeof window.refreshAllSelects==='function') window.refreshAllSelects(); }catch(e){}
+    try{ if(typeof window.seleccionarPacienteCita==='function') window.seleccionarPacienteCita(nuevo.id); }catch(e){}
+    const sel=$('pacienteCita'); if(sel) sel.value=nuevo.id;
+    const editSel=$('editCitaPaciente'); if(editSel){
+      try{ editSel.insertAdjacentHTML('beforeend','<option value="'+esc(nuevo.id)+'">'+esc(nuevo.nombre)+'</option>'); }catch(e){}
+      editSel.value=nuevo.id;
     }
-  }
-
-  function instalarBotonNuevoPacienteEditor(){
-    const sel=byId('editCitaPaciente');
-    if(!sel || byId('btnNuevoPacienteEditorFinal')) return;
-    const b=document.createElement('button');
-    b.id='btnNuevoPacienteEditorFinal';
-    b.type='button';
-    b.className='secondary';
-    b.style.cssText='display:block!important;width:100%;margin-top:8px;';
-    b.textContent='➕ Nuevo paciente';
-    b.onclick=function(){ window.__yneaPacienteDestinoEditor=true; if(typeof window.abrirNuevoPaciente==='function') window.abrirNuevoPaciente(); };
-    sel.insertAdjacentElement('afterend', b);
-  }
-
-  window.yneaEliminarPaciente=function(id){
-    const d=ensure();
-    const p=d.pacientes.find(x=>String(x.id)===String(id));
-    if(!p) return alert('No se ha encontrado el paciente.');
-    const citas=d.citas.filter(c=>String(c.pacienteId)===String(id));
-    let msg='¿Eliminar este paciente?\n\n'+pacienteLabel(p);
-    if(citas.length) msg+='\n\nTiene '+citas.length+' cita(s). Si continúas, también se eliminarán esas citas.';
-    if(!confirm(msg)) return;
-    d.pacientes=d.pacientes.filter(x=>String(x.id)!==String(id));
-    d.citas=d.citas.filter(c=>String(c.pacienteId)!==String(id));
-    persistir();
+    if($('nuevoPacienteOverlay')) $('nuevoPacienteOverlay').style.display='none';
+    repaint();
   };
 
-  window.yneaBloquearPaciente=function(id){
-    const d=ensure();
-    const p=d.pacientes.find(x=>String(x.id)===String(id));
-    if(!p) return alert('No se ha encontrado el paciente.');
-    const motivo=prompt('Motivo del bloqueo para '+(p.nombre||'este paciente')+':', p.motivoBloqueo||'');
+  window.editarPacienteYnea=function(id){
+    const p=(d().pacientes||[]).find(function(x){return String(x.id)===String(id);}); if(!p) return;
+    const nombre=prompt('Nombre del paciente:',p.nombre||''); if(nombre===null) return;
+    const telefono=prompt('Teléfono obligatorio:',p.telefono||''); if(telefono===null) return;
+    const email=prompt('Email obligatorio:',p.email||''); if(email===null) return;
+    const obs=prompt('Observaciones:',p.obs||''); if(obs===null) return;
+    const nuevo={nombre:nombre.trim(), telefono:telefono.trim(), email:email.trim(), obs:String(obs||'').trim()};
+    if(!validarPaciente(nuevo, p.id, alert)) return;
+    Object.assign(p,nuevo); persist(); repaint();
+  };
+
+  window.bloquearPacienteYnea=function(id){
+    const p=(d().pacientes||[]).find(function(x){return String(x.id)===String(id);}); if(!p) return;
+    const motivo=prompt('Motivo del bloqueo del paciente:', p.motivoBloqueo||'');
     if(motivo===null) return;
-    p.bloqueado=true;
-    p.motivoBloqueo=String(motivo||'Paciente bloqueado').trim() || 'Paciente bloqueado';
-    persistir();
+    if(!String(motivo).trim()) return alert('Debes escribir un motivo para bloquear al paciente.');
+    p.bloqueado=true; p.motivoBloqueo=String(motivo).trim(); persist(); repaint();
   };
-
-  window.yneaDesbloquearPaciente=function(id){
-    const d=ensure();
-    const p=d.pacientes.find(x=>String(x.id)===String(id));
-    if(!p) return alert('No se ha encontrado el paciente.');
-    if(!confirm('¿Desbloquear a '+(p.nombre||'este paciente')+'?')) return;
-    p.bloqueado=false;
-    p.motivoBloqueo='';
-    persistir();
+  window.desbloquearPacienteYnea=function(id){
+    const p=(d().pacientes||[]).find(function(x){return String(x.id)===String(id);}); if(!p) return;
+    if(!confirm('¿Desbloquear a '+pacienteNombre(p)+'?')) return;
+    p.bloqueado=false; p.motivoBloqueo=''; persist(); repaint();
+  };
+  window.eliminarPacienteYnea=function(id){
+    const p=(d().pacientes||[]).find(function(x){return String(x.id)===String(id);}); if(!p) return;
+    const citas=(d().citas||[]).filter(function(c){return String(c.pacienteId)===String(id);}).length;
+    const msg='¿Eliminar al paciente '+pacienteNombre(p)+'?'+(citas?'\nTambién se eliminarán '+citas+' cita(s) asociada(s).':'');
+    if(!confirm(msg)) return;
+    d().pacientes=(d().pacientes||[]).filter(function(x){return String(x.id)!==String(id);});
+    d().citas=(d().citas||[]).filter(function(c){return String(c.pacienteId)!==String(id);});
+    persist(); repaint();
   };
 
   window.renderPatients=function(){
-    const d=ensure();
-    const table=byId('pacientesTable');
-    if(!table) return;
-    const q=normText(byId('buscadorPacientes')?byId('buscadorPacientes').value:'');
-    const rows=d.pacientes.filter(function(p){
-      if(!q) return true;
-      return normText([p.nombre,p.telefono,p.email,p.obs,p.motivoBloqueo].join(' ')).includes(q);
-    });
-    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Bloqueo</th><th>Acciones</th></tr></thead><tbody>'+rows.map(function(p){
-      const bloqueado=pacienteBloqueado(p);
-      const bloqueoHtml=bloqueado?('<b style="color:#991b1b">Bloqueado</b><br><span class="small">'+esc(motivoBloqueo(p))+'</span><br><button type="button" class="secondary" onclick="yneaDesbloquearPaciente(\''+esc(p.id)+'\')">Desbloquear</button>'):'<button type="button" class="secondary" onclick="yneaBloquearPaciente(\''+esc(p.id)+'\')">Bloquear</button>';
-      return '<tr data-paciente-id="'+esc(p.id)+'">'+
-        '<td><b>'+esc(p.nombre)+'</b></td>'+
-        '<td>'+esc(p.telefono||'')+'</td>'+
-        '<td>'+esc(p.email||'')+'</td>'+
-        '<td>'+esc(p.obs||'')+'</td>'+
-        '<td>'+bloqueoHtml+'</td>'+
-        '<td><button type="button" class="danger" onclick="yneaEliminarPaciente(\''+esc(p.id)+'\')">Eliminar</button></td>'+
-      '</tr>';
-    }).join('')+'</tbody>';
-    const info=byId('pacientesSearchInfo');
-    if(info) info.textContent=q?' '+rows.length+' resultado(s)':'';
+    const table=$('pacientesTable'); if(!table) return;
+    const q=normNombre($('buscadorPacientes')?.value||'');
+    const pacientes=(d().pacientes||[]).filter(function(p){return !q || normNombre([p.nombre,p.telefono,p.email,p.obs,p.motivoBloqueo].join(' ')).includes(q);});
+    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Bloqueo</th><th>Acciones</th></tr></thead><tbody>'+
+      pacientes.map(function(p){
+        const bloqueado=!!p.bloqueado;
+        const bloqueo=bloqueado?('<b style="color:#b91c1c">BLOQUEADO</b><br><small>'+esc(p.motivoBloqueo||'Sin motivo')+'</small>'):'Activo';
+        return '<tr>'+
+          '<td><b>'+esc(p.nombre||'')+'</b></td><td>'+esc(p.telefono||'')+'</td><td>'+esc(p.email||'')+'</td><td>'+esc(p.obs||'')+'</td><td>'+bloqueo+'</td>'+
+          '<td class="yneaPacienteAcciones">'+
+            '<button type="button" class="secondary" onclick="event.stopPropagation();editarPacienteYnea(\''+esc(p.id)+'\')">Editar</button> '+
+            (bloqueado?'<button type="button" onclick="event.stopPropagation();desbloquearPacienteYnea(\''+esc(p.id)+'\')">Desbloquear</button> ':'<button type="button" onclick="event.stopPropagation();bloquearPacienteYnea(\''+esc(p.id)+'\')">Bloquear</button> ')+
+            '<button type="button" class="danger" onclick="event.stopPropagation();eliminarPacienteYnea(\''+esc(p.id)+'\')">Eliminar</button>'+
+          '</td></tr>';
+      }).join('')+'</tbody>';
+    const info=$('pacientesSearchInfo'); if(info) info.textContent=q?' '+pacientes.length+' resultado(s)':'';
   };
 
-  // Alta de paciente desde pestaña Pacientes / PC.
-  window.addPaciente=function(){
-    const nombre=(byId('pacNombre')?.value||'').trim();
-    const telefono=(byId('pacTelefono')?.value||'').trim();
-    const email=(byId('pacEmail')?.value||'').trim();
-    const obs=(byId('pacObs')?.value||'').trim();
-    if(!nombre){alert('Escribe el nombre del paciente.');return;}
-    if(!telefono){alert('El teléfono es obligatorio.');return;}
-    if(!email){alert('El email es obligatorio.');return;}
-    const dup=findDuplicatePaciente({nombre,telefono,email});
-    if(dup){avisoDuplicado(dup);return;}
-    const d=ensure();
-    const p={id:'p'+Date.now(),nombre,telefono,email,obs,bloqueado:false,motivoBloqueo:''};
-    d.pacientes.push(p);
-    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){const el=byId(id); if(el) el.value='';});
-    try{ if(typeof window.seleccionarPacienteCita==='function') window.seleccionarPacienteCita(p.id); }catch(e){}
-    persistir();
-    alert('Paciente guardado.');
-  };
-
-  // Alta de paciente desde modal móvil / cita.
-  window.guardarNuevoPacienteModal=function(){
-    const nombre=(byId('npNombre')?.value||'').trim();
-    const telefono=(byId('npTelefono')?.value||'').trim();
-    const email=(byId('npEmail')?.value||'').trim();
-    const obs=(byId('npObs')?.value||'').trim();
-    const err=byId('nuevoPacienteError');
-    if(err){err.textContent='';err.style.display='none';}
-    if(!nombre){ if(err){err.textContent='El nombre del paciente es obligatorio.';err.style.display='block';} else alert('El nombre del paciente es obligatorio.'); return; }
-    if(!telefono){ if(err){err.textContent='El teléfono es obligatorio.';err.style.display='block';} else alert('El teléfono es obligatorio.'); return; }
-    if(!email){ if(err){err.textContent='El email es obligatorio.';err.style.display='block';} else alert('El email es obligatorio.'); return; }
-    const dup=findDuplicatePaciente({nombre,telefono,email});
-    if(dup){avisoDuplicado(dup);return;}
-    const d=ensure();
-    const p={id:'p'+Date.now(),nombre,telefono,email,obs,bloqueado:false,motivoBloqueo:''};
-    d.pacientes.push(p);
-    try{ if(typeof window.actualizarBuscadorPacienteCita==='function') window.actualizarBuscadorPacienteCita(); }catch(e){}
-    try{ if(typeof window.seleccionarPacienteCita==='function') window.seleccionarPacienteCita(p.id); else { const h=byId('pacienteCita'); if(h) h.value=p.id; } }catch(e){}
-    try{ const sel=byId('editCitaPaciente'); if(window.__yneaPacienteDestinoEditor && sel){ const opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.nombre; sel.appendChild(opt); sel.value=p.id; } }catch(e){}
-    window.__yneaPacienteDestinoEditor=false;
-    try{ const ov=byId('nuevoPacienteOverlay'); if(ov) ov.style.display='none'; }catch(e){}
-    persistir();
-    alert('Paciente guardado.');
-  };
-
-  // Impedir crear/editar cita con paciente bloqueado.
-  const oldAddCita=window.addCita;
+  function pacienteBloqueadoPorId(id){return (d().pacientes||[]).find(function(p){return String(p.id)===String(id) && p.bloqueado;});}
+  function precheckCitaPaciente(pid){
+    const p=pacienteBloqueadoPorId(pid);
+    if(p){ alert('Paciente bloqueado: '+pacienteNombre(p)+'\nMotivo: '+(p.motivoBloqueo||'Sin motivo')+'\nNo se puede crear/modificar una cita para este paciente.'); return false; }
+    return true;
+  }
+  const baseAddCita=window.addCita;
   window.addCita=function(){
-    const pid=(typeof window.pacienteSeleccionadoParaCita==='function')?window.pacienteSeleccionadoParaCita():(byId('pacienteCita')?.value||'');
-    if(impedirPacienteBloqueado(obtenerPaciente(pid))) return;
-    if(typeof oldAddCita==='function') return oldAddCita.apply(this,arguments);
+    const pid=(typeof window.pacienteSeleccionadoParaCita==='function') ? window.pacienteSeleccionadoParaCita() : ($('pacienteCita')?.value||'');
+    if(!precheckCitaPaciente(pid)) return;
+    return typeof baseAddCita==='function' ? baseAddCita.apply(this,arguments) : undefined;
   };
-
-  const oldGuardarEditor=window.guardarCitaDesdeEditor;
+  const baseGuardarCita=window.guardarCitaDesdeEditor;
   window.guardarCitaDesdeEditor=function(){
-    const pid=byId('editCitaPaciente')?.value;
-    if(impedirPacienteBloqueado(obtenerPaciente(pid))) return;
-    if(typeof oldGuardarEditor==='function') return oldGuardarEditor.apply(this,arguments);
+    const pid=$('editCitaPaciente')?.value||'';
+    if(!precheckCitaPaciente(pid)) return;
+    return typeof baseGuardarCita==='function' ? baseGuardarCita.apply(this,arguments) : undefined;
   };
 
-  function conectar(){
-    instalarBotonNuevoPacienteCita();
-    instalarBotonNuevoPacienteEditor();
-    const b=byId('buscadorPacientes');
-    if(b && b.dataset.yneaFinalSearch!=='1'){
-      b.dataset.yneaFinalSearch='1';
-      b.addEventListener('input',function(){window.renderPatients();});
-      b.addEventListener('keyup',function(){window.renderPatients();});
-      b.addEventListener('search',function(){window.renderPatients();});
+  function asegurarBotonesNuevoPaciente(){
+    const box=$('pacienteCita')?.parentElement;
+    if(box && !$('yneaBtnNuevoPacienteCrear')){
+      const b=document.createElement('button'); b.id='yneaBtnNuevoPacienteCrear'; b.type='button'; b.className='secondary'; b.textContent='➕ Nuevo paciente'; b.style.marginTop='8px'; b.onclick=function(){ if(typeof window.abrirNuevoPaciente==='function') window.abrirNuevoPaciente(); };
+      box.appendChild(b);
     }
-    try{window.renderPatients();}catch(e){}
+    const edit=$('editCitaPaciente');
+    if(edit && !$('yneaBtnNuevoPacienteEditar')){
+      const b=document.createElement('button'); b.id='yneaBtnNuevoPacienteEditar'; b.type='button'; b.className='secondary'; b.textContent='➕ Nuevo paciente'; b.style.marginTop='8px'; b.onclick=function(){ if(typeof window.abrirNuevoPaciente==='function') window.abrirNuevoPaciente(); };
+      edit.insertAdjacentElement('afterend', b);
+    }
   }
 
-  const oldAbrirEditor=window.abrirEditorCita;
-  window.abrirEditorCita=function(){
-    const r=typeof oldAbrirEditor==='function'?oldAbrirEditor.apply(this,arguments):undefined;
-    setTimeout(instalarBotonNuevoPacienteEditor,50);
+  const baseRenderAll=window.renderAll;
+  window.renderAll=function(){
+    const r=typeof baseRenderAll==='function' ? baseRenderAll.apply(this,arguments) : undefined;
+    setTimeout(function(){ asegurarBotonesNuevoPaciente(); try{window.renderPatients();}catch(e){} },20);
     return r;
   };
-
-  const oldRenderAll=window.renderAll;
-  if(typeof oldRenderAll==='function'){
-    window.renderAll=function(){
-      const r=oldRenderAll.apply(this,arguments);
-      setTimeout(conectar,50);
-      return r;
-    };
-  }
-
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(conectar,300);setTimeout(conectar,1200);},true);
-  window.addEventListener('load',function(){setTimeout(conectar,300);});
-  setInterval(conectar,2000);
+  document.addEventListener('DOMContentLoaded',function(){ asegurarBotonesNuevoPaciente(); setTimeout(function(){asegurarBotonesNuevoPaciente(); repaint();},300); });
+  window.addEventListener('load',function(){ asegurarBotonesNuevoPaciente(); repaint(); });
+  setInterval(asegurarBotonesNuevoPaciente,1000);
 })();
 </script>
+<style id="ynea-fix-final-verificado-css">
+#pacientesTable th,#pacientesTable td{font-size:12px!important;vertical-align:top!important;}
+#pacientesTable .yneaPacienteAcciones button{font-size:11px!important;padding:5px 7px!important;margin:2px!important;min-height:28px!important;}
+@media(max-width:700px){
+  #pacientesTable{display:table!important;min-width:900px!important;width:100%!important;}
+  #pacientesTable thead{display:table-header-group!important;}
+  #pacientesTable tbody{display:table-row-group!important;}
+  #pacientesTable tr{display:table-row!important;}
+  #pacientesTable th,#pacientesTable td{display:table-cell!important;}
+}
+</style>
 
 </body>
 </html>
