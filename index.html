@@ -2679,7 +2679,12 @@ function importBackupFromMain(event){
       </div>
       <div>
         <label>Paciente</label>
-        <select id="editCitaPaciente"></select>
+        
+<input id="editCitaPacienteBusqueda" type="text" placeholder="Escribe nombre, teléfono o email" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="yneaBuscarPacienteEditor()" onfocus="yneaBuscarPacienteEditor()">
+<input type="hidden" id="editCitaPaciente">
+<div id="editCitaPacienteResultados" class="pacienteResultados"></div>
+<div id="editCitaPacienteInfo" class="pacienteSeleccionado"></div>
+
       </div>
       <div>
         <label>Profesional</label>
@@ -7243,472 +7248,323 @@ header{padding-right:112px!important;}
 </script>
 
 
-<!-- YNEA FIX FINAL: ficha móvil paciente + eliminar solo administrador -->
-<style id="ynea-ficha-paciente-mobile-admin-css">
-  .yneaPacienteFichaOverlay{
+<!-- YNEA FIX REAL 2026-05-14: paciente escribible en modificar cita + sin memoria + sin botones duplicados -->
+<style id="ynea-fix-real-paciente-editor-css">
+  /* En nueva cita deja solo un botón Nuevo paciente dentro del bloque de paciente */
+  .pacienteSearchBox .yneaNuevoPacienteDuplicadoOculto{display:none!important;}
+  #editCitaPacienteResultados{
+    position:relative!important;
+    top:auto!important;
+    margin-top:6px!important;
     display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(15,23,42,.48);
-    z-index:70000;
-    align-items:flex-end;
-    justify-content:center;
-    padding:10px;
+    z-index:70000!important;
   }
-  .yneaPacienteFichaModal{
-    background:#fff;
-    width:min(560px,100%);
-    max-height:88vh;
-    overflow:auto;
-    border-radius:22px 22px 0 0;
-    border:1px solid #f3cfe0;
-    box-shadow:0 22px 80px rgba(15,23,42,.28);
-    padding:16px;
-  }
-  .yneaPacienteFichaHeader{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:10px;
-  }
-  .yneaPacienteFichaHeader h2{
-    margin:0;
-    font-size:20px;
-    color:#db2777;
-    line-height:1.15;
-  }
-  .yneaPacienteFichaEstado{
-    display:inline-flex;
-    padding:5px 9px;
-    border-radius:999px;
-    font-weight:800;
-    font-size:12px;
-    margin-top:6px;
-  }
-  .yneaPacienteFichaEstado.activo{background:#dcfce7;color:#166534;}
-  .yneaPacienteFichaEstado.bloqueado{background:#fee2e2;color:#991b1b;}
-  .yneaPacienteFichaDato{
-    border:1px solid #f3cfe0;
-    border-radius:14px;
-    padding:10px;
-    margin:8px 0;
-    background:#fff7fb;
-    overflow-wrap:anywhere;
-  }
-  .yneaPacienteFichaDato b{
-    display:block;
-    color:#64748b;
-    font-size:12px;
-    margin-bottom:4px;
-  }
-  .yneaPacienteFichaActions{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-    margin-top:12px;
-  }
-  .yneaPacienteFichaActions button{
-    min-width:0 !important;
-    width:100% !important;
-  }
-  .yneaPacienteFichaActions .full{grid-column:1/-1;}
-  #pacienteSeleccionadoInfo{
+  #editCitaPacienteInfo{
     cursor:pointer;
   }
-  #pacienteSeleccionadoInfo .yneaVerFichaBtn{
-    margin-top:6px;
-    width:100%;
+  #editCitaPacienteInfo button,
+  #pacienteSeleccionadoInfo button{
+    margin-top:6px!important;
+    width:100%!important;
     min-height:30px!important;
     font-size:12px!important;
     padding:5px 7px!important;
   }
   @media(max-width:900px){
-    #pacientesTable tbody tr{
-      cursor:pointer !important;
+    #editCitaPacienteResultados,
+    #pacienteResultados{
+      max-height:240px!important;
+      overflow:auto!important;
+      z-index:70000!important;
     }
-    #pacientesTable .yneaPacienteAcciones{
-      display:grid !important;
-      grid-template-columns:1fr 1fr !important;
-      gap:6px !important;
-      margin-top:6px !important;
-    }
-    #pacientesTable .yneaPacienteAcciones button{
-      width:100% !important;
-      min-width:0 !important;
-      min-height:30px !important;
-      font-size:11px !important;
-      padding:5px 6px !important;
-    }
-    .yneaPacienteFichaModal{
-      padding-bottom:18px;
+    .pacienteResultadoItem{
+      padding:10px!important;
     }
   }
 </style>
 
-<script id="ynea-ficha-paciente-mobile-admin-js">
+<script id="ynea-fix-real-paciente-editor-js">
 (function(){
   'use strict';
 
-  function $(id){ return document.getElementById(id); }
-
-  function esc(v){
-    return String(v == null ? '' : v).replace(/[&<>"']/g,function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
-  }
-
-  function norm(v){
-    return String(v || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .trim();
-  }
-
-  function getData(){
+  function $(id){return document.getElementById(id);}
+  function dataSafe(){
     window.data = window.data || {};
     data.pacientes = Array.isArray(data.pacientes) ? data.pacientes : [];
     data.citas = Array.isArray(data.citas) ? data.citas : [];
     return data;
   }
-
-  function currentUser(){
-    try{ return JSON.parse(sessionStorage.getItem('yneaCurrentUser') || 'null') || {}; }
-    catch(e){ return {}; }
+  function esc(v){
+    return String(v == null ? '' : v).replace(/[&<>"']/g,function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
   }
-
-  function currentRole(){
-    return String(currentUser().rol || '').toLowerCase();
+  function norm(v){
+    return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   }
-
-  function isAdmin(){
-    var r = currentRole();
-    return r === 'admin' || r === 'administrador';
-  }
-
-  function persistAndRefresh(){
-    try{ window.yneaLocalPendingUntil = Date.now() + 15000; }catch(e){}
-    try{ if(typeof window.save === 'function') window.save(); }catch(e){}
-    try{ localStorage.setItem('agendaClinicaSemanal', JSON.stringify(getData())); }catch(e){}
-    try{ localStorage.setItem('agendaData', JSON.stringify(getData())); }catch(e){}
-    try{ if(typeof window.yneaForceCloudSave === 'function') setTimeout(function(){ window.yneaForceCloudSave(); }, 80); }catch(e){}
-    try{ if(typeof window.refreshAllSelects === 'function') window.refreshAllSelects(); }catch(e){}
-    try{ if(typeof window.renderAll === 'function') window.renderAll(); }catch(e){}
-    try{ if(typeof window.renderPatients === 'function') window.renderPatients(); }catch(e){}
-  }
-
   function pacienteById(id){
-    return (getData().pacientes || []).find(function(p){ return String(p.id) === String(id); });
+    return (dataSafe().pacientes||[]).find(function(p){return String(p.id)===String(id);});
   }
-
-  function ensureFichaModal(){
-    var ov = $('yneaPacienteFichaOverlay');
-    if(ov) return ov;
-
-    ov = document.createElement('div');
-    ov.id = 'yneaPacienteFichaOverlay';
-    ov.className = 'yneaPacienteFichaOverlay';
-    ov.innerHTML =
-      '<div class="yneaPacienteFichaModal" role="dialog" aria-modal="true">' +
-        '<div class="yneaPacienteFichaHeader">' +
-          '<div><h2 id="yneaPacienteFichaNombre">Paciente</h2><span id="yneaPacienteFichaEstado" class="yneaPacienteFichaEstado activo">Activo</span></div>' +
-          '<button type="button" class="secondary" onclick="yneaCerrarFichaPaciente()">Cerrar</button>' +
-        '</div>' +
-        '<div id="yneaPacienteFichaContenido"></div>' +
-        '<div id="yneaPacienteFichaActions" class="yneaPacienteFichaActions"></div>' +
-      '</div>';
-
-    ov.addEventListener('click', function(ev){
-      if(ev.target === ov) window.yneaCerrarFichaPaciente();
-    });
-
-    document.body.appendChild(ov);
-    return ov;
+  function textoPaciente(p){
+    return [p.nombre,p.telefono,p.email,p.obs,p.motivoBloqueo].map(function(x){return x||'';}).join(' ');
   }
-
-  window.yneaCerrarFichaPaciente = function(){
-    var ov = $('yneaPacienteFichaOverlay');
-    if(ov) ov.style.display = 'none';
-  };
-
-  window.yneaAbrirFichaPaciente = function(id){
-    var p = pacienteById(id);
-    if(!p) return;
-
-    var ov = ensureFichaModal();
-    var estado = $('yneaPacienteFichaEstado');
-    var cont = $('yneaPacienteFichaContenido');
-    var actions = $('yneaPacienteFichaActions');
-
-    $('yneaPacienteFichaNombre').textContent = p.nombre || 'Paciente';
-
-    if(p.bloqueado){
-      estado.textContent = 'BLOQUEADO';
-      estado.className = 'yneaPacienteFichaEstado bloqueado';
-    }else{
-      estado.textContent = 'Activo';
-      estado.className = 'yneaPacienteFichaEstado activo';
-    }
-
-    var citas = (getData().citas || []).filter(function(c){ return String(c.pacienteId) === String(p.id); }).length;
-
-    cont.innerHTML =
-      '<div class="yneaPacienteFichaDato"><b>Teléfono</b>' + esc(p.telefono || 'Sin teléfono') + '</div>' +
-      '<div class="yneaPacienteFichaDato"><b>Email</b>' + esc(p.email || 'Sin email') + '</div>' +
-      '<div class="yneaPacienteFichaDato"><b>Observaciones</b>' + esc(p.obs || 'Sin observaciones') + '</div>' +
-      '<div class="yneaPacienteFichaDato"><b>Estado de bloqueo</b>' +
-        (p.bloqueado ? ('Bloqueado<br><small>' + esc(p.motivoBloqueo || 'Sin motivo') + '</small>') : 'Activo') +
-      '</div>' +
-      '<div class="yneaPacienteFichaDato"><b>Citas asociadas</b>' + citas + '</div>';
-
-    var html =
-      '<button type="button" class="secondary" onclick="editarPacienteYnea(\'' + esc(p.id) + '\'); yneaAbrirFichaPaciente(\'' + esc(p.id) + '\')">Editar</button>' +
-      (p.bloqueado
-        ? '<button type="button" onclick="desbloquearPacienteYnea(\'' + esc(p.id) + '\'); yneaCerrarFichaPaciente()">Desbloquear</button>'
-        : '<button type="button" onclick="bloquearPacienteYnea(\'' + esc(p.id) + '\'); yneaCerrarFichaPaciente()">Bloquear</button>');
-
-    if(isAdmin()){
-      html += '<button type="button" class="danger full" onclick="eliminarPacienteYnea(\'' + esc(p.id) + '\'); yneaCerrarFichaPaciente()">Eliminar paciente</button>';
-    }
-
-    actions.innerHTML = html;
-    ov.style.display = 'flex';
-  };
-
-  function bloquearPacienteLocal(id){
-    var p = pacienteById(id);
-    if(!p) return;
-    var motivo = prompt('Motivo del bloqueo del paciente:', p.motivoBloqueo || '');
-    if(motivo === null) return;
-    if(!String(motivo).trim()){
-      alert('Debes escribir un motivo para bloquear al paciente.');
-      return;
-    }
-    p.bloqueado = true;
-    p.motivoBloqueo = String(motivo).trim();
-    persistAndRefresh();
+  function setNoMemory(el){
+    if(!el) return;
+    try{
+      el.setAttribute('autocomplete','off');
+      el.setAttribute('autocorrect','off');
+      el.setAttribute('autocapitalize','off');
+      el.setAttribute('spellcheck','false');
+      el.setAttribute('data-lpignore','true');
+      el.setAttribute('data-form-type','other');
+      el.name = 'ynea_' + (el.id || 'campo') + '_' + Date.now() + '_' + Math.floor(Math.random()*999999);
+    }catch(e){}
   }
-
-  function desbloquearPacienteLocal(id){
-    var p = pacienteById(id);
-    if(!p) return;
-    if(!confirm('¿Desbloquear a ' + (p.nombre || 'este paciente') + '?')) return;
-    p.bloqueado = false;
-    p.motivoBloqueo = '';
-    persistAndRefresh();
+  function aplicarNoMemory(){
+    [
+      'pacienteBusqueda','pacienteCita','pacNombre','pacTelefono','pacEmail','pacObs',
+      'npNombre','npTelefono','npEmail','npObs','obsCita',
+      'editCitaPacienteBusqueda','editCitaPaciente','editCitaObs',
+      'buscadorPacientes'
+    ].forEach(function(id){setNoMemory($(id));});
   }
-
-  var bloquearBase = window.bloquearPacienteYnea;
-  window.bloquearPacienteYnea = function(id){
-    if(typeof bloquearBase === 'function'){
-      var r = bloquearBase.apply(this, arguments);
-      setTimeout(function(){ try{ window.renderPatients(); }catch(e){} }, 80);
-      return r;
-    }
-    return bloquearPacienteLocal(id);
-  };
-
-  var desbloquearBase = window.desbloquearPacienteYnea;
-  window.desbloquearPacienteYnea = function(id){
-    if(typeof desbloquearBase === 'function'){
-      var r = desbloquearBase.apply(this, arguments);
-      setTimeout(function(){ try{ window.renderPatients(); }catch(e){} }, 80);
-      return r;
-    }
-    return desbloquearPacienteLocal(id);
-  };
-
-  window.eliminarPacienteYnea = function(id){
-    if(!isAdmin()){
-      alert('Solo el administrador puede eliminar pacientes. Para el resto de usuarios está disponible Bloquear paciente.');
-      return false;
-    }
-
-    var p = pacienteById(id);
-    if(!p) return false;
-
-    var citas = (getData().citas || []).filter(function(c){ return String(c.pacienteId) === String(id); }).length;
-    var msg = '¿Eliminar al paciente ' + (p.nombre || '') + '?' +
-      (citas ? '\nTambién se eliminarán ' + citas + ' cita(s) asociada(s).' : '');
-
-    if(!confirm(msg)) return false;
-
-    getData().pacientes = (getData().pacientes || []).filter(function(x){ return String(x.id) !== String(id); });
-    getData().citas = (getData().citas || []).filter(function(c){ return String(c.pacienteId) !== String(id); });
-
-    persistAndRefresh();
-    return true;
-  };
-
-  function accionesPacienteHtml(p){
-    var id = esc(p.id);
-    var bloqueado = !!p.bloqueado;
-    var out =
-      '<button type="button" class="secondary" onclick="event.stopPropagation();yneaAbrirFichaPaciente(\'' + id + '\')">Ver ficha</button>' +
-      '<button type="button" class="secondary" onclick="event.stopPropagation();editarPacienteYnea(\'' + id + '\')">Editar</button>' +
-      (bloqueado
-        ? '<button type="button" onclick="event.stopPropagation();desbloquearPacienteYnea(\'' + id + '\')">Desbloquear</button>'
-        : '<button type="button" onclick="event.stopPropagation();bloquearPacienteYnea(\'' + id + '\')">Bloquear</button>');
-
-    if(isAdmin()){
-      out += '<button type="button" class="danger" onclick="event.stopPropagation();eliminarPacienteYnea(\'' + id + '\')">Eliminar</button>';
-    }
-    return out;
+  function limpiarSeleccionNuevaCita(){
+    var input=$('pacienteBusqueda');
+    var hidden=$('pacienteCita');
+    var res=$('pacienteResultados');
+    if(input) input.value='';
+    if(hidden) hidden.value='';
+    if(res){res.innerHTML='';res.style.display='none';}
+    var info=$('pacienteSeleccionadoInfo');
+    if(info) info.remove();
   }
-
-  window.renderPatients = function(){
-    var table = $('pacientesTable');
-    if(!table) return;
-
-    var q = norm($('buscadorPacientes') ? $('buscadorPacientes').value : '');
-    var pacientes = (getData().pacientes || []).filter(function(p){
-      var texto = norm([p.nombre, p.telefono, p.email, p.obs, p.motivoBloqueo].join(' '));
-      return !q || texto.indexOf(q) >= 0;
-    });
-
-    table.innerHTML =
-      '<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' +
-      pacientes.map(function(p){
-        var bloqueo = p.bloqueado
-          ? '<b style="color:#b91c1c">BLOQUEADO</b><br><small>' + esc(p.motivoBloqueo || 'Sin motivo') + '</small>'
-          : 'Activo';
-
-        return '<tr onclick="yneaAbrirFichaPaciente(\'' + esc(p.id) + '\')">' +
-          '<td><b>' + esc(p.nombre || '') + '</b></td>' +
-          '<td>' + esc(p.telefono || '') + '</td>' +
-          '<td>' + esc(p.email || '') + '</td>' +
-          '<td>' + esc(p.obs || '') + '</td>' +
-          '<td>' + bloqueo + '</td>' +
-          '<td class="yneaPacienteAcciones">' + accionesPacienteHtml(p) + '</td>' +
-        '</tr>';
-      }).join('') +
-      '</tbody>';
-
-    var info = $('pacientesSearchInfo');
-    if(info) info.textContent = q ? (' ' + pacientes.length + ' resultado(s)') : '';
-  };
-
-  function pintarInfoPacienteSeleccionado(id){
-    var p = pacienteById(id);
-    var box = document.querySelector('.pacienteSearchBox');
-    if(!p || !box) return;
-
-    var info = $('pacienteSeleccionadoInfo');
-    if(!info){
-      info = document.createElement('div');
-      info.id = 'pacienteSeleccionadoInfo';
-      info.className = 'pacienteSeleccionado';
-      box.appendChild(info);
-    }
-
+  function pintarInfoPaciente(containerId, p){
+    var info=$(containerId);
+    if(!info || !p) return;
+    info.style.display='block';
     info.innerHTML =
-      '<b>Paciente seleccionado:</b> ' + esc(p.nombre || '') +
-      (p.telefono ? '<br><b>Tel.:</b> ' + esc(p.telefono) : '') +
-      (p.email ? '<br><b>Email:</b> ' + esc(p.email) : '') +
+      '<b>Paciente seleccionado:</b> ' + esc(p.nombre||'') +
+      (p.telefono ? '<br><b>Tel.:</b> ' + esc(p.telefono) : '<br><b>Tel.:</b> Sin teléfono') +
+      (p.email ? '<br><b>Email:</b> ' + esc(p.email) : '<br><b>Email:</b> Sin email') +
       '<br><b>Estado:</b> ' + (p.bloqueado ? '<span style="color:#b91c1c;font-weight:800">BLOQUEADO</span>' : 'Activo') +
       (p.bloqueado ? '<br><small>' + esc(p.motivoBloqueo || 'Sin motivo') + '</small>' : '') +
-      '<button type="button" class="secondary yneaVerFichaBtn" onclick="event.preventDefault();yneaAbrirFichaPaciente(\'' + esc(p.id) + '\')">Ver ficha completa</button>';
-
-    info.onclick = function(ev){
-      if(ev.target && ev.target.tagName === 'BUTTON') return;
-      window.yneaAbrirFichaPaciente(p.id);
-    };
+      '<button type="button" class="secondary" onclick="event.preventDefault();event.stopPropagation(); if(window.yneaAbrirFichaPaciente) yneaAbrirFichaPaciente(\\'' + esc(p.id) + '\\')">Ver ficha completa</button>';
   }
 
-  var seleccionarBase = window.seleccionarPacienteCita;
+  function eliminarBotonesDuplicadosNuevoPaciente(){
+    document.querySelectorAll('.pacienteSearchBox').forEach(function(box){
+      var botones = Array.prototype.slice.call(box.querySelectorAll('button')).filter(function(b){
+        return /nuevo paciente/i.test((b.textContent||''));
+      });
+      botones.forEach(function(b, idx){
+        if(idx===0){
+          b.classList.remove('yneaNuevoPacienteDuplicadoOculto');
+          b.style.display='';
+          b.onclick=function(ev){
+            if(ev){ev.preventDefault();ev.stopPropagation();}
+            if(typeof window.abrirNuevoPacienteDesdeBusqueda==='function') window.abrirNuevoPacienteDesdeBusqueda();
+            else if(typeof window.abrirNuevoPaciente==='function') window.abrirNuevoPaciente();
+            return false;
+          };
+        }else{
+          b.remove();
+        }
+      });
+    });
+  }
+
+  /* NUEVA CITA: al abrir desde calendario, limpiar paciente y quitar memoria */
+  var baseQuickNewCitaConsulta = window.quickNewCitaConsulta;
+  window.quickNewCitaConsulta = function(fecha,hora,consulta){
+    var r = typeof baseQuickNewCitaConsulta==='function'
+      ? baseQuickNewCitaConsulta.apply(this, arguments)
+      : undefined;
+    setTimeout(function(){
+      limpiarSeleccionNuevaCita();
+      aplicarNoMemory();
+      eliminarBotonesDuplicadosNuevoPaciente();
+    }, 80);
+    return r;
+  };
+
+  var baseQuickNewCita = window.quickNewCita;
+  window.quickNewCita = function(fecha,hora){
+    var r = typeof baseQuickNewCita==='function'
+      ? baseQuickNewCita.apply(this, arguments)
+      : undefined;
+    setTimeout(function(){
+      limpiarSeleccionNuevaCita();
+      aplicarNoMemory();
+      eliminarBotonesDuplicadosNuevoPaciente();
+    }, 80);
+    return r;
+  };
+
+  /* NUEVA CITA: selección muestra datos en móvil/PC */
+  var baseSeleccionarPacienteCita = window.seleccionarPacienteCita;
   window.seleccionarPacienteCita = function(id){
+    var p = pacienteById(id);
     var r;
-    if(typeof seleccionarBase === 'function'){
-      r = seleccionarBase.apply(this, arguments);
-    }else{
-      var p = pacienteById(id);
-      if(p){
-        if($('pacienteCita')) $('pacienteCita').value = p.id;
-        if($('pacienteBusqueda')) $('pacienteBusqueda').value = p.nombre || '';
-        if($('pacienteResultados')) $('pacienteResultados').style.display = 'none';
+    if(typeof baseSeleccionarPacienteCita==='function'){
+      r = baseSeleccionarPacienteCita.apply(this, arguments);
+    }else if(p){
+      if($('pacienteCita')) $('pacienteCita').value = p.id;
+      if($('pacienteBusqueda')) $('pacienteBusqueda').value = p.nombre || '';
+      if($('pacienteResultados')) $('pacienteResultados').style.display='none';
+    }
+    if(p){
+      var box = document.querySelector('.pacienteSearchBox');
+      if(box){
+        var info=$('pacienteSeleccionadoInfo');
+        if(!info){
+          info=document.createElement('div');
+          info.id='pacienteSeleccionadoInfo';
+          info.className='pacienteSeleccionado';
+          box.appendChild(info);
+        }
+        pintarInfoPaciente('pacienteSeleccionadoInfo', p);
       }
     }
-    pintarInfoPacienteSeleccionado(id);
+    aplicarNoMemory();
     return r;
   };
 
-  var buscarBase = window.buscarPacienteCita;
-  window.buscarPacienteCita = function(){
-    var r = typeof buscarBase === 'function' ? buscarBase.apply(this, arguments) : undefined;
+  /* EDITOR DE CITA: buscador escribible */
+  window.yneaBuscarPacienteEditor = function(){
+    var input=$('editCitaPacienteBusqueda');
+    var hidden=$('editCitaPaciente');
+    var res=$('editCitaPacienteResultados');
+    var info=$('editCitaPacienteInfo');
+    if(!input || !hidden || !res) return;
+
+    hidden.value='';
+    if(info) info.innerHTML='';
+
+    var q=norm(input.value);
+    var pacientes=(dataSafe().pacientes||[]).filter(function(p){
+      return !q || norm(textoPaciente(p)).indexOf(q)>=0;
+    }).slice(0,20);
+
+    if(!pacientes.length){
+      res.innerHTML='<div class="pacienteResultadoItem"><strong>No hay resultados</strong><span>Escribe otro dato o crea un paciente nuevo.</span></div>';
+      res.style.display='block';
+      return;
+    }
+
+    res.innerHTML=pacientes.map(function(p){
+      return '<div class="pacienteResultadoItem" onclick="yneaSeleccionarPacienteEditor(\\'' + esc(p.id) + '\\')">' +
+        '<strong>' + esc(p.nombre||'') + '</strong>' +
+        '<span>' + esc(p.telefono||'Sin teléfono') + ' · ' + esc(p.email||'Sin email') + '</span>' +
+        (p.bloqueado ? '<br><span style="color:#b91c1c;font-weight:800">BLOQUEADO: ' + esc(p.motivoBloqueo||'Sin motivo') + '</span>' : '') +
+      '</div>';
+    }).join('');
+    res.style.display='block';
+  };
+
+  window.yneaSeleccionarPacienteEditor = function(id){
+    var p=pacienteById(id);
+    if(!p) return;
+    if($('editCitaPaciente')) $('editCitaPaciente').value=p.id;
+    if($('editCitaPacienteBusqueda')) $('editCitaPacienteBusqueda').value=p.nombre||'';
+    if($('editCitaPacienteResultados')) $('editCitaPacienteResultados').style.display='none';
+    pintarInfoPaciente('editCitaPacienteInfo', p);
+    aplicarNoMemory();
+  };
+
+  /* Sustituir abrirEditorCita para que NO rellene un select, sino el input buscador */
+  var baseAbrirEditorCita = window.abrirEditorCita;
+  window.abrirEditorCita = function(id){
+    var cita=(dataSafe().citas||[]).find(function(c){return String(c.id)===String(id);});
+    if(!cita){
+      if(typeof baseAbrirEditorCita==='function') return baseAbrirEditorCita.apply(this, arguments);
+      return;
+    }
+
+    try{ if(typeof limpiarErrorEditorCita==='function') limpiarErrorEditorCita(); }catch(e){}
+
+    try{ if(typeof llenarSelectEditor==='function') llenarSelectEditor('editCitaHora', window.horas || horas || []); }catch(e){}
+    try{ if(typeof llenarSelectEditor==='function') llenarSelectEditor('editCitaProfesional', dataSafe().profesionales||[]); }catch(e){}
+    try{ if(typeof llenarSelectEditor==='function') llenarSelectEditor('editCitaConsulta', dataSafe().consultas||[]); }catch(e){}
+
+    var p=pacienteById(cita.pacienteId);
+
+    if($('editCitaId')) $('editCitaId').value=cita.id;
+    if($('editCitaFecha')) $('editCitaFecha').value=cita.fecha||'';
+    if($('editCitaHora')) $('editCitaHora').value=cita.hora||'';
+    if($('editCitaDuracion')) $('editCitaDuracion').value=cita.duracion||'10';
+    if($('editCitaEstado')) $('editCitaEstado').value=cita.estado||'Pendiente';
+    if($('editCitaPaciente')) $('editCitaPaciente').value=cita.pacienteId||'';
+    if($('editCitaPacienteBusqueda')) $('editCitaPacienteBusqueda').value=p ? (p.nombre||'') : '';
+    if($('editCitaProfesional')) $('editCitaProfesional').value=cita.profesional||'';
+    if($('editCitaConsulta')) $('editCitaConsulta').value=cita.consulta||'';
+    try{ if(typeof refrescarTiposEditorCita==='function') refrescarTiposEditorCita(cita.tipo); }catch(e){}
+    if($('editCitaTipo')) $('editCitaTipo').value=cita.tipo||'';
+    if($('editCitaObs')) $('editCitaObs').value=cita.obs || cita.observaciones || '';
+
+    if($('editCitaPacienteResultados')) $('editCitaPacienteResultados').style.display='none';
+    if(p) pintarInfoPaciente('editCitaPacienteInfo', p);
+
+    aplicarNoMemory();
+    if($('editorCitaOverlay')) $('editorCitaOverlay').style.display='flex';
     setTimeout(function(){
-      var box = $('pacienteResultados');
-      if(!box) return;
-      Array.prototype.forEach.call(box.querySelectorAll('.pacienteResultadoItem'), function(item){
-        item.title = 'Toca para seleccionar. Después podrás abrir la ficha completa.';
-      });
-    }, 10);
-    return r;
+      aplicarNoMemory();
+      if($('editCitaPacienteBusqueda')){
+        $('editCitaPacienteBusqueda').removeAttribute('list');
+      }
+    },100);
   };
 
-  function refrescoInicial(){
-    ensureFichaModal();
-    try{ window.renderPatients(); }catch(e){}
-    var selected = $('pacienteCita') ? $('pacienteCita').value : '';
-    if(selected) pintarInfoPacienteSeleccionado(selected);
-  }
+  /* Guardar cita: validar que si se escribe manualmente, se haya seleccionado un paciente */
+  var baseGuardarCitaDesdeEditor = window.guardarCitaDesdeEditor;
+  window.guardarCitaDesdeEditor = function(){
+    var hidden=$('editCitaPaciente');
+    var txt=$('editCitaPacienteBusqueda');
+    if(txt && hidden && !hidden.value){
+      var q=norm(txt.value);
+      var matches=(dataSafe().pacientes||[]).filter(function(p){return norm(p.nombre)===q;});
+      if(matches.length===1){
+        window.yneaSeleccionarPacienteEditor(matches[0].id);
+      }else{
+        alert('Selecciona el paciente desde los resultados del buscador. Escribe nombre, teléfono o email y toca el paciente correcto.');
+        if(txt) txt.focus();
+        return false;
+      }
+    }
+    if(typeof baseGuardarCitaDesdeEditor==='function') return baseGuardarCitaDesdeEditor.apply(this, arguments);
+  };
+
+  var baseRenderAll = window.renderAll;
+  window.renderAll = function(){
+    var r = typeof baseRenderAll==='function' ? baseRenderAll.apply(this, arguments) : undefined;
+    setTimeout(function(){
+      eliminarBotonesDuplicadosNuevoPaciente();
+      aplicarNoMemory();
+    }, 50);
+    return r;
+  };
 
   document.addEventListener('DOMContentLoaded', function(){
-    setTimeout(refrescoInicial, 250);
-    setTimeout(refrescoInicial, 1000);
+    setTimeout(function(){
+      eliminarBotonesDuplicadosNuevoPaciente();
+      aplicarNoMemory();
+    }, 250);
+    setTimeout(function(){
+      eliminarBotonesDuplicadosNuevoPaciente();
+      aplicarNoMemory();
+    }, 1000);
   }, true);
 
   window.addEventListener('load', function(){
-    setTimeout(refrescoInicial, 300);
+    setTimeout(function(){
+      eliminarBotonesDuplicadosNuevoPaciente();
+      aplicarNoMemory();
+    }, 500);
   });
 
   setInterval(function(){
-    try{
-      var selected = $('pacienteCita') ? $('pacienteCita').value : '';
-      if(selected) pintarInfoPacienteSeleccionado(selected);
-    }catch(e){}
-  }, 2000);
-})();
-</script>
-
-
-<script id="ynea-form-clean-fix">
-(function(){
-  function limpiarFormularioYnea(){
-    var ids = [
-      'pacienteBusqueda','pacienteCita','telefonoPaciente','emailPaciente',
-      'observacionesCita','nombrePaciente','buscadorPacientes'
-    ];
-    ids.forEach(function(id){
-      var el=document.getElementById(id);
-      if(el){
-        try{
-          el.value='';
-          el.removeAttribute('value');
-          el.setAttribute('autocomplete','off');
-          el.setAttribute('autocorrect','off');
-          el.setAttribute('autocapitalize','off');
-          el.setAttribute('spellcheck','false');
-        }catch(e){}
-      }
-    });
-
-    var resultados=document.getElementById('pacienteResultados');
-    if(resultados) resultados.innerHTML='';
-
-    var info=document.getElementById('pacienteSeleccionadoInfo');
-    if(info) info.innerHTML='';
-  }
-
-  document.addEventListener('DOMContentLoaded',function(){
-    setTimeout(limpiarFormularioYnea,300);
-  });
-
-  window.addEventListener('load',function(){
-    setTimeout(limpiarFormularioYnea,500);
-  });
-
-  window.yneaLimpiarFormulario=limpiarFormularioYnea;
+    eliminarBotonesDuplicadosNuevoPaciente();
+    aplicarNoMemory();
+  }, 1500);
 })();
 </script>
 
