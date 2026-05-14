@@ -7671,5 +7671,46 @@ header{padding-right:112px!important;}
 })();
 </script>
 
+
+<script id="ynea-form-clean-fix">
+(function(){
+  function limpiarFormularioYnea(){
+    var ids = [
+      'pacienteBusqueda','pacienteCita','telefonoPaciente','emailPaciente',
+      'observacionesCita','nombrePaciente','buscadorPacientes'
+    ];
+    ids.forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){
+        try{
+          el.value='';
+          el.removeAttribute('value');
+          el.setAttribute('autocomplete','off');
+          el.setAttribute('autocorrect','off');
+          el.setAttribute('autocapitalize','off');
+          el.setAttribute('spellcheck','false');
+        }catch(e){}
+      }
+    });
+
+    var resultados=document.getElementById('pacienteResultados');
+    if(resultados) resultados.innerHTML='';
+
+    var info=document.getElementById('pacienteSeleccionadoInfo');
+    if(info) info.innerHTML='';
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(limpiarFormularioYnea,300);
+  });
+
+  window.addEventListener('load',function(){
+    setTimeout(limpiarFormularioYnea,500);
+  });
+
+  window.yneaLimpiarFormulario=limpiarFormularioYnea;
+})();
+</script>
+
 </body>
 </html>

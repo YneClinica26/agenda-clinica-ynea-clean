@@ -1,3 +1,7 @@
-Sube este index.html a GitHub sustituyendo el anterior y pulsa Commit changes. Luego espera a que Vercel termine y abre la app con Ctrl+F5 en PC.
+FIX FINAL YNEA
 
-Correcciones: bloqueo de duplicados en PC y móvil, columna Bloqueo visible, eliminar pacientes duplicados, bloqueo/desbloqueo con motivo, y aviso al citar paciente bloqueado.
+- Un solo boton Nuevo paciente
+- Sin memoria en formularios
+- Sin autocompletar raro
+- Campos limpios al abrir/modificar cita
+- Compatible movil/PC
