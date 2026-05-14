@@ -8299,5 +8299,486 @@ header{padding-right:112px!important;}
 })();
 </script>
 
+
+<style id="ynea-fix-modal-paciente-hora-css">
+#nuevoPacienteOverlay{
+  z-index:2147483000!important;
+}
+#nuevoPacienteOverlay .nuevoPacienteModal{
+  position:relative!important;
+  z-index:2147483001!important;
+}
+#editorCitaOverlay{
+  z-index:9999!important;
+}
+</style>
+
+<script id="ynea-fix-modal-paciente-hora-js">
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+
+  function ds(){
+    window.data = window.data || {};
+    if(!Array.isArray(window.data.pacientes)) window.data.pacientes = [];
+    if(!Array.isArray(window.data.citas)) window.data.citas = [];
+    return window.data;
+  }
+
+  function norm(v){
+    return String(v || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+
+  function tel(v){ return String(v || "").replace(/\D+/g,"").trim(); }
+  function mail(v){ return String(v || "").toLowerCase().trim(); }
+
+  function pacienteNombre(p){ return (p && (p.nombre || p.name)) || ""; }
+
+  function horaNormalizada(h){
+    h = String(h || "").trim();
+    if(!h) return "";
+    var m = h.match(/^(\d{1,2}):(\d{2})/);
+    if(!m) return h;
+    return String(m[1]).padStart(2,"0") + ":" + m[2];
+  }
+
+  function setSelectSeguro(select, value){
+    if(!select) return;
+    value = horaNormalizada(value);
+    if(!value) return;
+
+    var existe = Array.from(select.options || []).some(function(o){
+      return String(o.value) === value || String(o.textContent).trim() === value;
+    });
+
+    if(!existe){
+      var opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = value;
+      select.appendChild(opt);
+    }
+
+    select.value = value;
+    select.dataset.yneaHoraOriginal = value;
+    select.dataset.ultimaHoraValida = value;
+  }
+
+  function pacienteById(pid){
+    return (ds().pacientes || []).find(function(p){
+      return String(p.id) === String(pid);
+    });
+  }
+
+  function pacienteDuplicado(nombre, telefono, email){
+    var n = norm(nombre);
+    var t = tel(telefono);
+    var e = mail(email);
+
+    return (ds().pacientes || []).find(function(p){
+      if(n && norm(p.nombre || p.name) === n) return true;
+      if(t && tel(p.telefono) === t) return true;
+      if(e && mail(p.email) === e) return true;
+      return false;
+    }) || null;
+  }
+
+  function modalEditorVisible(){
+    var ed = $("editorCitaOverlay");
+    return !!(ed && getComputedStyle(ed).display !== "none");
+  }
+
+  function seleccionarPacienteEnEditor(p){
+    if(!p) return;
+
+    var sel = $("editCitaPaciente");
+    var input = $("editCitaPacienteBusqueda");
+
+    if(sel) sel.value = p.id;
+    if(input) input.value = pacienteNombre(p);
+
+    var info = $("editCitaPacienteInfo");
+    if(info){
+      info.innerHTML =
+        "<b>Paciente seleccionado:</b> " + pacienteNombre(p) +
+        "<br><b>Tel.:</b> " + (p.telefono || "Sin teléfono") +
+        "<br><b>Email:</b> " + (p.email || "Sin email") +
+        "<br><b>Estado:</b> Activo";
+    }
+  }
+
+  function seleccionarPacienteEnNuevaCita(p){
+    if(!p) return;
+    var hidden = $("pacienteCita");
+    var input = $("pacienteBusqueda");
+
+    if(hidden) hidden.value = p.id;
+    if(input) input.value = pacienteNombre(p);
+
+    if(typeof window.seleccionarPacienteCita === "function"){
+      try{ window.seleccionarPacienteCita(p.id); }catch(e){}
+    }
+  }
+
+  window.abrirNuevoPaciente = function(){
+    var overlay = $("nuevoPacienteOverlay");
+    if(!overlay) return;
+
+    window.yneaNuevoPacienteContext = modalEditorVisible() ? "edit" : "new";
+
+    // Coloca la ventana al final del body para que nunca quede detrás de modificar cita.
+    if(overlay.parentNode !== document.body){
+      document.body.appendChild(overlay);
+    }
+
+    if($("npNombre")) $("npNombre").value = "";
+    if($("npTelefono")) $("npTelefono").value = "";
+    if($("npEmail")) $("npEmail").value = "";
+    if($("npObs")) $("npObs").value = "";
+
+    if(typeof limpiarErrorNuevoPaciente === "function"){
+      try{ limpiarErrorNuevoPaciente(); }catch(e){}
+    }
+
+    overlay.style.display = "flex";
+    overlay.style.zIndex = "2147483000";
+
+    setTimeout(function(){
+      if($("npNombre")) $("npNombre").focus();
+    }, 80);
+  };
+
+  window.abrirNuevoPacienteDesdeBusqueda = function(){
+    window.abrirNuevoPaciente();
+  };
+
+  window.cerrarNuevoPaciente = function(){
+    var overlay = $("nuevoPacienteOverlay");
+    if(overlay) overlay.style.display = "none";
+
+    var sel = $("pacienteCita");
+    if(sel && sel.value === "__nuevo__") sel.value = "";
+  };
+
+  window.guardarNuevoPacienteModal = function(){
+    if(typeof limpiarErrorNuevoPaciente === "function"){
+      try{ limpiarErrorNuevoPaciente(); }catch(e){}
+    }
+
+    var nombre = $("npNombre") ? $("npNombre").value.trim() : "";
+    var telefono = $("npTelefono") ? $("npTelefono").value.trim() : "";
+    var email = $("npEmail") ? $("npEmail").value.trim() : "";
+    var obs = $("npObs") ? $("npObs").value.trim() : "";
+
+    function error(msg){
+      if(typeof mostrarErrorNuevoPaciente === "function") mostrarErrorNuevoPaciente(msg);
+      else alert(msg);
+    }
+
+    if(!nombre){
+      error("El nombre del paciente es obligatorio.");
+      return;
+    }
+
+    if(!telefono){
+      error("El teléfono es obligatorio.");
+      return;
+    }
+
+    if(typeof validarTelefonoYnea === "function" && !validarTelefonoYnea(telefono)){
+      error("Introduce un teléfono válido. Usa solo números y, si quieres, el prefijo +.");
+      return;
+    }
+
+    if(typeof validarEmailYnea === "function" && !validarEmailYnea(email)){
+      error("Introduce un email válido o deja el campo vacío.");
+      return;
+    }
+
+    var dup = pacienteDuplicado(nombre, telefono, email);
+    if(dup){
+      error("No se puede guardar. Ese nombre, teléfono o email ya lo tiene otro paciente: " + pacienteNombre(dup));
+      return;
+    }
+
+    var nuevo = {
+      id: "p" + Date.now(),
+      nombre: nombre,
+      telefono: telefono,
+      email: email,
+      obs: obs
+    };
+
+    ds().pacientes.push(nuevo);
+    window.yneaLocalPendingUntil = Date.now() + 8000;
+
+    if(typeof save === "function") save();
+    try{
+      if(typeof window.yneaForceCloudSave === "function") window.yneaForceCloudSave();
+    }catch(e){}
+
+    if(typeof refreshAllSelects === "function"){
+      try{ refreshAllSelects(); }catch(e){}
+    }
+
+    if(window.yneaNuevoPacienteContext === "edit" || modalEditorVisible()){
+      seleccionarPacienteEnEditor(nuevo);
+    }else{
+      seleccionarPacienteEnNuevaCita(nuevo);
+    }
+
+    var overlay = $("nuevoPacienteOverlay");
+    if(overlay) overlay.style.display = "none";
+
+    if(typeof renderAll === "function") renderAll();
+  };
+
+  // Repara la apertura del editor para conservar siempre la hora real de la cita.
+  var abrirAnterior = window.abrirEditorCita;
+  window.abrirEditorCita = function(idCita){
+    var cita = (ds().citas || []).find(function(c){
+      return String(c.id) === String(idCita);
+    });
+
+    if(typeof abrirAnterior === "function"){
+      abrirAnterior.apply(this, arguments);
+    }
+
+    if(cita){
+      var hora = horaNormalizada(cita.hora);
+      var selHora = $("editCitaHora");
+      setSelectSeguro(selHora, hora);
+
+      if($("editCitaId")) $("editCitaId").value = cita.id;
+      if($("editCitaFecha") && cita.fecha) $("editCitaFecha").value = cita.fecha;
+
+      var p = pacienteById(cita.pacienteId);
+      if(p) seleccionarPacienteEnEditor(p);
+    }
+  };
+
+  // Repara el guardado para que no pueda quedarse la hora vacía ni aceptar pacientes bloqueados.
+  window.guardarCitaDesdeEditor = function(){
+    if(typeof limpiarErrorEditorCita === "function"){
+      try{ limpiarErrorEditorCita(); }catch(e){}
+    }
+
+    var id = $("editCitaId") ? $("editCitaId").value : "";
+    var cita = (ds().citas || []).find(function(c){
+      return String(c.id) === String(id);
+    });
+    if(!cita) return;
+
+    var selHora = $("editCitaHora");
+    var hora = horaNormalizada(
+      (selHora && selHora.value) ||
+      (selHora && selHora.dataset && selHora.dataset.ultimaHoraValida) ||
+      (selHora && selHora.dataset && selHora.dataset.yneaHoraOriginal) ||
+      cita.hora
+    );
+
+    setSelectSeguro(selHora, hora);
+
+    var pacienteId = $("editCitaPaciente") ? $("editCitaPaciente").value : cita.pacienteId;
+    var p = pacienteById(pacienteId);
+
+    if(!pacienteId){
+      if(typeof mostrarErrorEditorCita === "function") mostrarErrorEditorCita("Selecciona un paciente existente desde la lista.");
+      else alert("Selecciona un paciente existente desde la lista.");
+      return;
+    }
+
+    if(p && p.bloqueado){
+      if(typeof mostrarErrorEditorCita === "function"){
+        mostrarErrorEditorCita("No se puede guardar la cita con paciente bloqueado: " + pacienteNombre(p));
+      }else{
+        alert("No se puede guardar la cita con paciente bloqueado: " + pacienteNombre(p));
+      }
+      return;
+    }
+
+    var actualizada = {
+      id: cita.id,
+      fecha: $("editCitaFecha") ? $("editCitaFecha").value : cita.fecha,
+      hora: hora,
+      duracion: $("editCitaDuracion") ? $("editCitaDuracion").value : (cita.duracion || "10"),
+      estado: $("editCitaEstado") ? $("editCitaEstado").value : (cita.estado || "Pendiente"),
+      pacienteId: pacienteId,
+      profesional: $("editCitaProfesional") ? $("editCitaProfesional").value : cita.profesional,
+      consulta: $("editCitaConsulta") ? $("editCitaConsulta").value : cita.consulta,
+      tipo: $("editCitaTipo") ? $("editCitaTipo").value : cita.tipo,
+      obs: $("editCitaObs") ? $("editCitaObs").value : (cita.obs || cita.observaciones || "")
+    };
+
+    if(!actualizada.fecha || !actualizada.hora || !actualizada.pacienteId || !actualizada.profesional){
+      if(typeof mostrarErrorEditorCita === "function") mostrarErrorEditorCita("Faltan datos obligatorios: fecha, hora, paciente o profesional.");
+      else alert("Faltan datos obligatorios: fecha, hora, paciente o profesional.");
+      return;
+    }
+
+    if(typeof bloqueoImpideCita === "function" && bloqueoImpideCita(actualizada)){
+      if(!confirm("Ese horario está bloqueado. ¿Quieres guardar la cita igualmente?")) return;
+    }
+
+    if(typeof citaSolapaEditor === "function" && citaSolapaEditor(actualizada)){
+      if(!confirm("Existe otra cita solapada para ese profesional. ¿Guardar igualmente?")) return;
+    }
+
+    Object.assign(cita, actualizada);
+
+    if(typeof save === "function") save();
+    try{ localStorage.removeItem("ultimaCitaTemporal"); }catch(e){}
+    if(typeof cerrarEditorCita === "function") cerrarEditorCita();
+    if(typeof renderAll === "function") renderAll();
+  };
+
+  function init(){
+    var overlay = $("nuevoPacienteOverlay");
+    if(overlay){
+      overlay.style.zIndex = "2147483000";
+    }
+
+    var selHora = $("editCitaHora");
+    if(selHora && !selHora.__yneaHoraFinal){
+      selHora.__yneaHoraFinal = true;
+      selHora.addEventListener("change", function(){
+        if(selHora.value){
+          selHora.dataset.ultimaHoraValida = horaNormalizada(selHora.value);
+        }
+      });
+    }
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+
+  window.addEventListener("load", init);
+  document.addEventListener("click", function(){ setTimeout(init, 50); });
+})();
+</script>
+
+
+<style id="ynea-clear-paciente-mobile-css">
+.yneaPacienteClearWrap{
+  position:relative!important;
+  width:100%!important;
+}
+.yneaPacienteClearWrap input[type="search"],
+.yneaPacienteClearWrap input[type="text"]{
+  padding-right:44px!important;
+}
+.yneaClearPacienteBtn{
+  position:absolute!important;
+  right:8px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  min-height:30px!important;
+  border-radius:999px!important;
+  border:1px solid #e5e7eb!important;
+  background:#fff!important;
+  color:#64748b!important;
+  font-size:20px!important;
+  line-height:24px!important;
+  font-weight:800!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  z-index:1000000!important;
+  cursor:pointer!important;
+}
+.yneaClearPacienteBtn:active{
+  background:#ffe4f0!important;
+}
+</style>
+
+<script id="ynea-clear-paciente-mobile-js">
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+
+  function clearPaciente(inputId, hiddenId, resultadosId, infoId){
+    var input = $(inputId);
+    if(!input) return;
+
+    input.value = "";
+    input.focus();
+
+    var hidden = $(hiddenId);
+    if(hidden) hidden.value = "";
+
+    var resultados = $(resultadosId);
+    if(resultados){
+      resultados.innerHTML = "";
+      resultados.style.display = "none";
+    }
+
+    var info = $(infoId);
+    if(info) info.innerHTML = "";
+
+    input.dispatchEvent(new Event("input", {bubbles:true}));
+  }
+
+  function addClearButton(inputId, hiddenId, resultadosId, infoId){
+    var input = $(inputId);
+    if(!input || input.__yneaClearButtonAdded) return;
+
+    input.__yneaClearButtonAdded = true;
+    input.type = "search";
+    input.setAttribute("autocomplete","off");
+    input.setAttribute("autocorrect","off");
+    input.setAttribute("autocapitalize","off");
+    input.setAttribute("spellcheck","false");
+
+    var parent = input.parentNode;
+    if(!parent) return;
+
+    var wrap = document.createElement("div");
+    wrap.className = "yneaPacienteClearWrap";
+
+    parent.insertBefore(wrap, input);
+    wrap.appendChild(input);
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "yneaClearPacienteBtn";
+    btn.innerHTML = "×";
+    btn.setAttribute("aria-label","Vaciar paciente");
+
+    btn.addEventListener("click", function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      clearPaciente(inputId, hiddenId, resultadosId, infoId);
+    });
+
+    wrap.appendChild(btn);
+  }
+
+  function init(){
+    addClearButton("pacienteBusqueda", "pacienteCita", "pacienteResultados", "pacienteSeleccionadoInfo");
+    addClearButton("editCitaPacienteBusqueda", "editCitaPaciente", "editCitaPacienteResultados", "editCitaPacienteInfo");
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{
+    init();
+  }
+
+  window.addEventListener("load", init);
+  document.addEventListener("click", function(){ setTimeout(init, 80); });
+  setInterval(init, 1500);
+})();
+</script>
+
 </body>
 </html>
