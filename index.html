@@ -9327,5 +9327,267 @@ body:not(.ynea-role-admin) button[data-ynea-action="delete-paciente"]{
 })();
 </script>
 
+
+<style id="ynea-fix-recepcion-eliminar-required-css">
+body:not(.ynea-role-admin) #pacientesTable button,
+body:not(.ynea-role-admin) #yneaPacienteFichaActions button{
+}
+body:not(.ynea-role-admin) button.yneaDeletePacienteBtn,
+body:not(.ynea-role-admin) button[data-ynea-action="delete-paciente"],
+body:not(.ynea-role-admin) .danger[data-ynea-action="delete-paciente"]{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+.yneaRequiredAviso{
+  margin-top:6px!important;
+  padding:8px 10px!important;
+  border-radius:10px!important;
+  border:1px solid #fecaca!important;
+  background:#fff1f2!important;
+  color:#991b1b!important;
+  font-size:13px!important;
+  font-weight:700!important;
+}
+.yneaCampoRequired{
+  border-color:#ef4444!important;
+  box-shadow:0 0 0 3px rgba(239,68,68,.15)!important;
+}
+</style>
+
+<script id="ynea-fix-recepcion-eliminar-required-js">
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+
+  function roleRaw(){
+    var keys = ["yneaCurrentUser","currentUser","usuarioActual","yneaUsuarioActual"];
+    for(var i=0;i<keys.length;i++){
+      try{
+        var raw = sessionStorage.getItem(keys[i]) || localStorage.getItem(keys[i]);
+        if(raw){
+          var u = JSON.parse(raw);
+          if(u) return String(u.rol || u.role || u.tipo || u.perfil || "");
+        }
+      }catch(e){}
+    }
+    var w = window.currentUser || window.usuarioActual || window.yneaCurrentUser || {};
+    return String(w.rol || w.role || w.tipo || w.perfil || "");
+  }
+
+  function normalizaRol(r){
+    return String(r || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .trim();
+  }
+
+  function isAdmin(){
+    var r = normalizaRol(roleRaw());
+    return r === "admin" || r === "administrador";
+  }
+
+  function canEditBlock(){
+    var r = normalizaRol(roleRaw());
+    return isAdmin() || r === "recepcion" || r === "mostrador";
+  }
+
+  function markRole(){
+    document.body.classList.toggle("ynea-role-admin", isAdmin());
+    document.body.classList.toggle("ynea-role-recepcion", !isAdmin() && canEditBlock());
+  }
+
+  function borrarBotonesEliminarNoAdmin(){
+    markRole();
+    if(isAdmin()) return;
+
+    document.querySelectorAll("button, a").forEach(function(el){
+      var txt = String(el.textContent || "").toLowerCase().trim();
+      var onclick = String(el.getAttribute("onclick") || "").toLowerCase();
+      var action = String(el.getAttribute("data-ynea-action") || "").toLowerCase();
+      var inPacientes = !!el.closest("#pacientesTable, #yneaPacienteFichaActions, .yneaPacienteAcciones");
+
+      if(inPacientes && (txt.includes("eliminar") || onclick.includes("eliminarpaciente") || action.includes("delete-paciente"))){
+        el.remove();
+      }
+    });
+  }
+
+  function protegerFuncionesEliminar(){
+    var old = window.eliminarPacienteYnea;
+    window.eliminarPacienteYnea = function(){
+      if(!isAdmin()){
+        alert("Solo el administrador puede eliminar pacientes.");
+        borrarBotonesEliminarNoAdmin();
+        return false;
+      }
+      if(typeof old === "function") return old.apply(this, arguments);
+      return false;
+    };
+  }
+
+  function esc(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g,function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function campoPacienteIds(){
+    return {
+      nombre: ["npNombre","pacienteNombre","nombrePaciente"],
+      telefono: ["npTelefono","pacienteTelefono","telefonoPaciente"],
+      email: ["npEmail","pacienteEmail","emailPaciente"]
+    };
+  }
+
+  function findCampo(tipo){
+    var ids = campoPacienteIds()[tipo];
+    for(var i=0;i<ids.length;i++){
+      var el = $(ids[i]);
+      if(el) return el;
+    }
+
+    if(tipo === "nombre") return document.querySelector('input[placeholder*="Nombre"], input[name*="nombre"]');
+    if(tipo === "telefono") return document.querySelector('input[placeholder*="Tel"], input[name*="telefono"], input[name*="phone"]');
+    if(tipo === "email") return document.querySelector('input[placeholder*="Email"], input[type="email"], input[name*="email"]');
+    return null;
+  }
+
+  function limpiarAviso(input){
+    if(!input) return;
+    input.classList.remove("yneaCampoRequired");
+    var n = input.nextElementSibling;
+    if(n && n.classList && n.classList.contains("yneaRequiredAviso")) n.remove();
+  }
+
+  function aviso(input, msg){
+    if(!input) return;
+    limpiarAviso(input);
+    input.classList.add("yneaCampoRequired");
+    var div = document.createElement("div");
+    div.className = "yneaRequiredAviso";
+    div.innerHTML = esc(msg);
+    input.insertAdjacentElement("afterend", div);
+  }
+
+  function validarEmail(v){
+    v = String(v || "").trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  function validarPacienteObligatorio(mostrar){
+    var nombre = findCampo("nombre");
+    var telefono = findCampo("telefono");
+    var email = findCampo("email");
+
+    [nombre, telefono, email].forEach(limpiarAviso);
+
+    var ok = true;
+
+    if(!nombre || !String(nombre.value || "").trim()){
+      ok = false;
+      if(mostrar) aviso(nombre, "El nombre es obligatorio.");
+    }
+
+    if(!telefono || !String(telefono.value || "").trim()){
+      ok = false;
+      if(mostrar) aviso(telefono, "El teléfono es obligatorio.");
+    }
+
+    if(!email || !String(email.value || "").trim()){
+      ok = false;
+      if(mostrar) aviso(email, "El email es obligatorio.");
+    }else if(!validarEmail(email.value)){
+      ok = false;
+      if(mostrar) aviso(email, "Introduce un email válido.");
+    }
+
+    if(!ok && mostrar){
+      alert("No se puede guardar el paciente: nombre, teléfono y email son obligatorios.");
+    }
+
+    return ok;
+  }
+
+  function bindRequired(){
+    ["nombre","telefono","email"].forEach(function(tipo){
+      var input = findCampo(tipo);
+      if(!input || input.__yneaRequiredBound) return;
+      input.__yneaRequiredBound = true;
+
+      input.setAttribute("required","required");
+
+      input.addEventListener("input", function(){
+        if(String(input.value || "").trim()){
+          limpiarAviso(input);
+        }
+      });
+
+      input.addEventListener("blur", function(){
+        validarPacienteObligatorio(false);
+      });
+    });
+  }
+
+  function protegerGuardarPaciente(){
+    ["guardarNuevoPacienteModal","guardarPaciente","guardarPacienteYnea","savePaciente","crearPaciente"].forEach(function(fn){
+      if(typeof window[fn] === "function" && !window[fn].__yneaRequiredPatch){
+        var old = window[fn];
+        window[fn] = function(){
+          bindRequired();
+          if(!validarPacienteObligatorio(true)) return false;
+          return old.apply(this, arguments);
+        };
+        window[fn].__yneaRequiredPatch = true;
+      }
+    });
+
+    document.querySelectorAll("button").forEach(function(btn){
+      if(btn.__yneaRequiredClick) return;
+      var txt = String(btn.textContent || "").toLowerCase();
+      var onclick = String(btn.getAttribute("onclick") || "").toLowerCase();
+      var esGuardarPaciente = txt.includes("guardar") && (
+        onclick.includes("paciente") ||
+        btn.closest("#nuevoPacienteOverlay") ||
+        btn.closest("#pacienteModal") ||
+        btn.closest("#modalPaciente")
+      );
+
+      if(esGuardarPaciente){
+        btn.__yneaRequiredClick = true;
+        btn.addEventListener("click", function(ev){
+          if(!validarPacienteObligatorio(true)){
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            return false;
+          }
+        }, true);
+      }
+    });
+  }
+
+  function init(){
+    markRole();
+    protegerFuncionesEliminar();
+    borrarBotonesEliminarNoAdmin();
+    bindRequired();
+    protegerGuardarPaciente();
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+
+  window.addEventListener("load", init);
+  document.addEventListener("click", function(){ setTimeout(init, 50); });
+  setInterval(function(){
+    borrarBotonesEliminarNoAdmin();
+    bindRequired();
+    protegerGuardarPaciente();
+  }, 700);
+})();
+</script>
+
 </body>
 </html>
