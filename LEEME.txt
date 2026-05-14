@@ -1,0 +1,20 @@
+Agenda Clínica YNEA - corrección real 13/05/2026
+
+Este ZIP contiene el index.html completo modificado.
+
+Corrige:
+- Borrado de citas desde móvil, evitando que reaparezcan por sincronización.
+- Bloqueo de duplicados de pacientes por nombre, teléfono o email.
+- Aviso indicando qué paciente ya tiene ese dato duplicado.
+- Botón Nuevo paciente visible en crear cita y modificar cita, también móvil.
+- Bloqueo de paciente con motivo rellenable.
+- Aviso al intentar crear/modificar cita con paciente bloqueado.
+
+Subida:
+1. Descomprime el ZIP.
+2. En GitHub, entra en tu repositorio.
+3. Sube este index.html sustituyendo el anterior.
+4. Pulsa Commit changes.
+5. Espera a que Vercel despliegue.
+6. En PC pulsa Ctrl+F5.
+7. En móvil cierra la app completamente y vuelve a abrirla.
