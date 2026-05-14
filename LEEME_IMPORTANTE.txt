@@ -1,20 +1,17 @@
-AGENDA CLÍNICA YNEA - CORRECCIÓN VERIFICADA
+AGENDA CLINICA YNEA - FIX FINAL REAL EDITOR Y FICHA PACIENTE
 
-Este ZIP contiene un index.html completo.
+Incluye:
+- En modificar cita, el paciente ya es un campo de texto escribible.
+- Puedes buscar paciente por nombre, telefono o email en PC y movil.
+- El desplegable antiguo queda oculto.
+- En movil, el buscador muestra telefono, email y estado.
+- Al tocar el paciente se abre ficha completa.
+- La base de pacientes en movil muestra telefono, email, observaciones, estado y acciones.
+- Al abrir nueva cita desde calendario se limpia el paciente anterior.
 
-Qué se ha añadido al final del archivo:
-1. Bloqueo real de duplicados por nombre, teléfono y email.
-2. El aviso indica qué paciente tiene ya el dato duplicado.
-3. Columna Bloqueo visible en la tabla de pacientes.
-4. Botones Editar / Bloquear / Desbloquear / Eliminar.
-5. Bloqueo de paciente con motivo obligatorio.
-6. No permite crear/modificar citas para pacientes bloqueados.
-7. Botón Nuevo paciente en crear cita y modificar cita.
-
-Para subirlo:
-1. En GitHub abre tu repositorio.
-2. Sube este index.html sustituyendo el anterior.
-3. Pulsa Commit changes.
-4. Espera a Vercel.
-5. En PC abre la app con Ctrl + F5.
-6. En iPhone/Android cierra la app completamente y vuelve a abrirla.
+Subir:
+1. Descomprime el ZIP.
+2. Sube index.html a GitHub sustituyendo el anterior.
+3. Commit changes.
+4. Espera Vercel.
+5. En PC pulsa Ctrl+F5. En móvil cierra la app completamente y vuelve a abrirla.
