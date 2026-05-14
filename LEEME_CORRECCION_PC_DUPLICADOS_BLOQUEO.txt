@@ -1,0 +1,17 @@
+AGENDA CLÍNICA YNEA - CORRECCIÓN PC DUPLICADOS Y BLOQUEO
+
+Cambios aplicados:
+1. El formulario de Nuevo paciente en PC comprueba duplicados antes de guardar.
+2. Comprueba nombre, teléfono y email.
+3. Si hay duplicado, muestra qué paciente lo tiene.
+4. En el listado de pacientes aparece una columna Bloqueo.
+5. Botón Bloquear / Desbloquear paciente con motivo rellenable.
+6. Si un paciente está bloqueado, avisa al intentar crear cita.
+
+Subir a GitHub:
+1. Entra en tu repositorio.
+2. Sube este index.html sustituyendo el anterior.
+3. Pulsa Commit changes.
+4. Espera a que Vercel actualice.
+5. En PC abre la app con CTRL + F5.
+6. En móvil cierra la app completamente y vuelve a abrirla.

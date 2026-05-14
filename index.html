@@ -993,6 +993,7 @@ header{position:sticky;}
     <div class="grid">
       <div class="card">
         <h2>Nuevo paciente</h2>
+        <p class="small">No se permiten pacientes, teléfonos ni emails duplicados.</p>
         <label>Nombre</label><input id="pacNombre" placeholder="Nombre y apellidos">
         <label>Teléfono</label><input id="pacTelefono" placeholder="Teléfono">
         <label>Email</label><input id="pacEmail" placeholder="Email">
@@ -1328,10 +1329,80 @@ function goThisWeek(){
  renderAll();
 }
 
+
+
+/* === YNEA FIX PC 2026-05-14: duplicados + bloqueo visible === */
+function yneaNormNombre(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');}
+function yneaNormTelefono(s){return String(s||'').replace(/[^0-9+]/g,'').replace(/^00/,'+');}
+function yneaNormEmail(s){return String(s||'').trim().toLowerCase();}
+function yneaEsc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function yneaPacienteDuplicado(nombre, telefono, email, excludeId){
+  const n=yneaNormNombre(nombre), t=yneaNormTelefono(telefono), e=yneaNormEmail(email);
+  const arr=(data && Array.isArray(data.pacientes))?data.pacientes:[];
+  for(const p of arr){
+    if(excludeId && String(p.id)===String(excludeId)) continue;
+    if(n && yneaNormNombre(p.nombre)===n) return {campo:'nombre', paciente:p};
+    if(t && yneaNormTelefono(p.telefono)===t) return {campo:'teléfono', paciente:p};
+    if(e && yneaNormEmail(p.email)===e) return {campo:'email', paciente:p};
+  }
+  return null;
+}
+function yneaMensajeDuplicado(d){
+  const p=d.paciente||{};
+  return 'No se puede guardar. Ese '+d.campo+' ya existe.\n\nLo tiene el paciente:\n'+(p.nombre||'Sin nombre')+'\nTeléfono: '+(p.telefono||'')+'\nEmail: '+(p.email||'');
+}
+function yneaValidarPaciente(nombre, telefono, email, excludeId){
+  if(!String(nombre||'').trim()){alert('Escribe el nombre del paciente.');return false;}
+  if(!String(telefono||'').trim()){alert('El teléfono es obligatorio.');return false;}
+  if(!String(email||'').trim()){alert('El email es obligatorio.');return false;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email||'').trim())){alert('Introduce un email válido.');return false;}
+  const dup=yneaPacienteDuplicado(nombre,telefono,email,excludeId);
+  if(dup){alert(yneaMensajeDuplicado(dup));return false;}
+  return true;
+}
+function yneaPacienteBloqueado(id){
+  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id));
+  if(p && p.bloqueado){alert('Paciente bloqueado: '+(p.nombre||'')+'\nMotivo: '+(p.motivoBloqueo||'Sin motivo indicado')); return true;}
+  return false;
+}
+function bloquearPacienteYnea(id){
+  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id)); if(!p)return;
+  const motivo=prompt('Motivo del bloqueo de '+(p.nombre||'este paciente')+':',p.motivoBloqueo||'');
+  if(motivo===null)return;
+  p.bloqueado=true; p.motivoBloqueo=String(motivo||'').trim()||'Sin motivo indicado';
+  save(); renderAll(); alert('Paciente bloqueado.');
+}
+function desbloquearPacienteYnea(id){
+  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id)); if(!p)return;
+  if(!confirm('¿Desbloquear a '+(p.nombre||'este paciente')+'?'))return;
+  p.bloqueado=false; p.motivoBloqueo=''; save(); renderAll(); alert('Paciente desbloqueado.');
+}
+function editarPacienteYnea(id){
+  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id)); if(!p)return;
+  const nombre=prompt('Nombre del paciente:',p.nombre||''); if(nombre===null)return;
+  const telefono=prompt('Teléfono obligatorio:',p.telefono||''); if(telefono===null)return;
+  const email=prompt('Email obligatorio:',p.email||''); if(email===null)return;
+  if(!yneaValidarPaciente(nombre,telefono,email,p.id))return;
+  const obs=prompt('Observaciones:',p.obs||''); if(obs===null)return;
+  p.nombre=String(nombre).trim(); p.telefono=String(telefono).trim(); p.email=String(email).trim(); p.obs=String(obs||'').trim();
+  save(); renderAll(); alert('Paciente actualizado.');
+}
+
 function addPaciente(){
- const nombre=$("pacNombre").value.trim(); if(!nombre){alert("Escribe el nombre del paciente.");return}
- const p={id:"p"+Date.now(),nombre,telefono:$("pacTelefono").value,email:$("pacEmail").value,obs:$("pacObs").value};
- data.pacientes.push(p); save(); ["pacNombre","pacTelefono","pacEmail","pacObs"].forEach(id=>$(id).value=""); refreshAllSelects(); seleccionarPacienteCita(p.id); renderAll(); alert("Paciente guardado.");
+ const nombre=$("pacNombre").value.trim();
+ const telefono=$("pacTelefono").value.trim();
+ const email=$("pacEmail").value.trim();
+ const obs=$("pacObs").value.trim();
+ if(!yneaValidarPaciente(nombre,telefono,email,null)) return false;
+ const p={id:"p"+Date.now(),nombre,telefono,email,obs,bloqueado:false,motivoBloqueo:""};
+ data.pacientes.push(p);
+ save();
+ ["pacNombre","pacTelefono","pacEmail","pacObs"].forEach(id=>$(id).value="");
+ refreshAllSelects();
+ try{seleccionarPacienteCita(p.id);}catch(e){}
+ renderAll();
+ alert("Paciente guardado.");
+ return false;
 }
 function quickNewCita(fecha,hora){
  $("fechaCita").value=fecha;
@@ -1348,6 +1419,7 @@ function quickNewCita(fecha,hora){
 function addCita(){
  const c={id:Date.now(),fecha:$("fechaCita").value,hora:$("horaCita").value,duracion:$("duracionCita").value,pacienteId:pacienteSeleccionadoParaCita(),profesional:$("profesionalCita").value,consulta:$("consultaCita").value,tipo:$("tipoCita").value,estado:$("estadoCita").value,obs:$("obsCita").value};
  if(!c.fecha||!c.hora||!c.pacienteId){alert("Falta fecha, hora o paciente.");return}
+ if(typeof yneaPacienteBloqueado==="function" && yneaPacienteBloqueado(c.pacienteId)) return;
  if(typeof bloqueoImpideCita==="function" && bloqueoImpideCita(c) && !confirm("Ese horario está bloqueado para ese profesional o para todos los profesionales. ¿Quieres guardar la cita igualmente?")) return;
  const solape=overlapsNewCita(c);
  if(solape&&!confirm("Ya existe una cita solapada con ese profesional durante ese intervalo. ¿Quieres guardarla igualmente?"))return;
@@ -1574,7 +1646,13 @@ function quickNewCitaConsulta(fecha,hora,consulta){
 }
 
 function renderPatients(){
- $("pacientesTable").innerHTML="<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>"+data.pacientes.map(p=>`<tr><td><b>${p.nombre}</b></td><td>${p.telefono||""}</td><td>${p.email||""}</td><td>${p.obs||""}</td></tr>`).join("")+"</tbody>";
+ const q=yneaNormNombre($("buscadorPacientes")?$("buscadorPacientes").value:"");
+ const arr=(data.pacientes||[]).filter(p=>!q || yneaNormNombre((p.nombre||"")+" "+(p.telefono||"")+" "+(p.email||"")+" "+(p.obs||"")).includes(q));
+ $("pacientesTable").innerHTML="<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Bloqueo</th></tr></thead><tbody>"+arr.map(p=>{
+   const estado=p.bloqueado?`<b style="color:#991b1b">BLOQUEADO</b><br><small>${yneaEsc(p.motivoBloqueo||"Sin motivo")}</small>`:`<span style="color:#16a34a">Activo</span>`;
+   const boton=p.bloqueado?`<button type="button" onclick="event.stopPropagation();desbloquearPacienteYnea('${String(p.id).replaceAll("'","\'")}')">Desbloquear</button>`:`<button type="button" class="danger" onclick="event.stopPropagation();bloquearPacienteYnea('${String(p.id).replaceAll("'","\'")}')">Bloquear</button>`;
+   return `<tr onclick="editarPacienteYnea('${String(p.id).replaceAll("'","\'")}')"><td><b>${yneaEsc(p.nombre)}</b></td><td>${yneaEsc(p.telefono||"")}</td><td>${yneaEsc(p.email||"")}</td><td>${yneaEsc(p.obs||"")}</td><td>${estado}<br>${boton}</td></tr>`;
+ }).join("")+"</tbody>";
 }
 
 
@@ -2505,13 +2583,18 @@ function guardarNuevoPacienteModal(){
     mostrarErrorNuevoPaciente("Introduce un email válido o deja el campo vacío.");
     return;
   }
+  if(typeof yneaValidarPaciente==="function" && !yneaValidarPaciente(nombre,telefono,email,null)){
+    return;
+  }
 
   const nuevo={
     id:"p"+Date.now(),
     nombre:nombre,
     telefono:telefono,
     email:email,
-    obs:obs
+    obs:obs,
+    bloqueado:false,
+    motivoBloqueo:""
   };
 
   data.pacientes.push(nuevo);
@@ -6907,9 +6990,10 @@ header{padding-right:112px!important;}
     var table=$('pacientesTable'); if(!table) return;
     var q=normNombre(($('buscadorPacientes')&&$('buscadorPacientes').value)||'');
     var arr=pacientes().filter(function(p){return !q || normNombre((p.nombre||'')+' '+(p.telefono||'')+' '+(p.email||'')+' '+(p.obs||'')).includes(q);});
-    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+arr.map(function(p){
-      var b=p.bloqueado?' <span class="ynea-paciente-bloqueado">BLOQUEADO: '+esc(p.motivoBloqueo||'Sin motivo')+'</span>':'';
-      return '<tr data-paciente-id="'+esc(p.id)+'" onclick="editarPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')"><td><b>'+esc(p.nombre)+'</b>'+b+'</td><td>'+esc(p.telefono||'')+'</td><td>'+esc(p.email||'')+'</td><td>'+esc(p.obs||'')+'</td></tr>';
+    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Bloqueo</th></tr></thead><tbody>'+arr.map(function(p){
+      var estado=p.bloqueado?'<b style="color:#991b1b">BLOQUEADO</b><br><small>'+esc(p.motivoBloqueo||'Sin motivo')+'</small>':'<span style="color:#16a34a">Activo</span>';
+      var boton=p.bloqueado?'<button type="button" onclick="event.stopPropagation();desbloquearPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')">Desbloquear</button>':'<button type="button" class="danger" onclick="event.stopPropagation();bloquearPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')">Bloquear</button>';
+      return '<tr data-paciente-id="'+esc(p.id)+'" onclick="editarPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')"><td><b>'+esc(p.nombre)+'</b></td><td>'+esc(p.telefono||'')+'</td><td>'+esc(p.email||'')+'</td><td>'+esc(p.obs||'')+'</td><td>'+estado+'<br>'+boton+'</td></tr>';
     }).join('')+'</tbody>';
   };
 
@@ -6937,6 +7021,28 @@ header{padding-right:112px!important;}
   function iniciar(){addNuevoPacienteButtons(); try{renderPatients();}catch(e){}}
   document.addEventListener('DOMContentLoaded',function(){setTimeout(iniciar,100); setTimeout(iniciar,700);},true);
   setInterval(iniciar,1500);
+})();
+</script>
+
+
+
+<style id="ynea-pc-duplicados-bloqueo-visible-final-2">
+#pacientesTable th:nth-child(5),#pacientesTable td:nth-child(5){min-width:140px!important;}
+#pacientesView .small{color:#64748b;font-size:12px;margin:4px 0 8px;}
+</style>
+<script id="ynea-pc-duplicados-captura-final-2">
+(function(){
+  document.addEventListener('click',function(e){
+    var btn=e.target&&e.target.closest&&e.target.closest('button'); if(!btn)return;
+    var oc=btn.getAttribute('onclick')||'';
+    if(oc.indexOf('addPaciente')!==-1){
+      e.preventDefault(); e.stopImmediatePropagation();
+      if(typeof window.addPaciente==='function') window.addPaciente();
+      else if(typeof addPaciente==='function') addPaciente();
+      return false;
+    }
+  },true);
+  setTimeout(function(){try{if(typeof renderPatients==='function')renderPatients();}catch(e){}},500);
 })();
 </script>
 
