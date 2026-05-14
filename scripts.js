@@ -1,1249 +1,9 @@
-<!DOCTYPE html>
-<html lang="es" class="ynea-locked">
-<head>
-<style id="ynea-anti-flash-lock">
-  html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;pointer-events:none!important;user-select:none!important;}
-  html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important;}
-</style>
-<script id="ynea-anti-flash-lock-js">
+
   try{document.documentElement.classList.add('ynea-locked');}catch(e){}
-</script>
 
-<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
-<title>Agenda Clínica Semanal</title>
-<style>
-:root{
-  --bg:#f4f7fb; --card:#fff; --text:#1f2937; --muted:#64748b; --line:#dbe3ee;
-  --primary:#ec4899; --primary2:#db2777; --ok:#4ade80; --warn:#86efac; --bad:#fda4af; --soft:#e0f2fe;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-header{background:#fff;border-bottom:1px solid var(--line);padding:18px 24px;position:sticky;top:0;z-index:5}
-h1{margin:0;font-size:26px}.subtitle{margin:6px 0 0;color:var(--muted)}
-.container{max-width:1480px;margin:0 auto;padding:22px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 6px 24px rgba(15,23,42,.06);padding:18px;margin-bottom:18px}
-.card h2{margin:0 0 14px;font-size:20px}
-label{display:block;margin:12px 0 6px;font-weight:bold;font-size:14px}
-input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:15px}
-textarea{min-height:78px}
-button{border:0;border-radius:12px;background:var(--primary);color:#fff;padding:12px 14px;font-weight:bold;cursor:pointer;font-size:15px}
-button:hover{background:var(--primary2)}
-button.secondary{background:#e2e8f0;color:#1f2937}
-button.secondary:hover{background:#cbd5e1}
-button.danger{background:#fee2e2;color:#991b1b}
-button.danger:hover{background:#fecaca}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.tab{background:#fce7f3;color:#1d4ed8}.tab.active{background:var(--primary);color:#fff}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.stat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}.stat b{font-size:26px;display:block;margin-top:4px}
-.grid{display:grid;grid-template-columns:360px 1fr;gap:20px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.filters{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
-.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:16px;background:#fff;max-height:72vh}
-table{border-collapse:collapse;width:100%;min-width:1100px}
-th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:8px;text-align:left;vertical-align:top;font-size:13px}
-th{background:#f1f5f9;position:sticky;top:0;z-index:2}.time{font-weight:bold;color:#64748b;white-space:nowrap;background:#fff;position:sticky;left:0;z-index:1}
-.slot{min-height:62px;min-width:155px}.appt{border-radius:12px;background:var(--soft);border:1px solid #bfdbfe;padding:7px;cursor:pointer}
-.appt strong{display:block}.badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;margin-top:5px;background:#fff}
-.badge.Confirmada{color:var(--ok)}.badge.Pendiente{color:var(--warn)}.badge.Cancelada,.badge.NoAcude{color:var(--bad)}
-.notice{background:#e0f2fe;border:1px solid #bae6fd;border-radius:14px;padding:12px;color:#155e75;margin-bottom:14px}.small{font-size:13px;color:var(--muted)}
-.weekbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:14px}.weekbar > div{min-width:180px}
-.configGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.pill{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;margin:8px 0;background:#fff}
-@media(max-width:900px){.grid,.configGrid{grid-template-columns:1fr}.stats,.filters{grid-template-columns:1fr 1fr}.container{padding:14px}}
 
-.configEditor{border:1px solid var(--line);background:#fff;border-radius:16px;padding:14px;margin-top:12px}
-.configEditor .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.configEditor input,.configEditor select{margin-top:4px}
+try{document.documentElement.classList.add('ynea-locked')}catch(e){}
 
-.nuevoPacienteOverlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(15,23,42,.45);
-  z-index:9999;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-.nuevoPacienteModal{
-  background:#fff;
-  width:min(560px,100%);
-  border-radius:24px;
-  box-shadow:0 24px 80px rgba(15,23,42,.25);
-  border:1px solid #e5e7eb;
-  padding:24px;
-}
-.nuevoPacienteHeader{
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  align-items:flex-start;
-  margin-bottom:14px;
-}
-.nuevoPacienteHeader h2{
-  margin:0;
-  font-size:24px;
-}
-.nuevoPacienteHeader p{
-  margin:6px 0 0;
-  color:#64748b;
-}
-.nuevoPacienteGrid{
-  display:grid;
-  gap:12px;
-}
-.nuevoPacienteError{
-  display:none;
-  background:#fee2e2;
-  color:#991b1b;
-  border:1px solid #fecaca;
-  border-radius:12px;
-  padding:10px;
-  margin-bottom:12px;
-}
-.nuevoPacienteActions{
-  display:flex;
-  justify-content:flex-end;
-  gap:10px;
-  margin-top:18px;
-  flex-wrap:wrap;
-}
-
-
-.autosaveBar{
-  position:fixed;
-  right:18px;
-  bottom:18px;
-  z-index:9998;
-  background:#fff;
-  border:1px solid #dbe3ee;
-  border-radius:14px;
-  padding:10px 12px;
-  box-shadow:0 8px 28px rgba(15,23,42,.12);
-  font-size:13px;
-  color:#334155;
-}
-.autosaveBar button{
-  margin-left:8px;
-  padding:7px 10px;
-  font-size:12px;
-}
-
-.editorCitaOverlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(15,23,42,.48);
-  z-index:10000;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-.editorCitaModal{
-  background:#fff;
-  width:min(760px,100%);
-  max-height:92vh;
-  overflow:auto;
-  border-radius:24px;
-  border:1px solid #e5e7eb;
-  box-shadow:0 24px 90px rgba(15,23,42,.28);
-  padding:24px;
-}
-.editorCitaHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-  margin-bottom:14px;
-}
-.editorCitaHeader h2{margin:0;font-size:24px}
-.editorCitaHeader p{margin:6px 0 0;color:#64748b}
-.editorCitaGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.editorCitaActions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
-@media (max-width: 768px){
-#editorCitaModal .modal-content,#editorCitaModal .modalCard{max-height:78vh !important;overflow:auto !important;padding-bottom:90px !important;}
-.editorCitaActions{position:sticky !important;bottom:0 !important;background:#fff !important;padding:10px 0 !important;z-index:9999 !important;}
-}
-.editorCitaActions button,.calendarNav button{background:#fff !important;color:#444 !important;border:1px solid #ddd !important;}
-
-.editorCitaError{
-  display:none;
-  background:#fee2e2;
-  color:#991b1b;
-  border:1px solid #fecaca;
-  border-radius:12px;
-  padding:10px;
-  margin-bottom:12px;
-}
-@media(max-width:700px){.editorCitaGrid{grid-template-columns:1fr}}
-
-
-.citaEnlazadaOverlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(15,23,42,.45);
-  z-index:10001;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-.citaEnlazadaModal{
-  background:#fff;
-  width:min(680px,100%);
-  max-height:92vh;
-  overflow:auto;
-  border-radius:24px;
-  border:1px solid #e5e7eb;
-  box-shadow:0 24px 90px rgba(15,23,42,.28);
-  padding:24px;
-}
-.citaEnlazadaHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-  margin-bottom:14px;
-}
-.citaEnlazadaHeader h2{margin:0;font-size:24px}
-.citaEnlazadaHeader p{margin:6px 0 0;color:#64748b}
-.citaEnlazadaGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.citaEnlazadaActions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
-.citaEnlazadaError{
-  display:none;
-  background:#fee2e2;
-  color:#991b1b;
-  border:1px solid #fecaca;
-  border-radius:12px;
-  padding:10px;
-  margin-bottom:12px;
-}
-@media(max-width:700px){.citaEnlazadaGrid{grid-template-columns:1fr}}
-
-</style>
-
-
-
-
-<style id="ynea-topbar-brand">
-header{
-  display:flex;
-  align-items:center;
-  gap:22px;
-  padding:18px 24px !important;
-}
-.yneaBrandTitle{
-  display:flex;
-  align-items:center;
-  gap:18px;
-  min-width:fit-content;
-}
-.yneaBrandTitle img{
-  height:64px;
-  width:auto;
-  object-fit:contain;
-  display:block;
-}
-.yneaBrandTitle .brandText{
-  font-size:30px;
-  font-weight:600;
-  color:#e94f86;
-  letter-spacing:.2px;
-  white-space:nowrap;
-}
-.yneaHeaderDivider{
-  width:1px;
-  height:52px;
-  background:#e5e7eb;
-}
-header .tabs{
-  margin-left:auto;
-  margin-top:0 !important;
-  align-items:center;
-}
-@media(max-width:1050px){
-  header{
-    flex-direction:column;
-    align-items:flex-start;
-  }
-  header .tabs{
-    margin-left:0;
-  }
-}
-@media(max-width:700px){
-  .yneaBrandTitle{
-    flex-direction:column;
-    align-items:flex-start;
-    gap:6px;
-  }
-  .yneaBrandTitle img{
-    height:52px;
-  }
-  .yneaBrandTitle .brandText{
-    font-size:24px;
-    white-space:normal;
-  }
-  .yneaHeaderDivider{
-    display:none;
-  }
-}
-</style>
-
-
-<style id="ocultar-stats-info-diaria">
-.stats{display:none !important;}
-.infoGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:14px}
-.infoBox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 6px 24px rgba(15,23,42,.05)}
-.infoBox b{display:block;font-size:28px;margin-top:6px}
-</style>
-
-
-
-
-
-<style id="ynea-clinical-branding">
-header{
-  background:linear-gradient(135deg,#ffffff 0%,#fff7fb 100%) !important;
-  border-bottom:1px solid #f6d5e2 !important;
-  box-shadow:0 8px 28px rgba(15,23,42,.05);
-}
-.yneaBrandTitle{
-  display:flex !important;
-  align-items:center !important;
-  gap:24px !important;
-  padding:10px 0 !important;
-}
-.yneaBrandTitle img{
-  height:118px !important;
-  width:auto !important;
-  object-fit:contain !important;
-  display:block !important;
-}
-.yneaBrandTitle .yneaSeparator,
-.yneaBrandTitle .separator{
-  width:1px !important;
-  height:72px !important;
-  background:#f1c7d8 !important;
-  display:inline-block !important;
-}
-.yneaBrandTitle .brandText{
-  font-size:34px !important;
-  line-height:1.1 !important;
-  color:#9f244f !important;
-  font-weight:700 !important;
-  letter-spacing:.2px !important;
-  text-transform:none !important;
-}
-.yneaBrandTitle .brandSub{
-  display:block;
-  font-size:14px;
-  color:#64748b;
-  font-weight:500;
-  margin-top:6px;
-  letter-spacing:.6px;
-  text-transform:uppercase;
-}
-.card{
-  border-radius:20px !important;
-}
-button:not(.secondary):not(.danger):not(.tab){
-  border-radius:12px !important;
-}
-@media(max-width:800px){
-  .yneaBrandTitle{
-    flex-direction:column !important;
-    align-items:flex-start !important;
-    gap:10px !important;
-  }
-  .yneaBrandTitle img{
-    height:92px !important;
-  }
-  .yneaBrandTitle .yneaSeparator,
-  .yneaBrandTitle .separator{
-    display:none !important;
-  }
-  .yneaBrandTitle .brandText{
-    font-size:26px !important;
-  }
-}
-</style>
-
-
-<style id="paciente-search-style">
-.pacienteSearchBox{position:relative}
-.pacienteResultados{
-  display:none;position:absolute;left:0;right:0;top:72px;z-index:999;background:#fff;
-  border:1px solid #dbe3ee;border-radius:14px;box-shadow:0 14px 40px rgba(15,23,42,.14);
-  max-height:260px;overflow:auto;
-}
-.pacienteResultadoItem{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9}
-.pacienteResultadoItem:hover{background:#fff5f8}
-.pacienteResultadoItem strong{display:block}
-.pacienteResultadoItem span{font-size:12px;color:#64748b}
-.pacienteSeleccionado{margin-top:8px;padding:8px 10px;border:1px solid #dbe3ee;border-radius:12px;background:#f8fafc;color:#334155;font-size:13px}
-</style>
-
-
-
-<style id="opcion-c-app-movil">
-/* ===== OPCIÓN C: experiencia tipo app móvil ===== */
-:root{
-  --app-pink:#ec4899;
-  --app-pink-2:#db2777;
-  --app-rose:#fff1f7;
-  --app-bg:#fff8fb;
-  --app-card:#ffffff;
-  --app-text:#1f2937;
-  --app-muted:#64748b;
-  --app-line:#f3cfe0;
-}
-
-body{background:var(--app-bg)}
-
-/* Botones uniformes */
-button{
-  min-height:42px;
-  border-radius:14px !important;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  line-height:1.15;
-}
-.card button,
-.weekbar button,
-.configEditor button,
-.nuevoPacienteActions button,
-.editorCitaActions button,
-.citaEnlazadaActions button{
-  min-width:120px;
-}
-button:not(.secondary):not(.danger):not(.tab):not(.mobileNavBtn):not(.appFab){
-  background:var(--app-pink) !important;
-}
-button:not(.secondary):not(.danger):not(.tab):not(.mobileNavBtn):not(.appFab):hover{
-  background:var(--app-pink-2) !important;
-}
-
-/* Desktop conserva tabs superiores; móvil usa nav inferior */
-.mobileBottomNav,.appFab{display:none}
-
-@media(max-width:900px){
-  body{padding-bottom:88px;}
-  header{
-    position:sticky;
-    top:0;
-    z-index:80;
-    padding:8px 12px !important;
-    min-height:64px;
-    display:flex !important;
-    flex-direction:row !important;
-    align-items:center !important;
-    gap:10px !important;
-  }
-  header h1{margin:0;min-width:0;}
-  header .tabs{display:none !important;}
-  .yneaBrandTitle{
-    flex-direction:row !important;
-    align-items:center !important;
-    gap:10px !important;
-    padding:0 !important;
-    min-width:0 !important;
-  }
-  .yneaBrandTitle img{height:42px !important;max-width:72px !important;object-fit:contain !important;}
-  .yneaBrandTitle .yneaSeparator,.yneaBrandTitle .separator{display:none !important;}
-  .yneaBrandTitle .brandText{
-    font-size:18px !important;
-    color:var(--app-pink-2) !important;
-    white-space:nowrap !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    display:block !important;
-    max-width:calc(100vw - 118px);
-  }
-  .yneaBrandTitle .brandSub{display:none !important;}
-
-  .container{padding:12px !important;max-width:100%;}
-  .stats{display:none !important;}
-  .grid,.configGrid,.row,.filters{grid-template-columns:1fr !important;gap:12px !important;}
-  .card{border-radius:20px !important;padding:14px !important;margin-bottom:14px !important;box-shadow:0 8px 26px rgba(15,23,42,.07) !important;}
-  .card h2{font-size:18px;margin-bottom:12px;color:var(--app-pink-2);}
-  label{font-size:13px;margin-top:10px;}
-  input,select,textarea{font-size:16px;border-radius:14px;padding:12px;}
-
-  .weekbar{display:grid !important;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch;}
-  .weekbar > div{min-width:0 !important;}
-  .weekbar button{width:100%;min-width:0;}
-  .weekbar .secondary:nth-child(3){grid-column:1/-1;}
-
-  /* Agenda semanal/mensual/anual convertida en tarjetas usables */
-  .tableWrap{overflow:visible !important;max-height:none !important;border:0 !important;background:transparent !important;}
-  table{min-width:0 !important;width:100% !important;border-collapse:separate !important;border-spacing:0 10px !important;}
-  thead{display:none !important;}
-  tr{display:block !important;background:#fff;border:1px solid var(--app-line);border-radius:18px;margin-bottom:10px;padding:10px;box-shadow:0 4px 14px rgba(15,23,42,.04);}
-  th,td{display:block !important;border:0 !important;padding:6px 2px !important;font-size:14px !important;min-width:0 !important;}
-  .time{position:static !important;background:transparent !important;color:var(--app-pink-2) !important;font-size:14px !important;font-weight:800 !important;margin-bottom:2px;}
-  .slot{min-height:auto !important;min-width:0 !important;}
-  .appt{border-radius:14px !important;padding:10px !important;margin:6px 0 !important;word-break:break-word;overflow:hidden;}
-  .appt strong{font-size:14px;}
-  .badge{white-space:normal;}
-
-  /* Buscador pacientes estable en móvil */
-  .pacienteSearchBox{position:relative;}
-  .pacienteResultados{top:100% !important;margin-top:6px;max-height:230px;z-index:12000;}
-  .pacienteResultadoItem{padding:12px;}
-
-  /* Listados y píldoras sin solapes */
-  .pill{align-items:flex-start;flex-direction:column;}
-  .pill button{width:100%;}
-  .infoGrid{grid-template-columns:1fr 1fr !important;}
-
-  /* Modales más cómodos */
-  .nuevoPacienteOverlay,.editorCitaOverlay,.citaEnlazadaOverlay{padding:10px !important;align-items:flex-end !important;}
-  .nuevoPacienteModal,.editorCitaModal,.citaEnlazadaModal{border-radius:24px 24px 0 0 !important;width:100% !important;max-height:90vh !important;overflow:auto !important;padding:18px !important;}
-  .nuevoPacienteHeader h2,.editorCitaHeader h2,.citaEnlazadaHeader h2{font-size:20px !important;}
-  .editorCitaGrid,.citaEnlazadaGrid{grid-template-columns:1fr !important;}
-  .nuevoPacienteActions,.editorCitaActions,.citaEnlazadaActions{display:grid !important;grid-template-columns:1fr !important;}
-  .nuevoPacienteActions button,.editorCitaActions button,.citaEnlazadaActions button{width:100%;}
-
-  .autosaveBar{left:12px !important;right:12px !important;bottom:92px !important;text-align:center;}
-
-  /* Navegación inferior tipo app */
-  .mobileBottomNav{
-    position:fixed;
-    left:10px;
-    right:10px;
-    bottom:10px;
-    z-index:12000;
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:4px;
-    padding:8px;
-    background:rgba(255,255,255,.96);
-    border:1px solid var(--app-line);
-    border-radius:24px;
-    box-shadow:0 16px 40px rgba(15,23,42,.18);
-    backdrop-filter:blur(14px);
-  }
-  .mobileNavBtn{
-    min-width:0 !important;
-    min-height:54px;
-    padding:6px 2px !important;
-    border-radius:18px !important;
-    background:transparent !important;
-    color:var(--app-muted) !important;
-    display:flex;
-    flex-direction:column;
-    gap:3px;
-    font-size:11px;
-    font-weight:700;
-  }
-  .mobileNavBtn .ico{font-size:20px;line-height:1;}
-  .mobileNavBtn.active{background:var(--app-rose) !important;color:var(--app-pink-2) !important;}
-
-  .appFab{
-    display:flex;
-    position:fixed;
-    right:18px;
-    bottom:86px;
-    z-index:11999;
-    width:58px;
-    height:58px;
-    min-width:58px !important;
-    border-radius:999px !important;
-    background:var(--app-pink) !important;
-    color:#fff !important;
-    border:0;
-    font-size:28px;
-    box-shadow:0 14px 34px rgba(236,72,153,.34);
-  }
-
-  /* Vista calendario: por defecto semanal en móvil, mensual/anual también quedan como tarjetas */
-  #semanaView,#mensualView,#anualView,#agendaView,#pacientesView,#configView,#bloqueosView,#listadosView,#infoDiariaView,#avisosView,#copiasView{scroll-margin-top:84px;}
-}
-
-@media(max-width:420px){
-  .weekbar{grid-template-columns:1fr !important;}
-  .infoGrid{grid-template-columns:1fr !important;}
-  .mobileNavBtn{font-size:10px;}
-}
-</style>
-
-
-<style id="ynea-fix-compacto-real">
-/* FIX compacto real: quitar anual, autoguardado y botón flotante */
-button[onclick*="setView('anual'"], #anualView, .autosaveBar, .appFab { display:none !important; }
-
-/* Pacientes: filas clicables */
-#pacientesTable tbody tr{cursor:pointer}
-#pacientesTable tbody tr:hover{background:#fff5f8}
-
-/* Mensual compacto */
-#monthTable .month-day{height:86px; min-width:0 !important; position:relative; cursor:pointer; border:1px solid #e5e7eb !important; border-radius:12px; background:#fff; padding:8px !important;}
-#monthTable .month-day.out{background:#f8fafc;color:#94a3b8}
-#monthTable .month-day.has-citas{background:#fff1f7 !important; border-color:#ec4899 !important;}
-#monthTable .day-num{font-weight:800; color:#1f2937; display:block; font-size:14px}
-#monthTable .day-count{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;padding:3px 8px;border-radius:999px;background:#ec4899;color:white;font-size:12px;font-weight:800}
-#monthTable .day-empty{display:block;margin-top:8px;color:#94a3b8;font-size:12px}
-.monthModalOverlay{display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:15000; align-items:center; justify-content:center; padding:16px}
-.monthModal{background:#fff; width:min(560px,100%); max-height:88vh; overflow:auto; border-radius:22px; padding:18px; box-shadow:0 24px 90px rgba(15,23,42,.25)}
-.monthModalHead{display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:12px}
-.monthModalHead h2{margin:0; color:#db2777; font-size:20px}
-.monthCita{border:1px solid #f3cfe0; background:#fff7fb; border-radius:14px; padding:10px; margin:8px 0; cursor:pointer}
-.monthCita:hover{background:#fff1f7}
-.monthModalActions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
-
-@media(max-width:900px){
-  body{padding-bottom:72px !important;}
-  header{padding:6px 10px !important; min-height:50px !important;}
-  .yneaBrandTitle img{height:34px !important; max-width:58px !important;}
-  .yneaBrandTitle .brandText{font-size:15px !important; max-width:calc(100vw - 85px) !important;}
-  .container{padding:8px !important;}
-  .card{padding:10px !important; margin-bottom:8px !important; border-radius:14px !important;}
-  .card h2{font-size:15px !important; margin-bottom:8px !important;}
-  label{font-size:11px !important; margin:4px 0 2px !important;}
-  input,select,textarea{font-size:13px !important; padding:6px 8px !important; min-height:30px !important; border-radius:9px !important;}
-  button{font-size:12px !important; padding:6px 8px !important; min-height:30px !important; border-radius:9px !important;}
-  .weekbar{display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; margin-bottom:8px !important;}
-  .weekbar > div{min-width:0 !important;}
-  .weekbar button{width:100% !important; min-width:0 !important;}
-  .small{font-size:11px !important; margin:4px 0 !important;}
-  .grid,.row,.filters,.configGrid{gap:8px !important;}
-  .tableWrap{overflow:auto !important; max-height:none !important; border-radius:12px !important; border:1px solid #f3cfe0 !important; background:#fff !important;}
-  #weekTable,#monthTable{width:100% !important; min-width:0 !important; table-layout:fixed !important; border-collapse:collapse !important; border-spacing:0 !important;}
-  #weekTable thead,#monthTable thead{display:table-header-group !important;}
-  #weekTable tr,#monthTable tr{display:table-row !important; margin:0 !important; padding:0 !important; box-shadow:none !important; border:0 !important; background:transparent !important;}
-  #weekTable th,#weekTable td,#monthTable th,#monthTable td{display:table-cell !important; padding:3px !important; font-size:10px !important; vertical-align:top !important; border:1px solid #f3cfe0 !important; min-width:0 !important;}
-  #weekTable th:first-child,#weekTable td.time{width:42px !important;}
-  #weekTable .time{position:static !important; font-size:10px !important; white-space:nowrap !important; background:#fff !important;}
-  #weekTable .slot{min-width:0 !important; min-height:34px !important; word-break:break-word !important;}
-  #weekTable .appt{padding:3px !important; margin:1px 0 !important; border-radius:7px !important; font-size:9px !important;}
-  #weekTable .appt strong{font-size:9px !important;}
-  #monthTable .month-day{height:54px !important; padding:4px !important; border-radius:8px !important;}
-  #monthTable .day-num{font-size:11px !important;}
-  #monthTable .day-count{font-size:9px !important; padding:2px 5px !important; margin-top:4px !important;}
-  #monthTable .day-empty{font-size:9px !important; margin-top:4px !important;}
-  .mobileBottomNav{grid-template-columns:repeat(3,1fr) !important; left:8px !important; right:8px !important; bottom:8px !important; padding:5px !important; border-radius:18px !important;}
-  .mobileNavBtn{min-height:42px !important; font-size:10px !important; padding:4px 2px !important;}
-  .mobileNavBtn .ico{font-size:16px !important;}
-  .mobileNavBtn[data-mobile-view="agenda"], .mobileNavBtn[data-mobile-view="listados"], .mobileNavBtn[data-mobile-view="config"], .mobileNavBtn[data-mobile-view="copias"], .mobileNavBtn[data-mobile-view="infoDiaria"], .mobileNavBtn[data-mobile-view="bloqueos"]{display:none !important;}
-  header .tabs{display:none !important;}
-  /* vistas móviles gestionadas por JS; no ocultar secciones globalmente aquí */
-  #anualView{display:none !important;}
-}
-</style>
-
-
-<style id="ynea-mobile-perfect-final">
-html,body{width:100%;max-width:100%;overflow-x:hidden;}
-body{touch-action:manipulation;}
-#weekTitle,#monthTitle{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.25;}
-#yneaTopLogoutBackup{position:absolute;right:18px;top:14px;z-index:20;background:#fff !important;color:#db2777 !important;border:1px solid #f3cfe0 !important;box-shadow:0 6px 18px rgba(15,23,42,.08);}
-header{position:sticky;}
-.container,.card,.tableWrap{max-width:100%;}
-@media(max-width:900px){
-  html,body{width:100vw;max-width:100vw;overflow-x:hidden;}
-  header{width:100vw;max-width:100vw;overflow:hidden;padding-right:92px !important;}
-  #yneaTopLogoutBackup{right:8px;top:8px;font-size:11px !important;min-height:28px !important;padding:5px 7px !important;border-radius:10px !important;}
-  .yneaBrandTitle .brandText{max-width:calc(100vw - 155px) !important;}
-  .container{width:100vw !important;max-width:100vw !important;margin:0 !important;padding-left:8px !important;padding-right:8px !important;overflow-x:hidden;}
-  .card{width:100% !important;max-width:100% !important;overflow:hidden;}
-  #semanaView .card,#mensualView .card,#pacientesView .card{padding-left:8px !important;padding-right:8px !important;}
-  #weekTitle,#monthTitle{font-size:10.5px !important;line-height:1.2 !important;margin:2px 0 4px !important;}
-  #semanaView .small b,#semanaView .small:not(#weekTitle){display:none !important;}
-  #mensualView h2,#semanaView h2{font-size:14px !important;}
-  .weekbar{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:5px !important;align-items:end !important;}
-  .weekbar > *{min-width:0 !important;width:100% !important;}
-  .weekbar button{font-size:11px !important;padding:6px 4px !important;white-space:nowrap !important;}
-  .weekbar label{font-size:10px !important;}
-  .weekbar input,.weekbar select{font-size:12px !important;padding:6px 4px !important;}
-  #weekTable,#monthTable{font-size:9px !important;}
-  #weekTable th,#weekTable td,#monthTable th,#monthTable td{font-size:9px !important;padding:2px !important;}
-  #weekTable th:first-child,#weekTable td.time{width:36px !important;}
-  #weekTable .time{font-size:9px !important;}
-  #weekTable .appt{font-size:8.5px !important;padding:2px !important;}
-  #weekTable .appt strong{font-size:8.5px !important;}
-  #monthTable .month-day{height:48px !important;padding:3px !important;}
-  #pacientesView .grid{display:block !important;}
-  #pacientesView .card{margin-bottom:10px !important;}
-  #pacientesSearchWrap{width:100% !important;max-width:100% !important;}
-  #pacientesTable{display:block !important;width:100% !important;min-width:0 !important;border-spacing:0 !important;}
-  #pacientesTable thead{display:none !important;}
-  #pacientesTable tbody{display:block !important;width:100% !important;}
-  #pacientesTable tr{display:block !important;width:100% !important;max-width:100% !important;margin:0 0 8px !important;padding:8px !important;border:1px solid #f3cfe0 !important;border-radius:12px !important;background:#fff !important;box-shadow:none !important;}
-  #pacientesTable td{display:block !important;width:100% !important;border:0 !important;padding:3px 0 !important;font-size:12px !important;overflow-wrap:anywhere !important;}
-  #pacientesTable td:nth-child(1)::before{content:'Paciente: ';font-weight:700;color:#64748b;}
-  #pacientesTable td:nth-child(2)::before{content:'Teléfono: ';font-weight:700;color:#64748b;}
-  #pacientesTable td:nth-child(3)::before{content:'Email: ';font-weight:700;color:#64748b;}
-  #pacientesTable td:nth-child(4)::before{content:'Obs.: ';font-weight:700;color:#64748b;}
-}
-@media(max-width:420px){
-  .weekbar{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
-  .weekbar button{font-size:10px !important;}
-}
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180-ynea.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192-ynea.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512-ynea.png">
-
-
-<style id="ynea-mobile-5dias-final-fix">
-/* Ajuste final móvil: siempre mostrar los 5 días completos en semanal y mensual */
-@media(max-width:900px){
-  #semanaView .tableWrap,#mensualView .tableWrap{
-    overflow-x:hidden !important;
-    width:100% !important;
-    max-width:100% !important;
-  }
-  #weekTable,#monthTable{
-    width:100% !important;
-    min-width:0 !important;
-    max-width:100% !important;
-    table-layout:fixed !important;
-    border-collapse:collapse !important;
-  }
-  #weekTable th,#weekTable td,#monthTable th,#monthTable td{
-    min-width:0 !important;
-    max-width:none !important;
-    box-sizing:border-box !important;
-    overflow:hidden !important;
-    padding:1px !important;
-    font-size:8px !important;
-    line-height:1.1 !important;
-    word-break:normal !important;
-  }
-  #weekTable th:first-child,#weekTable td.time{
-    width:28px !important;
-    max-width:28px !important;
-    min-width:28px !important;
-    font-size:7.5px !important;
-    padding:1px !important;
-  }
-  #weekTable th:not(:first-child),#weekTable td.slot{
-    width:calc((100% - 28px) / 5) !important;
-  }
-  #weekTable .slot{
-    min-height:26px !important;
-    height:auto !important;
-  }
-  #weekTable .appt{
-    font-size:7.5px !important;
-    line-height:1.05 !important;
-    padding:1px !important;
-    margin:1px 0 !important;
-    border-radius:4px !important;
-  }
-  #weekTable .appt strong{font-size:7.5px !important;}
-  #weekTable .appt span:nth-of-type(2),
-  #weekTable .appt .badge{display:none !important;}
-
-  #monthTable th,#monthTable td{
-    width:20% !important;
-    min-width:0 !important;
-    max-width:20% !important;
-  }
-  #monthTable td.slot{
-    min-width:0 !important;
-    background:#fff !important;
-  }
-  #monthTable .slot[style]{min-width:0 !important;}
-  #monthTable .appt{
-    display:block !important;
-    margin-top:1px !important;
-    padding:1px !important;
-    font-size:6.8px !important;
-    line-height:1 !important;
-    border-radius:4px !important;
-    white-space:nowrap !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-  }
-  #monthTable .appt span,
-  #monthTable .appt br{display:none !important;}
-  #monthTable td.slot > strong{
-    display:block !important;
-    font-size:9px !important;
-    line-height:1 !important;
-  }
-  #monthTable .small{font-size:7px !important;margin:1px 0 !important;}
-}
-@media(max-width:380px){
-  #weekTable th,#weekTable td,#monthTable th,#monthTable td{font-size:7.2px !important;}
-  #weekTable th:first-child,#weekTable td.time{width:24px !important;max-width:24px !important;min-width:24px !important;font-size:7px !important;}
-  #weekTable th:not(:first-child),#weekTable td.slot{width:calc((100% - 24px) / 5) !important;}
-}
-</style>
-
-
-<!-- YNEA FIX EARLY LOCK: evita parpadeo antes de acreditación -->
-<style id="ynea-early-login-lock-css">html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;pointer-events:none!important;user-select:none!important}html.ynea-locked #yneaLoginOverlay,html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important}</style>
-<script id="ynea-early-login-lock-js">try{document.documentElement.classList.add('ynea-locked')}catch(e){}</script>
-
-<style id="ynea-nuevo-paciente-mobile-final-visible">
-@media(max-width:900px){
-  #nuevoPacienteOverlay,
-  .nuevoPacienteOverlay{
-    z-index:60000 !important;
-    align-items:flex-end !important;
-    padding:6px !important;
-  }
-  #nuevoPacienteModal,
-  .nuevoPacienteModal{
-    width:100% !important;
-    max-height:calc(100dvh - 12px) !important;
-    overflow:auto !important;
-    padding:10px 10px 98px 10px !important;
-    border-radius:18px 18px 0 0 !important;
-  }
-  .nuevoPacienteHeader{margin-bottom:6px !important;}
-  .nuevoPacienteHeader h2{font-size:16px !important; line-height:1.1 !important;}
-  .nuevoPacienteHeader p{display:none !important;}
-  .nuevoPacienteGrid{gap:6px !important;}
-  .nuevoPacienteGrid label{font-size:11px !important; margin:3px 0 2px !important;}
-  .nuevoPacienteGrid input,
-  .nuevoPacienteGrid textarea{
-    height:30px !important;
-    min-height:30px !important;
-    font-size:12px !important;
-    padding:4px 6px !important;
-  }
-  .nuevoPacienteGrid textarea{
-    height:42px !important;
-    min-height:42px !important;
-  }
-  .nuevoPacienteActions{
-    position:fixed !important;
-    left:8px !important;
-    right:8px !important;
-    bottom:8px !important;
-    z-index:61000 !important;
-    background:#fff !important;
-    border:1px solid #ead5df !important;
-    border-radius:14px !important;
-    padding:7px !important;
-    box-shadow:0 8px 28px rgba(15,23,42,.24) !important;
-    display:grid !important;
-    grid-template-columns:1fr 1fr !important;
-    gap:6px !important;
-  }
-  .nuevoPacienteActions button{
-    min-width:0 !important;
-    width:100% !important;
-    height:34px !important;
-    min-height:34px !important;
-    padding:5px 6px !important;
-    font-size:12px !important;
-  }
-}
-</style>
-
-</head>
-<body>
-<header>
-  
-
-
-<h1>
-  <div class="yneaBrandTitle">
-    <img src="data:image/png;base64,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" alt="Ynea">
-    <span class="yneaSeparator"></span>
-    <span>
-      <span class="brandText">calendario de citación</span>
-      <span class="brandSub">gestión clínica de agenda</span>
-    </span>
-  </div>
-</h1>
-
-
-
-  
-  <button id="yneaTopLogoutBackup" class="secondary" type="button" onclick="yneaSalirConCopia()">Cerrar</button>
-
-  <div class="tabs">
-    <button class="tab active" onclick="setView('semana', this)">Calendario semanal</button>
-    <button class="tab" onclick="setView('mensual', this)">Vista mensual</button>
-    <button class="tab" onclick="setView('anual', this)">Vista anual</button>
-    
-    <button class="tab" onclick="setView('pacientes', this)">Pacientes</button>
-    <button class="tab" onclick="setView('config', this)">Configuración</button>
-    <button class="tab" onclick="setView('bloqueos', this)">Bloqueos</button>
-    <button class="tab" onclick="setView('listados', this)">Listados</button>
-    <button class="tab" onclick="setView('infoDiaria', this)">Información diaria</button>
-    <button class="tab" onclick="setView('avisos', this)">Avisos</button>
-    <button class="tab" onclick="setView('copias', this)">Copias de seguridad</button>
-  </div>
-</header>
-
-<div class="container">
-  <div class="stats">
-    <div class="stat">Citas <b id="statCitas">0</b></div>
-    <div class="stat">Pacientes <b id="statPacientes">0</b></div>
-    <div class="stat">Profesionales <b id="statProfs">0</b></div>
-    <div class="stat">Consultas <b id="statConsultas">0</b></div>
-  </div>
-
-  <section id="semanaView">
-    <div class="card">
-      <h2>Calendario por consulta / semana</h2>
-      <div class="weekbar ynea-calendar-bar">
-        <div id="weekField" class="ynea-cal-field"><label>Semana</label><button type="button" id="yneaWeekDisplay" class="ynea-range-display" onclick="yneaOpenHiddenPicker('weekPicker')">Semana actual</button><input type="date" id="weekPicker" class="ynea-hidden-picker" onchange="setWeekFromDate(this.value)"></div>
-        <div id="weekConsultaField" class="ynea-cal-field"><label>Consulta</label><select id="weekConsulta" onchange="renderAll()"></select></div>
-        <div id="weekProfField" class="ynea-cal-field"><label>Profesional</label><select id="weekProf" onchange="renderAll()"><option value="">Todos</option></select></div>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="moveWeek(-1)">Anterior</button>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="goThisWeek()">Actual</button>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="moveWeek(1)">Siguiente</button>
-      </div>
-      <p class="small" id="weekTitle"></p><p class="small"><b>Uso rápido:</b> elige una consulta y haz clic en cualquier hueco vacío para crear una cita en ese día y hora.</p>
-      <div class="tableWrap"><table id="weekTable"></table></div>
-    </div>
-  </section>
-
-
-  <section id="mensualView" style="display:none">
-    <div class="card">
-      <h2>Vista mensual por profesional</h2>
-      <div class="weekbar ynea-calendar-bar">
-        <div id="monthField" class="ynea-cal-field"><label>Mes</label><button type="button" id="yneaMonthDisplay" class="ynea-range-display" onclick="yneaOpenHiddenPicker('monthPicker')">Mes actual</button><input type="month" id="monthPicker" class="ynea-hidden-picker" onchange="renderAll()"></div>
-        <div id="monthConsultaField" class="ynea-cal-field"><label>Consulta</label><select id="monthConsulta" onchange="renderAll()"><option value="">Todas</option></select></div>
-        <div id="monthProfField" class="ynea-cal-field"><label>Profesional</label><select id="monthProf" onchange="renderAll()"><option value="">Todos</option></select></div>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="moveMonth(-1)">Anterior</button>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="goThisMonth()">Actual</button>
-        <button class="secondary ynea-calendar-nav" type="button" onclick="moveMonth(1)">Siguiente</button>
-      </div>
-      <p class="small" id="monthTitle"></p>
-      <div class="tableWrap"><table id="monthTable"></table></div>
-    </div>
-  </section>
-
-  <section id="anualView" style="display:none">
-    <div class="card">
-      <h2>Vista anual por profesional</h2>
-      <div class="weekbar">
-        <button class="secondary" onclick="moveYear(-1)">← Año anterior</button>
-        <div><label>Año</label><input type="number" id="yearPicker" min="2020" max="2100" onchange="renderAll()"></div>
-        <button class="secondary" onclick="goThisYear()">Año actual</button>
-        <button class="secondary" onclick="moveYear(1)">Año siguiente →</button>
-        <div><label>Profesional</label><select id="yearProf" onchange="renderAll()"><option value="">Todos</option></select></div>
-      </div>
-      <p class="small" id="yearTitle"></p>
-      <div class="tableWrap"><table id="yearTable"></table></div>
-    </div>
-  </section>
-
-  <section id="agendaView" style="display:none">
-    <div class="grid">
-      <div class="card">
-        <h2>Nueva cita</h2>
-        <div class="notice">Añade pacientes, profesionales y consultas desde las pestañas correspondientes. Aquí se crea la cita.</div>
-        <label>Fecha</label><input type="date" id="fechaCita">
-        <div class="row"><div><label>Hora</label><select id="horaCita"></select></div><div><label>Duración</label><select id="duracionCita"><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option><option>60</option><option>90</option></select></div></div>
-        
-<label>Paciente</label>
-<div class="pacienteSearchBox">
-  <input id="pacienteBusqueda" placeholder="Buscar por nombre, teléfono o email" autocomplete="off"
-         oninput="buscarPacienteCita()" onfocus="buscarPacienteCita()">
-  <input type="hidden" id="pacienteCita">
-  <div id="pacienteResultados" class="pacienteResultados"></div>
-  <button type="button" class="secondary" style="margin-top:8px" onclick="abrirNuevoPacienteDesdeBusqueda()">➕ Nuevo paciente</button>
-</div>
-
-        <label>Profesional</label><select id="profesionalCita" onchange="actualizarTiposNuevaCita()"></select>
-        <label>Consulta</label><select id="consultaCita"></select>
-        <div class="row"><div><label>Tipo de cita</label><select id="tipoCita" onchange="applyTipoDuration()"></select></div><div><label>Estado</label><select id="estadoCita"><option>Pendiente</option><option>Confirmada</option><option>Realizada</option><option>Cancelada</option><option>No acude</option></select></div></div>
-        <label>Observaciones</label><textarea id="obsCita"></textarea>
-        
-<div style="margin-top:14px;padding:12px;border:1px solid #dbe3ee;border-radius:14px;background:#fafafa">
-  <label style="display:flex;align-items:center;gap:8px;font-weight:bold">
-    <input type="checkbox" id="crearCitaEnlazada" style="width:auto">
-    Añadir cita enlazada con otro profesional
-  </label>
-  <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin-top:8px">
-    <input type="checkbox" id="crearPrimeroSegunda" style="width:auto">
-    Introducir primero la segunda cita y elegir después la primera
-  </label>
-  <p class="small">Primero se guardará esta cita y después podrás elegir hueco disponible para el segundo profesional.</p>
-  <div id="citaEnlazadaOpciones" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-    <div>
-      <label>Segundo profesional</label>
-      <select id="enlaceProfesional"></select>
-    </div>
-    <div>
-      <label>Tipo segunda cita</label>
-      <select id="enlaceTipo"></select>
-    </div>
-  </div>
-</div>
-
-          <button style="width:100%;margin-top:14px" onclick="addCita()">Guardar cita</button>
-      </div>
-      <div class="card">
-        <h2>Citas próximas</h2>
-        <div class="tableWrap"><table id="nextTable"></table></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="pacientesView" style="display:none">
-    <div class="grid">
-      <div class="card">
-        <h2>Nuevo paciente</h2>
-        <label>Nombre</label><input id="pacNombre" placeholder="Nombre y apellidos">
-        <label>Teléfono</label><input id="pacTelefono" placeholder="Teléfono">
-        <label>Email</label><input id="pacEmail" placeholder="Email">
-        <label>Observaciones</label><textarea id="pacObs"></textarea>
-        <button style="width:100%;margin-top:14px" onclick="addPaciente()">Guardar paciente</button>
-      </div>
-      <div class="card"><h2>Base de pacientes</h2><div id="pacientesSearchWrap" class="pacientesSearchWrapStatic"><input id="buscadorPacientes" type="search" placeholder="Buscar por nombre, email o teléfono..." autocomplete="off" oninput="window.renderPatients && window.renderPatients()"><span id="pacientesSearchInfo"></span></div><div class="tableWrap"><table id="pacientesTable"></table></div></div>
-    </div>
-  </section>
-
-  <section id="configView" style="display:none">
-    
-
-      <div class="card">
-        <h2>Tipos por profesional</h2>
-        <p class="small">Selecciona un profesional y marca qué tipos de cita puede utilizar.</p>
-        <label>Profesional</label>
-        <select id="mapProfesional" onchange="renderMapTipos()"></select>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-          <button class="secondary" onclick="activarTiposProfesional()">Activar todos para este profesional</button>
-          <button class="danger" onclick="desactivarTiposProfesional()">Desactivar todos para este profesional</button>
-        </div>
-        <label>Tipos disponibles</label>
-        <div id="mapTiposBox"></div>
-        <button style="width:100%;margin-top:10px" onclick="saveMapTipos()">Guardar tipos del profesional</button>
-      </div>
-
-      <div class="card">
-        <h2>Profesionales</h2>
-        <label>Nombre del profesional</label><input id="newProf" placeholder="Ej. Dra. Ana López">
-        <button style="width:100%;margin-top:10px" onclick="addItem('profesionales','newProf')">Añadir profesional</button>
-        <div id="profList"></div>
-      </div>
-      <div class="card">
-        <h2>Consultas / salas</h2>
-        <label>Nombre de consulta</label><input id="newConsulta" placeholder="Ej. Consulta 1">
-        <button style="width:100%;margin-top:10px" onclick="addItem('consultas','newConsulta')">Añadir consulta</button>
-        <div id="consultaList"></div>
-      </div>
-      <div class="card">
-        <h2>Tipos de cita</h2>
-        <label>Tipo de cita</label><input id="newTipo" placeholder="Ej. Revisión">
-        <label>Duración prefijada</label>
-        <select id="newTipoDuracion"><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option><option>60</option><option>90</option></select>
-        <button style="width:100%;margin-top:10px" onclick="addTipo()">Añadir tipo</button>
-        <p class="small">La duración se aplicará automáticamente al seleccionar el tipo en una nueva cita.</p>
-        <div id="tipoList"></div>
-      </div>
-    </div>
-</section>
-
-
-  <section id="bloqueosView" style="display:none">
-    <div class="grid">
-      <div class="card">
-        <h2>Nuevo bloqueo de agenda</h2>
-        <div class="notice">
-          Bloquea citas para un profesional concreto o para todos los profesionales. Puedes bloquear días concretos, rangos, semanas completas, días de la semana o de forma permanente.
-        </div>
-
-        <label>Aplicar bloqueo a</label>
-        <select id="bloqAmbitoNuevo" onchange="toggleBloqProfesionalNuevo()">
-          <option value="todos">Todos los profesionales</option>
-          <option value="profesional">Un profesional concreto</option>
-        </select>
-
-        <div id="bloqProfesionalBoxNuevo" style="display:none">
-          <label>Profesional</label>
-          <select id="bloqProfesionalNuevo"></select>
-        </div>
-
-        <label>Tipo de periodo</label>
-        <select id="bloqPeriodoTipo" onchange="toggleBloqPeriodoCampos()">
-          <option value="dia">Día concreto</option>
-          <option value="rango">Rango de fechas</option>
-          <option value="semana">Semana completa</option>
-          <option value="diasSemana">Días de la semana en un rango</option>
-          <option value="permanente">Permanente por días de la semana</option>
-        </select>
-
-        <div id="bloqFechaUnicaBox">
-          <label>Fecha</label>
-          <input type="date" id="bloqFechaUnica">
-        </div>
-
-        <div id="bloqRangoBox" style="display:none">
-          <div class="row">
-            <div><label>Desde</label><input type="date" id="bloqFechaDesde"></div>
-            <div><label>Hasta</label><input type="date" id="bloqFechaHasta"></div>
-          </div>
-        </div>
-
-        <div id="bloqSemanaBox" style="display:none">
-          <label>Selecciona cualquier día de la semana a bloquear</label>
-          <input type="date" id="bloqSemanaFecha">
-          <p class="small">Se bloqueará de lunes a viernes de esa semana.</p>
-        </div>
-
-        <div id="bloqDiasSemanaBox" style="display:none">
-          <label>Días de la semana</label>
-          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
-            <label style="font-weight:normal"><input type="checkbox" class="bloqDiaNuevo" value="1" checked> Lunes</label>
-            <label style="font-weight:normal"><input type="checkbox" class="bloqDiaNuevo" value="2" checked> Martes</label>
-            <label style="font-weight:normal"><input type="checkbox" class="bloqDiaNuevo" value="3" checked> Miércoles</label>
-            <label style="font-weight:normal"><input type="checkbox" class="bloqDiaNuevo" value="4" checked> Jueves</label>
-            <label style="font-weight:normal"><input type="checkbox" class="bloqDiaNuevo" value="5" checked> Viernes</label>
-          </div>
-        </div>
-
-        <label>Horario bloqueado</label>
-        <select id="bloqHorarioTipo" onchange="toggleBloqHorarioCampos()">
-          <option value="diaCompleto">Día completo</option>
-          <option value="horario">Tramo horario</option>
-        </select>
-
-        <div class="row" id="bloqHorarioBoxNuevo" style="display:none">
-          <div><label>Desde hora</label><select id="bloqHoraDesdeNuevo"></select></div>
-          <div><label>Hasta hora</label><select id="bloqHoraHastaNuevo"></select></div>
-        </div>
-
-        <label>Motivo del bloqueo</label>
-        <input id="bloqMotivoNuevo" placeholder="Ej. vacaciones, formación, festivo, reunión, no disponible">
-
-        <button style="width:100%;margin-top:14px" onclick="guardarBloqueoAvanzado()">Guardar bloqueo</button>
-      </div>
-
-      <div class="card">
-        <h2>Bloqueos guardados</h2>
-        <div class="tableWrap"><table id="bloqueosTable"></table></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="listadosView" style="display:none">
-    <div class="card">
-      <h2>Listado mensual y filtros combinados</h2>
-      <div class="filters">
-        <div>
-          <label>Periodo</label>
-          <select id="filtroPeriodo" onchange="toggleFiltroPeriodo(); renderAll()">
-            <option value="dia">Día</option>
-            <option value="semana">Semana</option>
-            <option value="mes" selected>Mes</option>
-            <option value="anio">Año</option>
-            <option value="personalizado">Personalizado</option>
-          </select>
-        </div>
-        <div id="boxFiltroDia"><label>Día</label><input type="date" id="filtroDia" onchange="renderAll()"></div>
-        <div id="boxFiltroSemana"><label>Semana</label><input type="date" id="filtroSemana" onchange="renderAll()"></div>
-        <div id="boxFiltroMes"><label>Mes</label><input type="month" id="filtroMes" onchange="renderAll()"></div>
-        <div id="boxFiltroAnio"><label>Año</label><input type="number" id="filtroAnio" min="2020" max="2100" onchange="renderAll()"></div>
-        <div id="boxFiltroDesde"><label>Desde</label><input type="date" id="filtroDesde" onchange="renderAll()"></div>
-        <div id="boxFiltroHasta"><label>Hasta</label><input type="date" id="filtroHasta" onchange="renderAll()"></div>
-        <div><label>Profesional</label><select id="filtroProf" onchange="renderAll()"><option value="">Todos</option></select></div>
-        <div><label>Paciente</label><input id="filtroPaciente" oninput="renderAll()" placeholder="Buscar"></div>
-        <div><label>Tipo</label><select id="filtroTipo" onchange="renderAll()"><option value="">Todos</option></select></div>
-        <div><label>Estado</label><select id="filtroEstado" onchange="renderAll()"><option value="">Todos</option><option>Pendiente</option><option>Confirmada</option><option>Realizada</option><option>Cancelada</option><option>No acude</option></select></div>
-      </div>
-      <button class="secondary" onclick="downloadCSV()">Exportar listado a Excel/CSV</button>
-      <div class="tableWrap" style="margin-top:14px"><table id="listadosTable"></table></div>
-    </div>
-  </section>
-
-  
-  <section id="avisosView" style="display:none">
-    <div class="card">
-      <h2>Avisos a pacientes</h2>
-      <div class="notice">
-        Esta pantalla muestra las citas cuyo recordatorio corresponde enviar 48 horas antes a las 11:00.
-        Puedes enviarlo por email o SMS. El envío automático real requiere una versión online con servidor.
-      </div>
-
-      <div class="filters">
-        <div>
-          <label>Fecha de revisión</label>
-          <input type="date" id="avisosFecha" onchange="renderAll()">
-        </div>
-        <div>
-          <label>Hora de envío</label>
-          <input type="time" id="avisosHora" value="11:00" onchange="renderAll()">
-        </div>
-        <div>
-          <label>Profesional</label>
-          <select id="avisosProfesional" onchange="renderAll()"><option value="">Todos</option></select>
-        </div>
-        <div>
-          <label>Estado de aviso</label>
-          <select id="avisosEstadoFiltro" onchange="renderAll()">
-            <option value="">Todos</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="enviado">Enviados</option>
-          </select>
-        </div>
-      </div>
-
-      <button onclick="marcarTodosAvisosEnviados()">Marcar visibles como enviados</button>
-      <button class="secondary" onclick="exportarAvisosCSV()">Exportar avisos CSV</button>
-
-      <div class="tableWrap" style="margin-top:14px">
-        <table id="avisosTable"></table>
-      </div>
-    </div>
-  </section>
-
-<section id="copiasView" style="display:none">
-    <div class="card">
-      <h2>Copias de seguridad</h2>
-      <div class="notice">
-        La agenda se guarda automáticamente en este navegador. Aun así, es recomendable descargar una copia diaria para no perder datos.
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px">
-        <div class="card" style="box-shadow:none">
-          <h3>Guardar copia</h3>
-<p class="small">Descarga un archivo .json con todos los datos.</p>
-<button onclick="guardarEnCarpetaFija()">💾 Guardar copia de seguridad</button>
-<button class="secondary" onclick="cambiarRutaBackup()">📁 Cambiar carpeta</button>
-    
-    
-    
-          <p class="small">Descarga un archivo .json con pacientes, profesionales, citas, bloqueos y configuración.</p>
-          
-        </div>
-
-        <div class="card" style="box-shadow:none">
-          <h3>Cargar copia</h3>
-          <p class="small">Restaura una copia guardada anteriormente. Esto sustituirá los datos actuales.</p>
-          <input type="file" id="restoreBackupInput" accept=".json,application/json" style="display:none" onchange="importBackupFromMain(event)">
-          <button class="secondary" onclick="document.getElementById('restoreBackupInput').click()">📂 Cargar copia de seguridad</button>
-        </div>
-
-        <div class="card" style="box-shadow:none">
-          <h3>Estado</h3>
-          <p class="small" id="backupMainStatus">Autoguardado activo.</p>
-          <button class="secondary" onclick="alert('Tus datos se guardan automáticamente en este navegador. Para máxima seguridad, descarga una copia .json cada día.')">ℹ️ Más información</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</div>
-
-  <section id="infoDiariaView" style="display:none">
-    <div class="card">
-      <h2>Información diaria</h2>
-      <div class="notice">Resumen general de la agenda.</div>
-      <div id="infoDiariaContent" class="infoGrid"></div>
-    </div>
-  </section>
-
-<script>
 const horas=[]; for(let m=9*60+30;m<=20*60+30;m+=10){horas.push(String(Math.floor(m/60)).padStart(2,'0')+":"+String(m%60).padStart(2,'0'))}
 const today=new Date().toISOString().slice(0,10);
 let data=JSON.parse(localStorage.getItem("agendaClinicaSemanal")||"null") || {
@@ -2382,54 +1142,8 @@ inicializarBloqueosAvanzados();
 renderAll();
 setupMonthlyAnnualControls();
 renderAll();
-</script>
 
 
-
-
-<div class="nuevoPacienteOverlay" id="nuevoPacienteOverlay">
-  <div class="nuevoPacienteModal">
-    <div class="nuevoPacienteHeader">
-      <div>
-        <h2>Nuevo paciente</h2>
-        <p>Introduce los datos básicos para añadirlo directamente a la cita.</p>
-      </div>
-      <button class="secondary" onclick="cerrarNuevoPaciente()">Cerrar</button>
-    </div>
-
-    <div id="nuevoPacienteError" class="nuevoPacienteError"></div>
-
-    <div class="nuevoPacienteGrid">
-      <div>
-        <label>Nombre y apellidos *</label>
-        <input id="npNombre" placeholder="Ej. María García López">
-      </div>
-
-      <div>
-        <label>Teléfono *</label>
-        <input id="npTelefono" placeholder="Ej. 600123456">
-      </div>
-
-      <div>
-        <label>Email</label>
-        <input id="npEmail" placeholder="Ej. paciente@email.com">
-      </div>
-
-      <div>
-        <label>Observaciones</label>
-        <textarea id="npObs" placeholder="Notas internas, preferencias, etc."></textarea>
-      </div>
-    </div>
-
-    <div class="nuevoPacienteActions">
-      <button class="secondary" onclick="cerrarNuevoPaciente()">Cancelar</button>
-      <button onclick="guardarNuevoPacienteModal()">Guardar paciente</button>
-    </div>
-  </div>
-</div>
-
-
-<script id="nuevo-paciente-handler">
 function mostrarErrorNuevoPaciente(msg){
   const box=document.getElementById("nuevoPacienteError");
   if(!box) return alert(msg);
@@ -2532,15 +1246,8 @@ function guardarNuevoPacienteModal(){
     renderAll();
   }
 }
-</script>
 
 
-<div class="autosaveBar">
-  <span id="autosaveStatus">Autoguardado activo</span>
-  </div>
-
-
-<script id="autosave-backup-script">
 (function(){
   const BACKUP_DAY_KEY = "agendaClinicaUltimoBackupDiario";
 
@@ -2602,10 +1309,8 @@ function guardarNuevoPacienteModal(){
   // Aviso diario de copia desactivado para móvil y escritorio.
   // La copia manual sigue disponible en la pestaña Copias de seguridad.
 })();
-</script>
 
 
-<script id="backup-main-import-script">
 function importBackupFromMain(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -2636,78 +1341,8 @@ function importBackupFromMain(event){
   };
   reader.readAsText(file);
 }
-</script>
 
 
-<div class="editorCitaOverlay" id="editorCitaOverlay">
-  <div class="editorCitaModal">
-    <div class="editorCitaHeader">
-      <div>
-        <h2>Modificar cita</h2>
-        <p>Edita los datos de la cita seleccionada.</p>
-      </div>
-      <button class="secondary" onclick="cerrarEditorCita()">Cerrar</button>
-    </div>
-
-    <div id="editorCitaError" class="editorCitaError"></div>
-    <input type="hidden" id="editCitaId">
-
-    <div class="editorCitaGrid">
-      <div>
-        <label>Fecha</label>
-        <input type="date" id="editCitaFecha">
-      </div>
-      <div>
-        <label>Hora</label>
-        <select id="editCitaHora"></select>
-      </div>
-      <div>
-        <label>Duración</label>
-        <select id="editCitaDuracion">
-          <option>10</option><option>20</option><option>30</option><option>40</option><option>50</option><option>60</option><option>90</option>
-        </select>
-      </div>
-      <div>
-        <label>Estado</label>
-        <select id="editCitaEstado">
-          <option>Pendiente</option>
-          <option>Confirmada</option>
-          <option>Realizada</option>
-          <option>Cancelada</option>
-          <option>No acude</option>
-        </select>
-      </div>
-      <div>
-        <label>Paciente</label>
-        <select id="editCitaPaciente"></select>
-      </div>
-      <div>
-        <label>Profesional</label>
-        <select id="editCitaProfesional" onchange="refrescarTiposEditorCita()"></select>
-      </div>
-      <div>
-        <label>Consulta</label>
-        <select id="editCitaConsulta"></select>
-      </div>
-      <div>
-        <label>Tipo de consulta</label>
-        <select id="editCitaTipo" onchange="aplicarDuracionTipoEditor()"></select>
-      </div>
-    </div>
-
-    <label>Observaciones</label>
-    <textarea id="editCitaObs"></textarea>
-
-    <div class="editorCitaActions">
-      <button class="danger" onclick="eliminarCitaDesdeEditor()">Eliminar cita</button>
-      <button class="secondary" onclick="cerrarEditorCita()">Cancelar</button>
-      <button onclick="guardarCitaDesdeEditor()">Guardar cambios</button>
-    </div>
-  </div>
-</div>
-
-
-<script id="editor-cita-script">
 function mostrarErrorEditorCita(msg){
   const box=document.getElementById("editorCitaError");
   if(!box) return alert(msg);
@@ -2857,10 +1492,8 @@ window.eliminarCitaDesdeEditor=eliminarCitaDesdeEditor;
 function editCita(id){
   abrirEditorCita(id);
 }
-</script>
 
 
-<script id="backup-folder-script">
 async function guardarBackupEligiendoCarpeta(){
   const nombre = "backup_agenda_clinica_" + new Date().toISOString().slice(0,10) + ".json";
   const contenido = JSON.stringify(data, null, 2);
@@ -2903,83 +1536,8 @@ async function guardarBackupEligiendoCarpeta(){
     a.click();
   }
 }
-</script>
 
 
-
-
-
-
-
-<div class="citaEnlazadaOverlay" id="citaEnlazadaOverlay">
-  <div class="citaEnlazadaModal">
-    <div class="citaEnlazadaHeader">
-      <div>
-        <h2>Crear cita enlazada</h2>
-        <p>Elige un hueco disponible para el segundo profesional.</p>
-      </div>
-      <button class="secondary" onclick="cerrarCitaEnlazada()">Cerrar</button>
-    </div>
-
-    <div id="citaEnlazadaError" class="citaEnlazadaError"></div>
-
-    <div class="citaEnlazadaGrid">
-      <div>
-        <label>Paciente</label>
-        <input id="enlazadaPacienteNombre" disabled>
-      </div>
-      <div>
-        <label>Fecha</label>
-        <input type="date" id="enlazadaFecha" onchange="actualizarHorasDisponiblesEnlazada()">
-      </div>
-      <div>
-        <label>Profesional</label>
-        <select id="enlazadaProfesional" onchange="actualizarTipoEnlazada(); actualizarHorasDisponiblesEnlazada()"></select>
-      </div>
-      <div>
-        <label>Consulta</label>
-        <select id="enlazadaConsulta"></select>
-      </div>
-      <div>
-        <label>Tipo de consulta</label>
-        <select id="enlazadaTipo" onchange="aplicarDuracionEnlazada(); actualizarHorasDisponiblesEnlazada()"></select>
-      </div>
-      <div>
-        <label>Duración</label>
-        <select id="enlazadaDuracion" onchange="actualizarHorasDisponiblesEnlazada()">
-          <option>10</option><option>20</option><option>30</option><option>40</option><option>50</option><option>60</option><option>90</option>
-        </select>
-      </div>
-      <div>
-        <label>Hora disponible</label>
-        <select id="enlazadaHora"></select>
-      </div>
-      <div>
-        <label>Estado</label>
-        <select id="enlazadaEstado">
-          <option>Pendiente</option>
-          <option>Confirmada</option>
-          <option>Realizada</option>
-          <option>Cancelada</option>
-          <option>No acude</option>
-        </select>
-      </div>
-    </div>
-
-    <label>Observaciones</label>
-    <textarea id="enlazadaObs" placeholder="Observaciones de la segunda cita"></textarea>
-
-    <div class="citaEnlazadaActions">
-      <button class="secondary" onclick="cerrarCitaEnlazada()">Omitir segunda cita</button>
-      <button onclick="guardarCitaEnlazada()">Guardar cita enlazada</button>
-    </div>
-  </div>
-</div>
-
-
-
-
-<script id="cita-enlazada-script">
 let citaReferenciaEnlazada = null;
 let modoPrimeraAntes = false;
 
@@ -3245,12 +1803,8 @@ function guardarCitaEnlazada(){
     window.addCita.__enlaceWrappedV3=true;
   }
 })();
-</script>
 
 
-
-
-<script id="backup-carpeta-persistente">
 const DB_BACKUP_YNEA = "AgendaClinicaYneaDB";
 const STORE_BACKUP_YNEA = "handles";
 const KEY_CARPETA_YNEA = "backupFolder";
@@ -3384,10 +1938,8 @@ async function guardarEnCarpetaFija(){
 }
 
 document.addEventListener("DOMContentLoaded", cargarCarpetaGuardadaYnea);
-</script>
 
 
-<script id="editor-profesional-fix">
 function llenarSelectEditorProfesionalFix(id, arr, valueKey, labelKey){
   const el=document.getElementById(id);
   if(!el) return;
@@ -3506,10 +2058,8 @@ function guardarCitaDesdeEditor(){
 // Compatibilidad
 window.eliminarCitaDesdeEditor=eliminarCitaDesdeEditor;
 function editCita(id){ abrirEditorCita(id); }
-</script>
 
 
-<script id="tipos-por-profesional-fix">
 function tiposPermitidosParaNuevaCita(prof){
   if(!prof) return data.tipos || [];
   if(data.tiposPorProfesional && Object.prototype.hasOwnProperty.call(data.tiposPorProfesional, prof)){
@@ -3555,10 +2105,8 @@ function actualizarTiposNuevaCita(){
     setTimeout(actualizarTiposNuevaCita, 100);
   });
 })();
-</script>
 
 
-<script id="avisos-script">
 function inicializarAvisos(){
   if(!data.avisosEnviados) data.avisosEnviados = {};
   if($("avisosFecha") && !$("avisosFecha").value) $("avisosFecha").value = new Date().toISOString().slice(0,10);
@@ -3706,11 +2254,8 @@ function exportarAvisosCSV(){
 (function(){
   document.addEventListener("DOMContentLoaded", inicializarAvisos);
 })();
-</script>
 
 
-
-<script id="info-diaria-script">
 function _infoTodayISO(){
   return new Date().toISOString().slice(0,10);
 }
@@ -3816,11 +2361,8 @@ function renderInfoDiaria(){
     hook();
   }
 })();
-</script>
 
 
-
-<script id="paciente-search-script">
 function normalizarTextoPaciente(v){
   return String(v||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 }
@@ -3909,21 +2451,8 @@ document.addEventListener("click", function(e){
   const wrap=document.querySelector(".pacienteSearchBox");
   if(box && wrap && !wrap.contains(e.target)) box.style.display="none";
 });
-</script>
 
 
-
-<nav class="mobileBottomNav" aria-label="Navegación principal móvil">
-  <button class="mobileNavBtn active" type="button" data-mobile-view="semana"><span class="ico">📅</span><span>Agenda</span></button>
-  <button class="mobileNavBtn" type="button" data-mobile-view="agenda"><span class="ico">➕</span><span>Cita</span></button>
-  <button class="mobileNavBtn" type="button" data-mobile-view="pacientes"><span class="ico">👤</span><span>Pacientes</span></button>
-  <button class="mobileNavBtn" type="button" data-mobile-view="listados"><span class="ico">📋</span><span>Listas</span></button>
-  <button class="mobileNavBtn" type="button" data-mobile-view="config"><span class="ico">⚙️</span><span>Ajustes</span></button>
-</nav>
-<button class="appFab" type="button" aria-label="Nueva cita" onclick="window.appMobileSetView ? appMobileSetView('agenda') : setView('agenda')">+</button>
-
-
-<script id="opcion-c-app-movil-js">
 (function(){
   const views=["semana","mensual","anual","agenda","pacientes","config","bloqueos","listados","copias","avisos","infoDiaria"];
   const originalSetView=window.setView;
@@ -3953,10 +2482,8 @@ document.addEventListener("click", function(e){
     syncMobileNav('semana');
   });
 })();
-</script>
 
 
-<script id="ynea-fix-compacto-real-js">
 (function(){
   const VIEWS=["semana","mensual","agenda","pacientes","config","bloqueos","listados","copias","avisos","infoDiaria"];
   function $(id){return document.getElementById(id)}
@@ -4149,63 +2676,8 @@ document.addEventListener("click", function(e){
     if(isMobile()) window.setView('semana',null);
   });
 })();
-</script>
 
 
-
-<style id="ynea-final-mobile-pc-restore-css">
-/* ===== FIX FINAL: PC visible + móvil compacto ===== */
-.autosaveBar{display:none !important;}
-button[onclick*="setView('anual'"], button[onclick*='setView("anual"']{display:none !important;}
-#anualView{display:none !important;}
-#pacientesTable tbody tr{cursor:pointer;}
-#pacientesTable tbody tr:hover{background:#fff5f8;}
-.month-day.has-citas{background:#fff1f7 !important;border:2px solid #ec4899 !important;}
-.month-day.expanded{background:#fce7f3 !important;}
-.month-day .month-mini-list{margin-top:4px;font-size:11px;line-height:1.25;}
-.month-day .month-mini-item{padding:2px 3px;border-radius:6px;background:#fff;margin-top:2px;}
-@media(max-width:900px){
-  body{font-size:13px !important;padding-bottom:62px !important;}
-  header{min-height:48px !important;padding:6px 8px !important;gap:6px !important;}
-  .yneaBrandTitle img{height:34px !important;max-width:56px !important;}
-  .yneaBrandTitle .brandText{font-size:14px !important;max-width:calc(100vw - 78px) !important;}
-  .container{padding:6px !important;}
-  .card{padding:8px !important;margin-bottom:7px !important;border-radius:12px !important;}
-  .card h2{font-size:15px !important;margin-bottom:6px !important;}
-  label{font-size:11px !important;margin:4px 0 2px !important;}
-  input,select,textarea{font-size:13px !important;padding:6px 7px !important;border-radius:9px !important;min-height:32px !important;}
-  button{font-size:12px !important;padding:6px 8px !important;min-height:32px !important;border-radius:9px !important;min-width:0 !important;}
-  .weekbar{display:grid !important;grid-template-columns:1fr 1fr 1fr !important;gap:5px !important;align-items:end !important;margin-bottom:7px !important;}
-  .weekbar>div{min-width:0 !important;}
-  .weekbar button{width:100% !important;}
-  .filters,.row{grid-template-columns:1fr 1fr !important;gap:5px !important;}
-  .grid,.configGrid{grid-template-columns:1fr !important;gap:7px !important;}
-  .tableWrap{overflow:auto !important;max-height:none !important;border-radius:10px !important;background:#fff !important;}
-  #weekTable,#monthTable{width:100% !important;min-width:0 !important;border-collapse:collapse !important;table-layout:fixed !important;}
-  #weekTable thead,#monthTable thead{display:table-header-group !important;}
-  #weekTable tr,#monthTable tr{display:table-row !important;background:transparent !important;border:0 !important;padding:0 !important;margin:0 !important;box-shadow:none !important;}
-  #weekTable th,#weekTable td,#monthTable th,#monthTable td{display:table-cell !important;padding:2px !important;font-size:9px !important;vertical-align:top !important;min-width:0 !important;border:1px solid #f3cfe0 !important;}
-  #weekTable th:first-child,#weekTable td.time{width:34px !important;}
-  #weekTable .time{position:static !important;font-size:9px !important;white-space:nowrap !important;background:#fff !important;}
-  #weekTable .slot{min-width:0 !important;min-height:28px !important;}
-  #weekTable .appt{font-size:8px !important;padding:2px !important;margin:1px 0 !important;border-radius:5px !important;}
-  #weekTable .appt strong{font-size:8px !important;}
-  #monthTable .month-day{height:42px !important;min-height:42px !important;padding:3px !important;border-radius:6px !important;overflow:hidden !important;}
-  #monthTable .day-num{font-size:10px !important;font-weight:800 !important;}
-  #monthTable .day-count,#monthTable .day-empty{display:block !important;font-size:8px !important;padding:1px 3px !important;margin-top:2px !important;}
-  #monthTable .month-mini-list{font-size:8px !important;max-height:70px !important;overflow:auto !important;}
-  .mobileBottomNav{display:grid !important;grid-template-columns:repeat(3,1fr) !important;left:8px !important;right:8px !important;bottom:8px !important;padding:5px !important;border-radius:16px !important;}
-  .mobileNavBtn{min-height:38px !important;font-size:9px !important;padding:3px 2px !important;}
-  .mobileNavBtn .ico{font-size:14px !important;}
-  .mobileNavBtn[data-mobile-view="config"],.mobileNavBtn[data-mobile-view="listados"],.mobileNavBtn[data-mobile-view="copias"],.mobileNavBtn[data-mobile-view="infoDiaria"],.mobileNavBtn[data-mobile-view="bloqueos"],.mobileNavBtn[data-mobile-view="agenda"]{display:none !important;}
-  .appFab{display:none !important;}
-  header .tabs{display:none !important;}
-}
-@media(max-width:430px){
-  .weekbar{grid-template-columns:1fr 1fr !important;}
-}
-</style>
-<script id="ynea-final-restore-js">
 (function(){
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -4353,13 +2825,8 @@ button[onclick*="setView('anual'"], button[onclick*='setView("anual"']{display:n
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initFinal); else initFinal();
 })();
-</script>
 
 
-
-
-
-<script id="ynea-iphone-cache-fix-2026-05-05">
 (function(){
   try{
     var VERSION='login-pro-clinica-2026-05-05-1';
@@ -4388,24 +2855,8 @@ button[onclick*="setView('anual'"], button[onclick*='setView("anual"']{display:n
     }
   }catch(e){}
 })();
-</script>
-<!-- ===== YNEA STABLE ACCESS + SUPABASE PATCH 2026-05-05 FIX SIN REINTENTAR ===== -->
-<style id="ynea-stable-access-css">
-.notice,#anualView,.autosaveBar,.appFab{display:none!important}
-button[onclick*="setView('anual'"]{display:none!important}
 
-html.ynea-locked body > *:not(#yneaLoginOverlay){visibility:hidden!important;pointer-events:none!important;user-select:none!important}
-html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibility:visible!important;pointer-events:auto!important}
-.ynea-login-overlay{position:fixed;inset:0;background:radial-gradient(circle at top left,rgba(236,72,153,.18),transparent 34%),linear-gradient(135deg,#fff7fb 0%,#f8fafc 48%,#f1f5f9 100%);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px}
-.ynea-login-card{width:min(440px,100%);background:rgba(255,255,255,.96);border:1px solid #f3cfe0;border-radius:28px;box-shadow:0 28px 90px rgba(15,23,42,.20);padding:28px;backdrop-filter:blur(10px)}
-.ynea-login-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}.ynea-login-logo{width:46px;height:46px;border-radius:16px;object-fit:cover;box-shadow:0 10px 24px rgba(219,39,119,.18)}.ynea-login-title{margin:0;color:#be185d;font-size:25px;line-height:1.1}.ynea-login-subtitle{margin:4px 0 0;color:#64748b;font-size:14px}.ynea-login-card label{display:block;margin:12px 0 6px;color:#334155;font-weight:700;font-size:13px}.ynea-login-card select,.ynea-login-card input{width:100%;margin-bottom:8px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px 13px;font-size:15px;min-height:46px}.ynea-login-card select:focus,.ynea-login-card input:focus{outline:none;border-color:#db2777;box-shadow:0 0 0 4px rgba(219,39,119,.10)}.ynea-login-button{width:100%;margin-top:14px;border:0;border-radius:16px;padding:13px 16px;min-height:48px;background:linear-gradient(135deg,#db2777,#be185d);color:#fff;font-weight:800;letter-spacing:.01em;box-shadow:0 14px 30px rgba(219,39,119,.25)}.ynea-login-button:hover{filter:brightness(.98);transform:translateY(-1px)}.ynea-login-foot{margin-top:14px;text-align:center;color:#94a3b8;font-size:12px}.ynea-login-error{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:12px;padding:10px;margin:10px 0}.ynea-login-tools{margin-top:12px;border:1px solid #f3cfe0;border-radius:14px;padding:12px;background:#fff7fb}.ynea-login-tools summary{cursor:pointer;font-weight:700;color:#9f244f}.ynea-login-remember{display:flex!important;align-items:center;gap:9px;margin:10px 0 2px;color:#475569;font-size:13px;font-weight:600}.ynea-login-remember input{width:auto!important;min-height:auto!important;margin:0!important;accent-color:#be185d}.ynea-login-mini{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}.ynea-login-link{border:0!important;background:transparent!important;color:#9f244f!important;padding:0!important;min-height:auto!important;font-size:12px!important;text-decoration:underline;box-shadow:none!important}.ynea-login-hint{color:#64748b;font-size:12px;line-height:1.35;margin-top:6px}
-#yneaAccessPanelStable .accessRow{display:grid;grid-template-columns:1fr 150px 190px;gap:8px;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:8px;margin-top:8px;background:#fff}
-#yneaAccessPanelStable input,#yneaAccessPanelStable select{margin:0}.appt{padding:2px 4px!important;line-height:1.05!important;font-size:11px!important;min-height:0!important}.appt strong{font-size:11px!important}.slot{min-height:22px!important}#weekTable td,#weekTable th{padding:3px!important}
-#pacientesTable{width:100%!important;min-width:680px!important;border-collapse:collapse!important}#pacientesTable thead{display:table-header-group!important}#pacientesTable tbody{display:table-row-group!important}#pacientesTable tr{display:table-row!important;background:#fff!important;border:0!important;box-shadow:none!important;margin:0!important;padding:0!important}#pacientesTable th,#pacientesTable td{display:table-cell!important;border:1px solid #e5e7eb!important;padding:6px 8px!important;font-size:12px!important;vertical-align:top!important}#pacientesTable tbody tr{cursor:pointer!important}#pacientesTable tbody tr:hover{background:#fff1f7!important}#pacientesSearchWrap{display:flex!important;gap:8px;align-items:center;margin:0 0 10px 0}#buscadorPacientes{width:100%;max-width:520px;padding:9px 12px;border:1px solid #dbe3ee;border-radius:12px}
-@media(max-width:900px){
-  header{padding:6px 10px!important;min-height:54px!important}.yneaBrandTitle img{height:36px!important;max-width:60px!important}.yneaBrandTitle .brandText{font-size:15px!important;max-width:calc(100vw - 92px)!important}.container{padding:8px!important}.card{padding:10px!important;margin-bottom:8px!important;border-radius:14px!important}.card h2{font-size:16px!important;margin-bottom:8px!important}label{font-size:11px!important;margin:5px 0 3px!important}input,select,textarea{font-size:13px!important;padding:6px 8px!important;min-height:34px!important;border-radius:10px!important}button{font-size:12px!important;padding:7px 9px!important;min-height:34px!important;border-radius:10px!important}.weekbar{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;margin-bottom:8px!important}.weekbar>div{min-width:0!important}.weekbar button{width:100%!important;min-width:0!important}.tableWrap{overflow-x:auto!important;max-height:none!important;border:1px solid #f3cfe0!important;background:#fff!important}table{min-width:620px!important;border-collapse:collapse!important;border-spacing:0!important}thead{display:table-header-group!important}tr{display:table-row!important;background:#fff!important;border:0!important;box-shadow:none!important;margin:0!important;padding:0!important}th,td{display:table-cell!important;padding:3px!important;font-size:10px!important;border:1px solid #eef2f7!important}.time{position:sticky!important;left:0!important;background:#fff!important;font-size:10px!important}.slot{min-width:84px!important;min-height:20px!important}.mobileBottomNav{grid-template-columns:repeat(3,1fr)!important}.mobileBottomNav .mobileNavBtn:nth-child(n+4){display:none!important}.tabs .tab{display:none!important}.appFab,.autosaveBar{display:none!important}.ynea-login-card{padding:16px;border-radius:18px}.ynea-login-card h2{font-size:20px}.ynea-login-tools{display:none!important}#yneaAccessPanelStable .accessRow{grid-template-columns:1fr}.configGrid{grid-template-columns:1fr!important}}
-</style>
-<script id="ynea-stable-access-js">
+
 (function(){
   'use strict';
   try{ document.documentElement.classList.add('ynea-locked'); sessionStorage.removeItem('yneaCurrentUser'); }catch(e){}
@@ -4614,10 +3065,8 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
   setInterval(function(){try{if(!sessionStorage.getItem('yneaCurrentUser') && !document.getElementById('yneaLoginOverlay')){document.documentElement.classList.add('ynea-locked'); makeLogin();}}catch(e){}},1500);
   document.addEventListener('DOMContentLoaded',async()=>{sessionStorage.removeItem('yneaCurrentUser'); addSupabasePanel(); ensureAccess(); refreshSelects(); try{renderAccessPanel();}catch(e){} const c=creds(); if(c.key){try{await loadCatalogs(false);}catch(e){console.warn('Supabase auto',e);}} await makeLogin(); try{if(typeof renderAll==='function') renderAll();}catch(e){} });
 })();
-</script>
 
 
-<script id="ynea-salir-copia-final">
 (function(){
   window.yneaSalirConCopia=function(){
     try{ if(typeof save==='function') save(); }catch(e){}
@@ -4639,52 +3088,8 @@ html.ynea-locked #yneaLoginOverlay, html.ynea-locked #yneaLoginOverlay *{visibil
     },450);
   };
 })();
-</script>
 
 
-
-
-
-<!-- ===== YNEA FIX DEFINITIVO VERIFICADO: login sin flash + calendario estable ===== -->
-<style id="ynea-definitivo-calendario-css">
-html.ynea-locked body > *:not(#yneaLoginOverlay){display:none!important;visibility:hidden!important;pointer-events:none!important;}
-html.ynea-locked #yneaLoginOverlay,html.ynea-locked #yneaLoginOverlay *{display:revert;visibility:visible!important;pointer-events:auto!important;}
-html.ynea-locked #yneaLoginOverlay{display:flex!important;}
-#semanaView .ynea-calendar-bar,#mensualView .ynea-calendar-bar{
-  display:grid!important;
-  grid-template-columns:170px minmax(170px,1fr) minmax(170px,1fr) 108px 108px 108px!important;
-  gap:8px!important;align-items:end!important;margin:6px 0 10px!important;width:100%!important;max-width:100%!important;
-}
-#semanaView .ynea-cal-field,#mensualView .ynea-cal-field{min-width:0!important;width:100%!important;}
-#semanaView .ynea-cal-field label,#mensualView .ynea-cal-field label{display:block!important;font-size:12px!important;font-weight:800!important;color:#64748b!important;margin:0 0 4px!important;line-height:1.1!important;}
-#semanaView .ynea-cal-field select,#mensualView .ynea-cal-field select,
-#semanaView .ynea-range-display,#mensualView .ynea-range-display{
-  width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;box-sizing:border-box!important;
-  background:#fff!important;background-image:none!important;color:#0f172a!important;border:1px solid #dbe3ee!important;border-radius:11px!important;
-  box-shadow:none!important;padding:7px 10px!important;font-size:13px!important;text-align:left!important;font-weight:700!important;appearance:auto!important;
-}
-#semanaView button.ynea-calendar-nav,#mensualView button.ynea-calendar-nav,
-#semanaView .weekbar button.secondary,#mensualView .weekbar button.secondary{
-  display:block!important;visibility:visible!important;opacity:1!important;position:static!important;width:100%!important;height:38px!important;min-height:38px!important;
-  background:#fff!important;background-image:none!important;color:#334155!important;border:1px solid #dbe3ee!important;border-radius:11px!important;
-  box-shadow:none!important;text-shadow:none!important;padding:7px 8px!important;font-size:13px!important;font-weight:800!important;white-space:nowrap!important;
-}
-#semanaView button.ynea-calendar-nav:hover,#mensualView button.ynea-calendar-nav:hover{background:#f8fafc!important;color:#0f172a!important;}
-.ynea-hidden-picker{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;}
-@media(max-width:900px){
-  #semanaView .ynea-calendar-bar,#mensualView .ynea-calendar-bar{grid-template-columns:1fr 1fr 1fr!important;gap:5px!important;margin:3px 0 7px!important;}
-  #weekField,#monthField{grid-column:1!important;grid-row:1!important;}
-  #weekConsultaField,#monthConsultaField{grid-column:2!important;grid-row:1!important;}
-  #weekProfField,#monthProfField{grid-column:3!important;grid-row:1!important;}
-  #semanaView button.ynea-calendar-nav,#mensualView button.ynea-calendar-nav{height:31px!important;min-height:31px!important;font-size:10.5px!important;padding:4px 2px!important;border-radius:9px!important;background:#fff!important;color:#334155!important;border-color:#dbe3ee!important;}
-  #semanaView .ynea-calendar-nav:nth-of-type(1),#mensualView .ynea-calendar-nav:nth-of-type(1){grid-column:1!important;grid-row:2!important;}
-  #semanaView .ynea-calendar-nav:nth-of-type(2),#mensualView .ynea-calendar-nav:nth-of-type(2){grid-column:2!important;grid-row:2!important;}
-  #semanaView .ynea-calendar-nav:nth-of-type(3),#mensualView .ynea-calendar-nav:nth-of-type(3){grid-column:3!important;grid-row:2!important;}
-  #semanaView .ynea-cal-field label,#mensualView .ynea-cal-field label{font-size:9px!important;margin:0 0 2px!important;}
-  #semanaView .ynea-cal-field select,#mensualView .ynea-cal-field select,#semanaView .ynea-range-display,#mensualView .ynea-range-display{height:31px!important;min-height:31px!important;font-size:10px!important;padding:4px 5px!important;border-radius:9px!important;}
-}
-</style>
-<script id="ynea-definitivo-calendario-js">
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
@@ -4761,67 +3166,8 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
   if(oldMakeLogin){ window.makeLogin=async function(){document.documentElement.classList.add('ynea-locked'); return oldMakeLogin.apply(this,arguments);}; }
   document.addEventListener('DOMContentLoaded',function(){document.documentElement.classList.add('ynea-locked'); setTimeout(function(){try{window.refreshAllSelects(); updateDisplays();}catch(e){}},0);},true);
 })();
-</script>
 
 
-
-<!-- ===== YNEA AJUSTE ESTABLE: tipos por profesional, copia, móvil y acreditación ===== -->
-<style id="ynea-ajuste-final-usuario-css">
-/* Calendario: misma familia visual en cabecera y navegación */
-#semanaView .ynea-calendar-bar,#mensualView .ynea-calendar-bar{
-  display:grid!important;
-  grid-template-columns:170px minmax(170px,1fr) minmax(170px,1fr) 108px 108px 108px!important;
-  gap:8px!important;align-items:end!important;
-}
-#semanaView #weekConsultaField,#mensualView #monthConsultaField{grid-column:auto!important;grid-row:auto!important;}
-#semanaView #weekProfField,#mensualView #monthProfField{grid-column:auto!important;grid-row:auto!important;}
-#semanaView .ynea-cal-field label,#mensualView .ynea-cal-field label,
-#semanaView .ynea-calendar-nav,#mensualView .ynea-calendar-nav{
-  font-size:12px!important;font-weight:800!important;line-height:1.1!important;
-}
-#semanaView .ynea-range-display,#mensualView .ynea-range-display,
-#semanaView .ynea-cal-field select,#mensualView .ynea-cal-field select,
-#semanaView button.ynea-calendar-nav,#mensualView button.ynea-calendar-nav{
-  background:#fff!important;background-image:none!important;color:#334155!important;border:1px solid #dbe3ee!important;
-  box-shadow:none!important;text-shadow:none!important;border-radius:11px!important;height:38px!important;min-height:38px!important;
-  padding:7px 10px!important;font-size:13px!important;font-weight:800!important;appearance:auto!important;
-}
-#semanaView button.ynea-calendar-nav:hover,#mensualView button.ynea-calendar-nav:hover{background:#f8fafc!important;}
-@media(max-width:900px){
-  #semanaView .ynea-calendar-bar,#mensualView .ynea-calendar-bar{
-    grid-template-columns:1fr 1fr 1fr!important;gap:5px!important;align-items:end!important;
-  }
-  #weekField,#monthField{grid-column:1!important;grid-row:1!important;}
-  #weekConsultaField,#monthConsultaField{grid-column:2!important;grid-row:1!important;}
-  #weekProfField,#monthProfField{grid-column:3!important;grid-row:1!important;}
-  #semanaView .ynea-calendar-nav:nth-of-type(1),#mensualView .ynea-calendar-nav:nth-of-type(1){grid-column:1!important;grid-row:2!important;}
-  #semanaView .ynea-calendar-nav:nth-of-type(2),#mensualView .ynea-calendar-nav:nth-of-type(2){grid-column:2!important;grid-row:2!important;}
-  #semanaView .ynea-calendar-nav:nth-of-type(3),#mensualView .ynea-calendar-nav:nth-of-type(3){grid-column:3!important;grid-row:2!important;}
-  #semanaView .ynea-cal-field label,#mensualView .ynea-cal-field label{font-size:10px!important;margin:0 0 2px!important;}
-  #semanaView .ynea-range-display,#mensualView .ynea-range-display,
-  #semanaView .ynea-cal-field select,#mensualView .ynea-cal-field select,
-  #semanaView button.ynea-calendar-nav,#mensualView button.ynea-calendar-nav{
-    height:32px!important;min-height:32px!important;font-size:10px!important;padding:4px 4px!important;border-radius:9px!important;
-  }
-  /* Pacientes en móvil como listado-tabla de PC: sin tarjetas deformadas */
-  #pacientesView .tableWrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
-  #pacientesTable{display:table!important;min-width:640px!important;width:100%!important;border-collapse:collapse!important;}
-  #pacientesTable thead{display:table-header-group!important;}
-  #pacientesTable tbody{display:table-row-group!important;}
-  #pacientesTable tr{display:table-row!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:#fff!important;}
-  #pacientesTable th,#pacientesTable td{display:table-cell!important;border:1px solid #e5e7eb!important;padding:6px 8px!important;font-size:11px!important;vertical-align:top!important;}
-  #pacientesTable td::before{content:none!important;}
-}
-/* Tipos por profesional con lineado claro */
-#mapTiposBox.ynea-tipos-lineado{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;background:#fff;margin-top:8px;}
-#mapTiposBox.ynea-tipos-lineado .tipo-row{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eef2f7;}
-#mapTiposBox.ynea-tipos-lineado .tipo-row:nth-child(even){background:#f8fafc;}
-#mapTiposBox.ynea-tipos-lineado .tipo-row:last-child{border-bottom:0;}
-#mapTiposBox.ynea-tipos-lineado input{width:20px;height:20px;accent-color:#be185d;}
-#mapTiposBox.ynea-tipos-lineado span{font-weight:700;color:#334155;}
-#backupMainStatus.ynea-backup-ok{color:#166534;font-weight:700;}
-</style>
-<script id="ynea-ajuste-final-usuario-js">
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
@@ -4963,15 +3309,8 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
     setTimeout(function(){try{window.refreshAllSelects(); window.renderLoginSelect();}catch(e){}},300);
   },true);
 })();
-</script>
 
 
-
-
-
-
-<!-- YNEA SYNC DURO FINAL 2026-05-07: Supabase manda siempre -->
-<script id="ynea-sync-duro-final">
 (function(){
   'use strict';
   const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
@@ -5077,24 +3416,8 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshFromCloud()});
   setInterval(()=>{if(document.visibilityState==='visible')refreshFromCloud()},2500);
 })();
-</script>
 
-<!-- YNEA AJUSTES FINALES 2026-05-07: fechas pasadas, móvil compacto, backup PC -->
-<style id="ynea-ajustes-finales-css">
-@media (max-width: 700px){
-  #yneaSyncStatusFinal{display:none !important; visibility:hidden !important; pointer-events:none !important;}
-  #pacientesView .card{padding:10px !important; margin-bottom:8px !important;}
-  #pacientesView h2{font-size:17px !important; margin:0 0 8px !important; line-height:1.15 !important;}
-  #pacientesSearchWrap input,#buscadorPacientes{font-size:13px !important; padding:8px 10px !important; min-height:34px !important;}
-  #pacientesTable{font-size:12px !important; line-height:1.15 !important;}
-  #pacientesTable tr{margin:0 0 5px !important; padding:6px 8px !important; border-radius:10px !important;}
-  #pacientesTable td{padding:1px 0 !important; font-size:12px !important; line-height:1.15 !important;}
-  #pacientesTable td b{font-size:13px !important;}
-  #pacientesTable td::before{font-size:11px !important;}
-  #pacientesView .tableWrap{margin-top:6px !important;}
-}
-</style>
-<script id="ynea-ajustes-finales-script">
+
 (function(){
   'use strict';
   const DB='AgendaClinicaYneaBackupDirFinal';
@@ -5176,10 +3499,8 @@ html.ynea-locked #yneaLoginOverlay{display:flex!important;}
   document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{instalarBloqueos(); setMinDates();},300);},true);
   setInterval(()=>{instalarBloqueos(); setMinDates();},1500);
 })();
-</script>
 
 
-<script>
 function pastelColorProfesional(nombre){
  const n=(nombre||'').toLowerCase();
  if(n.includes('susana')){
@@ -5190,147 +3511,8 @@ function pastelColorProfesional(nombre){
  return colors[h % colors.length];
 }
 
-</script>
-
-<style id="ynea-final-fix-susana-pacientes-grid-v2">
-/* Color rosa estable para cualquier cita de Susana: el color se pinta en el HTML y se refuerza aquí. */
-.appt.ynea-susana-rosa{background:#f8c8dc !important;background-color:#f8c8dc !important;border-color:rgba(190,24,93,.22) !important;color:#334155 !important;}
-.appt.ynea-susana-rosa *{color:#334155 !important;}
-@media (max-width:700px){
-  /* Base pacientes móvil: solo nombre, compacto, sin teléfono/email/observaciones. */
-  #pacientesView .card{padding:6px !important;margin-bottom:6px !important;}
-  #pacientesView h2{font-size:14px !important;line-height:1.05 !important;margin:0 0 6px !important;}
-  #pacientesView .tableWrap{overflow:visible !important;border:0 !important;background:transparent !important;max-height:none !important;}
-  #pacientesTable{display:block !important;width:100% !important;min-width:0 !important;border:0 !important;border-collapse:separate !important;border-spacing:0 !important;font-size:10.5px !important;}
-  #pacientesTable thead{display:none !important;}
-  #pacientesTable tbody{display:block !important;width:100% !important;}
-  #pacientesView #pacientesTable tr{display:block !important;width:100% !important;min-height:0 !important;height:auto !important;margin:0 0 3px !important;padding:3px 5px !important;border:1px solid #f1d7e3 !important;border-radius:8px !important;background:#fff !important;box-shadow:none !important;line-height:1 !important;}
-  #pacientesView #pacientesTable td{display:none !important;border:0 !important;padding:0 !important;margin:0 !important;min-height:0 !important;height:auto !important;line-height:1 !important;font-size:10.5px !important;}
-  #pacientesView #pacientesTable td:nth-child(1){display:block !important;width:100% !important;line-height:1 !important;}
-  #pacientesView #pacientesTable td:nth-child(1)::before{content:'' !important;}
-  #pacientesView #pacientesTable td:nth-child(2),
-  #pacientesView #pacientesTable td:nth-child(3),
-  #pacientesView #pacientesTable td:nth-child(4){display:none !important;}
-  #pacientesView #pacientesTable td b{font-size:10.5px !important;line-height:1 !important;font-weight:700 !important;}
-  #buscadorPacientes{height:28px !important;min-height:28px !important;font-size:11px !important;padding:4px 7px !important;border-radius:8px !important;}
-}
-</style>
 
 
-<style id="ynea-modal-pacientes-grid-recuperacion-final">
-@media (max-width:700px){
-  /* El modal debe estar por encima de la barra Semana/Mes/Pacientes */
-  .editorCitaOverlay{
-    z-index:30000 !important;
-    align-items:flex-end !important;
-    padding:6px !important;
-  }
-  .editorCitaModal{
-    width:100% !important;
-    max-height:calc(100dvh - 12px) !important;
-    height:auto !important;
-    border-radius:18px 18px 0 0 !important;
-    padding:10px 10px 76px 10px !important;
-    overflow:auto !important;
-  }
-  .editorCitaHeader{
-    margin-bottom:6px !important;
-  }
-  .editorCitaHeader h2{
-    font-size:16px !important;
-    line-height:1.1 !important;
-  }
-  .editorCitaHeader p{
-    display:none !important;
-  }
-  .editorCitaGrid{
-    grid-template-columns:1fr 1fr !important;
-    gap:6px !important;
-  }
-  .editorCitaGrid label{
-    font-size:11px !important;
-    margin-bottom:2px !important;
-  }
-  .editorCitaGrid input,
-  .editorCitaGrid select,
-  .editorCitaGrid textarea{
-    min-height:30px !important;
-    height:30px !important;
-    padding:4px 6px !important;
-    font-size:12px !important;
-    border-radius:8px !important;
-  }
-  .editorCitaGrid textarea{
-    height:44px !important;
-    min-height:44px !important;
-  }
-  .editorCitaActions{
-    position:fixed !important;
-    left:8px !important;
-    right:8px !important;
-    bottom:8px !important;
-    z-index:31000 !important;
-    background:#ffffff !important;
-    border:1px solid #ead5df !important;
-    border-radius:14px !important;
-    padding:7px !important;
-    display:grid !important;
-    grid-template-columns:1fr 1fr !important;
-    gap:6px !important;
-    box-shadow:0 8px 26px rgba(15,23,42,.18) !important;
-  }
-  .editorCitaActions button{
-    min-width:0 !important;
-    width:100% !important;
-    min-height:34px !important;
-    height:34px !important;
-    padding:5px 7px !important;
-    font-size:12px !important;
-    border-radius:10px !important;
-  }
-
-  /* Listado de pacientes móvil: solo nombre, compacto */
-  #pacientesTable{
-    display:block !important;
-    width:100% !important;
-    min-width:0 !important;
-    font-size:10.5px !important;
-    border-collapse:separate !important;
-    border-spacing:0 !important;
-  }
-  #pacientesTable thead{display:none !important;}
-  #pacientesTable tbody{display:block !important;}
-  #pacientesTable tr{
-    display:block !important;
-    height:auto !important;
-    min-height:0 !important;
-    margin:0 0 3px 0 !important;
-    padding:3px 5px !important;
-    line-height:1 !important;
-    border:1px solid #f1d7e3 !important;
-    border-radius:8px !important;
-    background:#fff !important;
-  }
-  #pacientesTable td{
-    display:none !important;
-    padding:0 !important;
-    margin:0 !important;
-    line-height:1 !important;
-    font-size:10.5px !important;
-    border:0 !important;
-  }
-  #pacientesTable td:first-child{
-    display:block !important;
-    line-height:1 !important;
-  }
-  #pacientesTable td:first-child b{
-    font-size:10.5px !important;
-    line-height:1 !important;
-  }
-}
-</style>
-
-<script id="ynea-recuperacion-modal-grid-final">
 (function(){
   'use strict';
 
@@ -5435,10 +3617,8 @@ function pastelColorProfesional(nombre){
     setTimeout(function(){try{window.renderPatients();}catch(e){}},250);
   }, true);
 })();
-</script>
 
 
-<script id="ynea-grid-rebuild-fix">
 (function(){
   function reconstruirCuadricula(){
     try{ if(typeof renderWeek==='function') renderWeek(); }catch(e){}
@@ -5460,37 +3640,8 @@ function pastelColorProfesional(nombre){
 
   window.eliminarCita = window.eliminarCitaDesdeEditor;
 })();
-</script>
 
 
-<style id="ynea-final-cerrar-y-huecos-real">
-/* Evita solape Cerrar/Bloqueos en PC aunque no tengan id específico */
-@media (min-width:701px){
-  header, .header, .topbar, .app-header, .toolbar, .acciones, .acciones-top{
-    flex-wrap:wrap !important;
-    gap:8px !important;
-  }
-  button{
-    white-space:nowrap !important;
-  }
-}
-
-/* En móvil/PC, si queda un bloque fantasma vacío de cita, no ocupa espacio */
-.cita:empty,
-.calendar-cita:empty,
-.evento-cita:empty,
-.evento:empty,
-.appointment:empty{
-  display:none !important;
-  height:0 !important;
-  min-height:0 !important;
-  padding:0 !important;
-  margin:0 !important;
-  border:0 !important;
-}
-</style>
-
-<script id="ynea-final-reparar-huecos-y-cerrar-real">
 (function(){
   function texto(el){ return (el && el.textContent ? el.textContent : '').trim().toLowerCase(); }
 
@@ -5579,12 +3730,8 @@ function pastelColorProfesional(nombre){
     window.eliminarCita = window.eliminarCitaDesdeEditor;
   }
 })();
-</script>
 
 
-
-<!-- YNEA FIX REAL: acreditación sin rol/tipo de acceso -->
-<script id="ynea-fix-real-acreditacion-solo-nombre">
 (function(){
   function limpiarRolTexto(t){
     return String(t||'')
@@ -5624,115 +3771,8 @@ function pastelColorProfesional(nombre){
   });
   setInterval(limpiarSelectAcreditacion, 1000);
 })();
-</script>
 
 
-
-<!-- YNEA FIX CIERRE + FECHA MOVIL + SEMANA REAL 2026-05-12 -->
-<style id="ynea-fix-cierre-fecha-semana-real-20260512">
-#yneaTopLogoutBackup,button#yneaTopLogoutBackup{
-  position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 8px)!important;right:calc(env(safe-area-inset-right,0px) + 8px)!important;left:auto!important;bottom:auto!important;z-index:2147482500!important;margin:0!important;transform:none!important;width:auto!important;max-width:90px!important;min-width:0!important;min-height:30px!important;padding:6px 9px!important;font-size:12px!important;line-height:1.1!important;white-space:nowrap!important;border-radius:10px!important;background:#fff!important;color:#db2777!important;border:1px solid #f3cfe0!important;box-shadow:0 6px 18px rgba(15,23,42,.14)!important;
-}
-header{padding-right:112px!important;}
-.ynea-range-display,#yneaMonthDisplay,#yneaWeekDisplay{overflow:hidden!important;text-overflow:ellipsis!important;white-space:normal!important;line-height:1.1!important;word-break:break-word!important;min-width:0!important;max-width:100%!important;}
-@media(max-width:900px){
-  header{padding-right:96px!important;}
-  #yneaTopLogoutBackup,button#yneaTopLogoutBackup{top:calc(env(safe-area-inset-top,0px) + 6px)!important;right:calc(env(safe-area-inset-right,0px) + 6px)!important;max-width:78px!important;font-size:11px!important;padding:5px 7px!important;}
-  #agendaView .grid{display:block!important;width:100%!important;max-width:100%!important;overflow:hidden!important;}
-  #agendaView .card{width:100%!important;max-width:100%!important;overflow:hidden!important;box-sizing:border-box!important;}
-  #agendaView .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:100%!important;gap:8px!important;}
-  #agendaView input,#agendaView select,#agendaView textarea,#fechaCita,#horaCita,#duracionCita{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;display:block!important;}
-  #fechaCita{font-size:16px!important;padding:8px 6px!important;}
-  .editorCitaOverlay,#editorCitaOverlay{padding:6px!important;align-items:flex-end!important;overflow:hidden!important;}
-  .editorCitaModal,#editorCitaModal{width:100%!important;max-width:100vw!important;min-width:0!important;box-sizing:border-box!important;overflow:auto!important;padding-left:10px!important;padding-right:10px!important;padding-bottom:96px!important;}
-  .editorCitaGrid,#editorCitaModal .editorCitaGrid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:100%!important;gap:8px!important;}
-  .editorCitaModal input,.editorCitaModal select,.editorCitaModal textarea,#editorCitaModal input,#editorCitaModal select,#editorCitaModal textarea{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
-  #yneaMonthDisplay,#yneaWeekDisplay{font-size:10.5px!important;padding:5px 4px!important;}
-}
-</style>
-
-
-
-<!-- YNEA FIX REAL 2026-05-12: semana desde weekPicker + fecha móvil + login limpio -->
-<style id="ynea-fix-real-semana-fecha-login-css">
-/* Login: eliminar textos no deseados */
-#yneaLoginOverlay .ynea-login-hint,
-#yneaLoginOverlay .ynea-login-remember,
-#yneaLoginOverlay .ynea-login-link{
-  display:none !important;
-}
-
-/* Móvil: evitar que el campo fecha de Nueva cita se salga */
-@media(max-width:900px){
-  html, body{
-    width:100% !important;
-    max-width:100% !important;
-    overflow-x:hidden !important;
-  }
-
-  #agendaView,
-  #agendaView *{
-    box-sizing:border-box !important;
-    max-width:100% !important;
-  }
-
-  #agendaView{
-    width:100% !important;
-    overflow-x:hidden !important;
-  }
-
-  #agendaView .grid{
-    display:block !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    overflow-x:hidden !important;
-  }
-
-  #agendaView .card{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    overflow-x:hidden !important;
-    padding-left:10px !important;
-    padding-right:10px !important;
-  }
-
-  #agendaView .row{
-    display:grid !important;
-    grid-template-columns:minmax(0,1fr) !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    overflow-x:hidden !important;
-    gap:8px !important;
-  }
-
-  #fechaCita{
-    display:block !important;
-    width:100% !important;
-    max-width:calc(100vw - 42px) !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-    font-size:16px !important;
-    padding-left:6px !important;
-    padding-right:6px !important;
-    -webkit-appearance:none !important;
-    appearance:none !important;
-  }
-
-  #agendaView input,
-  #agendaView select,
-  #agendaView textarea,
-  #agendaView button{
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-  }
-}
-</style>
-
-<script id="ynea-fix-real-semana-fecha-login-js">
 (function(){
   function byId(id){ return document.getElementById(id); }
 
@@ -5927,11 +3967,8 @@ header{padding-right:112px!important;}
 
   setInterval(limpiarLogin, 1000);
 })();
-</script>
 
 
-<!-- YNEA FIX: texto del botón Semana coincide con calendario mostrado -->
-<script id="ynea-fix-texto-semana-coincide-calendario-20260512">
 (function(){
   function el(id){ return document.getElementById(id); }
 
@@ -6038,37 +4075,8 @@ header{padding-right:112px!important;}
     setTimeout(actualizarTextoSemana, 300);
   });
 })();
-</script>
 
 
-<!-- YNEA FIX: buscador pacientes móvil -->
-<style id="ynea-fix-buscador-pacientes-movil-css">
-@media(max-width:900px){
-  #pacientesSearch,
-  #pacienteSearch,
-  #buscarPaciente,
-  #buscadorPacientes,
-  #pacientesSearchInput,
-  input[placeholder*="Buscar"],
-  input[placeholder*="buscar"]{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-    display:block !important;
-  }
-
-  #pacientesTable tbody tr{
-    display:block;
-  }
-
-  .yneaPacienteCardOculta{
-    display:none !important;
-  }
-}
-</style>
-
-<script id="ynea-fix-buscador-pacientes-movil-js">
 (function(){
   function normalizar(v){
     return String(v || '')
@@ -6196,37 +4204,8 @@ header{padding-right:112px!important;}
 
   window.yneaFiltrarPacientesMovil = filtrarPacientesMovil;
 })();
-</script>
 
 
-<!-- YNEA FIX FINAL: buscador móvil pacientes real + semana sin año PC/móvil -->
-<style id="ynea-fix-pacientes-search-real-css">
-@media(max-width:900px){
-  #pacientesView input,
-  #pacientesView input[type="search"],
-  #pacientesView input[type="text"]{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-  }
-  #pacientesTable tbody tr.yneaPacienteOculto,
-  #pacientesView .yneaPacienteOculto{
-    display:none !important;
-  }
-  #yneaWeekDisplay{
-    white-space:nowrap !important;
-    font-size:11px !important;
-  }
-}
-#yneaWeekDisplay{
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
-}
-</style>
-
-<script id="ynea-fix-pacientes-search-real-js">
 (function(){
   function norm(v){
     return String(v||'')
@@ -6414,11 +4393,8 @@ header{padding-right:112px!important;}
 
   window.yneaFiltrarPacientes = filtrarPacientes;
 })();
-</script>
 
 
-<!-- YNEA FIX REAL: buscador pacientes + evitar desaparición de altas recientes -->
-<script id="ynea-fix-buscador-y-pendientes-20260512">
 (function(){
   const PENDING_KEY='yneaPendientesRecientesPacientesCitasV2';
 
@@ -6607,20 +4583,8 @@ header{padding-right:112px!important;}
     window.renderPatients();
   });
 })();
-</script>
 
 
-<!-- ===== YNEA FIX REAL 2026-05-13: móvil, duplicados, borrar cita, nuevo paciente y bloqueo paciente ===== -->
-<style id="ynea-fix-real-20260513-css">
-  .ynea-inline-patient-btn{margin-top:8px!important;width:100%!important;display:block!important;visibility:visible!important;opacity:1!important;}
-  .ynea-paciente-bloqueado{color:#991b1b;font-weight:700;}
-  @media(max-width:700px){
-    button.ynea-inline-patient-btn,
-    #btnNuevoPacienteCitaFinal,
-    #btnNuevoPacienteEditorFinal{display:block!important;width:100%!important;min-height:40px!important;margin:8px 0!important;position:relative!important;z-index:99999!important;}
-  }
-</style>
-<script id="ynea-fix-real-20260513-script">
 (function(){
   'use strict';
   const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
@@ -6794,151 +4758,3 @@ header{padding-right:112px!important;}
   document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){addNuevoPacienteButtons(); try{window.renderPatients();}catch(e){}},500);},true);
   setInterval(addNuevoPacienteButtons,1500);
 })();
-</script>
-
-
-
-<style id="ynea-pacientes-antiduplicado-visible-20260514">
-.ynea-inline-patient-btn{display:block!important;width:100%!important;margin:8px 0!important;min-height:42px!important;position:relative!important;z-index:999999!important;}
-.ynea-paciente-bloqueado{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:700;}
-#nuevoPacienteError{white-space:pre-line!important;}
-</style>
-<script id="ynea-pacientes-antiduplicado-final-20260514">
-(function(){
-  'use strict';
-  if(window.__YNEA_DUP_FINAL_20260514__) return;
-  window.__YNEA_DUP_FINAL_20260514__=true;
-
-  function $(id){return document.getElementById(id);}
-  function getData(){try{ if(typeof data!=='undefined' && data) return data; }catch(e){} if(window.data) return window.data; window.data={pacientes:[],citas:[]}; return window.data;}
-  function pacientes(){var d=getData(); if(!Array.isArray(d.pacientes)) d.pacientes=[]; return d.pacientes;}
-  function citas(){var d=getData(); if(!Array.isArray(d.citas)) d.citas=[]; return d.citas;}
-  function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function normNombre(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');}
-  function normTel(s){return String(s||'').replace(/[^0-9+]/g,'').replace(/^00/,'+');}
-  function normEmail(s){return String(s||'').trim().toLowerCase();}
-  function datoPaciente(p){return (p&&p.nombre?p.nombre:'Paciente sin nombre')+'\nTeléfono: '+(p&&p.telefono?p.telefono:'')+'\nEmail: '+(p&&p.email?p.email:'');}
-  function findDup(nombre,telefono,email,excludeId){
-    var n=normNombre(nombre), t=normTel(telefono), e=normEmail(email);
-    var arr=pacientes();
-    for(var i=0;i<arr.length;i++){
-      var p=arr[i]||{};
-      if(excludeId && String(p.id)===String(excludeId)) continue;
-      if(n && normNombre(p.nombre)===n) return {campo:'nombre', paciente:p};
-      if(t && normTel(p.telefono)===t) return {campo:'teléfono', paciente:p};
-      if(e && normEmail(p.email)===e) return {campo:'email', paciente:p};
-    }
-    return null;
-  }
-  function msgDup(x){return 'No se puede guardar. Ese '+x.campo+' ya está registrado.\n\nLo tiene:\n'+datoPaciente(x.paciente);}
-  function aviso(msg){alert(msg);}
-  function modalError(msg){var box=$('nuevoPacienteError'); if(box){box.textContent=msg; box.style.display='block';} else alert(msg);}
-  function emailOk(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email||'').trim());}
-  function persistir(){
-    try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(getData()));}catch(e){}
-    try{localStorage.setItem('agendaData',JSON.stringify(getData()));}catch(e){}
-    try{window.yneaLocalPendingUntil=Date.now()+12000;}catch(e){}
-    try{ if(typeof save==='function') save(); }catch(e){}
-    try{ if(typeof refreshAllSelects==='function') refreshAllSelects(); }catch(e){}
-    try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
-    try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
-    try{ if(typeof window.yneaForceCloudSave==='function') window.yneaForceCloudSave(); }catch(e){}
-  }
-
-  function validarPacienteNuevo(nombre,telefono,email,excludeId,modoModal){
-    if(!nombre){(modoModal?modalError:aviso)('El nombre del paciente es obligatorio.'); return false;}
-    if(!telefono){(modoModal?modalError:aviso)('El teléfono es obligatorio.'); return false;}
-    if(!email){(modoModal?modalError:aviso)('El email es obligatorio.'); return false;}
-    if(!emailOk(email)){(modoModal?modalError:aviso)('Introduce un email válido.'); return false;}
-    var dup=findDup(nombre,telefono,email,excludeId);
-    if(dup){(modoModal?modalError:aviso)(msgDup(dup)); return false;}
-    return true;
-  }
-
-  window.yneaComprobarDuplicadoPaciente=function(nombre,telefono,email,excludeId){return findDup(nombre,telefono,email,excludeId);};
-
-  window.addPaciente=function(){
-    var nombre=($('pacNombre')&&$('pacNombre').value||'').trim();
-    var telefono=($('pacTelefono')&&$('pacTelefono').value||'').trim();
-    var email=($('pacEmail')&&$('pacEmail').value||'').trim();
-    var obs=($('pacObs')&&$('pacObs').value||'').trim();
-    if(!validarPacienteNuevo(nombre,telefono,email,null,false)) return false;
-    var p={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs,bloqueado:false,motivoBloqueo:''};
-    pacientes().push(p);
-    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){var el=$(id); if(el) el.value='';});
-    try{ if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(p.id); }catch(e){}
-    persistir();
-    alert('Paciente guardado.');
-    return false;
-  };
-
-  window.guardarNuevoPacienteModal=function(){
-    var nombre=($('npNombre')&&$('npNombre').value||'').trim();
-    var telefono=($('npTelefono')&&$('npTelefono').value||'').trim();
-    var email=($('npEmail')&&$('npEmail').value||'').trim();
-    var obs=($('npObs')&&$('npObs').value||'').trim();
-    if(!validarPacienteNuevo(nombre,telefono,email,null,true)) return false;
-    var p={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs,bloqueado:false,motivoBloqueo:''};
-    pacientes().push(p);
-    var sel=$('pacienteCita'); if(sel){sel.value=p.id; try{ if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(p.id); }catch(e){}}
-    var editSel=$('editCitaPaciente'); if(editSel){var opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.nombre; editSel.appendChild(opt); editSel.value=p.id;}
-    ['npNombre','npTelefono','npEmail','npObs'].forEach(function(id){var el=$(id); if(el) el.value='';});
-    var ov=$('nuevoPacienteOverlay'); if(ov) ov.style.display='none';
-    persistir();
-    return false;
-  };
-
-  window.editarPacienteYnea=function(id){
-    var p=pacientes().find(function(x){return String(x.id)===String(id);}); if(!p) return;
-    var nombre=prompt('Nombre del paciente:',p.nombre||''); if(nombre===null) return;
-    var telefono=prompt('Teléfono obligatorio:',p.telefono||''); if(telefono===null) return;
-    var email=prompt('Email obligatorio:',p.email||''); if(email===null) return;
-    nombre=String(nombre).trim(); telefono=String(telefono).trim(); email=String(email).trim();
-    if(!validarPacienteNuevo(nombre,telefono,email,p.id,false)) return;
-    var obs=prompt('Observaciones:',p.obs||''); if(obs===null) return;
-    var bloquear=confirm('¿Quieres bloquear este paciente?\n\nAceptar = bloquear / mantener bloqueado\nCancelar = dejar sin bloqueo');
-    var motivo='';
-    if(bloquear){motivo=prompt('Motivo del bloqueo:',p.motivoBloqueo||''); if(motivo===null) motivo=p.motivoBloqueo||'';}
-    p.nombre=nombre; p.telefono=telefono; p.email=email; p.obs=String(obs||'').trim(); p.bloqueado=!!bloquear; p.motivoBloqueo=bloquear?String(motivo||'').trim():'';
-    persistir();
-  };
-
-  window.renderPatients=function(){
-    var table=$('pacientesTable'); if(!table) return;
-    var q=normNombre(($('buscadorPacientes')&&$('buscadorPacientes').value)||'');
-    var arr=pacientes().filter(function(p){return !q || normNombre((p.nombre||'')+' '+(p.telefono||'')+' '+(p.email||'')+' '+(p.obs||'')).includes(q);});
-    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+arr.map(function(p){
-      var b=p.bloqueado?' <span class="ynea-paciente-bloqueado">BLOQUEADO: '+esc(p.motivoBloqueo||'Sin motivo')+'</span>':'';
-      return '<tr data-paciente-id="'+esc(p.id)+'" onclick="editarPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')"><td><b>'+esc(p.nombre)+'</b>'+b+'</td><td>'+esc(p.telefono||'')+'</td><td>'+esc(p.email||'')+'</td><td>'+esc(p.obs||'')+'</td></tr>';
-    }).join('')+'</tbody>';
-  };
-
-  function addNuevoPacienteButtons(){
-    var crearBox=($('pacienteBusqueda')&&$('pacienteBusqueda').closest('.pacienteSearchBox')) || ($('pacienteCita')&&$('pacienteCita').parentElement);
-    if(crearBox && !$('btnNuevoPacienteCitaFinal')){var b=document.createElement('button'); b.type='button'; b.id='btnNuevoPacienteCitaFinal'; b.className='secondary ynea-inline-patient-btn'; b.textContent='➕ Nuevo paciente'; b.onclick=function(e){if(e)e.preventDefault(); if(typeof abrirNuevoPaciente==='function') abrirNuevoPaciente(); return false;}; crearBox.appendChild(b);}
-    var editSel=$('editCitaPaciente');
-    if(editSel && !$('btnNuevoPacienteEditorFinal')){var b2=document.createElement('button'); b2.type='button'; b2.id='btnNuevoPacienteEditorFinal'; b2.className='secondary ynea-inline-patient-btn'; b2.textContent='➕ Nuevo paciente'; b2.onclick=function(e){if(e)e.preventDefault(); if(typeof abrirNuevoPaciente==='function') abrirNuevoPaciente(); return false;}; editSel.insertAdjacentElement('afterend',b2);}
-  }
-  window.yneaAddNuevoPacienteButtons=addNuevoPacienteButtons;
-
-  function pacienteBloqueado(id){var p=pacientes().find(function(x){return String(x.id)===String(id);}); if(p&&p.bloqueado){alert('Paciente bloqueado: '+(p.nombre||'')+'\nMotivo: '+(p.motivoBloqueo||'Sin motivo indicado')); return true;} return false;}
-  var oldAddCita=window.addCita;
-  window.addCita=function(){var pid=''; try{pid=typeof pacienteSeleccionadoParaCita==='function'?pacienteSeleccionadoParaCita():($('pacienteCita')&&$('pacienteCita').value||'');}catch(e){pid=$('pacienteCita')&&$('pacienteCita').value||'';} if(pacienteBloqueado(pid)) return false; return oldAddCita?oldAddCita.apply(this,arguments):false;};
-  var oldGuardarEditor=window.guardarCitaDesdeEditor;
-  window.guardarCitaDesdeEditor=function(){var pid=$('editCitaPaciente')&&$('editCitaPaciente').value||''; if(pacienteBloqueado(pid)) return false; return oldGuardarEditor?oldGuardarEditor.apply(this,arguments):false;};
-
-  document.addEventListener('click',function(e){
-    var btn=e.target && e.target.closest && e.target.closest('button'); if(!btn) return;
-    var oc=btn.getAttribute('onclick')||'';
-    if(oc.indexOf('addPaciente')>=0){e.preventDefault(); e.stopImmediatePropagation(); window.addPaciente();}
-    if(oc.indexOf('guardarNuevoPacienteModal')>=0){e.preventDefault(); e.stopImmediatePropagation(); window.guardarNuevoPacienteModal();}
-  },true);
-
-  function iniciar(){addNuevoPacienteButtons(); try{renderPatients();}catch(e){}}
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(iniciar,100); setTimeout(iniciar,700);},true);
-  setInterval(iniciar,1500);
-})();
-</script>
-
-</body>
-</html>
