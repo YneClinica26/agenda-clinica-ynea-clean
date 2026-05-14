@@ -1,0 +1,20 @@
+AGENDA CLÍNICA YNEA - CORRECCIÓN VERIFICADA
+
+Este ZIP contiene un index.html completo.
+
+Qué se ha añadido al final del archivo:
+1. Bloqueo real de duplicados por nombre, teléfono y email.
+2. El aviso indica qué paciente tiene ya el dato duplicado.
+3. Columna Bloqueo visible en la tabla de pacientes.
+4. Botones Editar / Bloquear / Desbloquear / Eliminar.
+5. Bloqueo de paciente con motivo obligatorio.
+6. No permite crear/modificar citas para pacientes bloqueados.
+7. Botón Nuevo paciente en crear cita y modificar cita.
+
+Para subirlo:
+1. En GitHub abre tu repositorio.
+2. Sube este index.html sustituyendo el anterior.
+3. Pulsa Commit changes.
+4. Espera a Vercel.
+5. En PC abre la app con Ctrl + F5.
+6. En iPhone/Android cierra la app completamente y vuelve a abrirla.
