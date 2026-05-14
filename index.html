@@ -993,7 +993,6 @@ header{position:sticky;}
     <div class="grid">
       <div class="card">
         <h2>Nuevo paciente</h2>
-        <p class="small">No se permiten pacientes, teléfonos ni emails duplicados.</p>
         <label>Nombre</label><input id="pacNombre" placeholder="Nombre y apellidos">
         <label>Teléfono</label><input id="pacTelefono" placeholder="Teléfono">
         <label>Email</label><input id="pacEmail" placeholder="Email">
@@ -1329,80 +1328,10 @@ function goThisWeek(){
  renderAll();
 }
 
-
-
-/* === YNEA FIX PC 2026-05-14: duplicados + bloqueo visible === */
-function yneaNormNombre(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');}
-function yneaNormTelefono(s){return String(s||'').replace(/[^0-9+]/g,'').replace(/^00/,'+');}
-function yneaNormEmail(s){return String(s||'').trim().toLowerCase();}
-function yneaEsc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function yneaPacienteDuplicado(nombre, telefono, email, excludeId){
-  const n=yneaNormNombre(nombre), t=yneaNormTelefono(telefono), e=yneaNormEmail(email);
-  const arr=(data && Array.isArray(data.pacientes))?data.pacientes:[];
-  for(const p of arr){
-    if(excludeId && String(p.id)===String(excludeId)) continue;
-    if(n && yneaNormNombre(p.nombre)===n) return {campo:'nombre', paciente:p};
-    if(t && yneaNormTelefono(p.telefono)===t) return {campo:'teléfono', paciente:p};
-    if(e && yneaNormEmail(p.email)===e) return {campo:'email', paciente:p};
-  }
-  return null;
-}
-function yneaMensajeDuplicado(d){
-  const p=d.paciente||{};
-  return 'No se puede guardar. Ese '+d.campo+' ya existe.\n\nLo tiene el paciente:\n'+(p.nombre||'Sin nombre')+'\nTeléfono: '+(p.telefono||'')+'\nEmail: '+(p.email||'');
-}
-function yneaValidarPaciente(nombre, telefono, email, excludeId){
-  if(!String(nombre||'').trim()){alert('Escribe el nombre del paciente.');return false;}
-  if(!String(telefono||'').trim()){alert('El teléfono es obligatorio.');return false;}
-  if(!String(email||'').trim()){alert('El email es obligatorio.');return false;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email||'').trim())){alert('Introduce un email válido.');return false;}
-  const dup=yneaPacienteDuplicado(nombre,telefono,email,excludeId);
-  if(dup){alert(yneaMensajeDuplicado(dup));return false;}
-  return true;
-}
-function yneaPacienteBloqueado(id){
-  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id));
-  if(p && p.bloqueado){alert('Paciente bloqueado: '+(p.nombre||'')+'\nMotivo: '+(p.motivoBloqueo||'Sin motivo indicado')); return true;}
-  return false;
-}
-function bloquearPacienteYnea(id){
-  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id)); if(!p)return;
-  const motivo=prompt('Motivo del bloqueo de '+(p.nombre||'este paciente')+':',p.motivoBloqueo||'');
-  if(motivo===null)return;
-  p.bloqueado=true; p.motivoBloqueo=String(motivo||'').trim()||'Sin motivo indicado';
-  save(); renderAll(); alert('Paciente bloqueado.');
-}
-function desbloquearPacienteYnea(id){
-  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id)); if(!p)return;
-  if(!confirm('¿Desbloquear a '+(p.nombre||'este paciente')+'?'))return;
-  p.bloqueado=false; p.motivoBloqueo=''; save(); renderAll(); alert('Paciente desbloqueado.');
-}
-function editarPacienteYnea(id){
-  const p=(data.pacientes||[]).find(x=>String(x.id)===String(id)); if(!p)return;
-  const nombre=prompt('Nombre del paciente:',p.nombre||''); if(nombre===null)return;
-  const telefono=prompt('Teléfono obligatorio:',p.telefono||''); if(telefono===null)return;
-  const email=prompt('Email obligatorio:',p.email||''); if(email===null)return;
-  if(!yneaValidarPaciente(nombre,telefono,email,p.id))return;
-  const obs=prompt('Observaciones:',p.obs||''); if(obs===null)return;
-  p.nombre=String(nombre).trim(); p.telefono=String(telefono).trim(); p.email=String(email).trim(); p.obs=String(obs||'').trim();
-  save(); renderAll(); alert('Paciente actualizado.');
-}
-
 function addPaciente(){
- const nombre=$("pacNombre").value.trim();
- const telefono=$("pacTelefono").value.trim();
- const email=$("pacEmail").value.trim();
- const obs=$("pacObs").value.trim();
- if(!yneaValidarPaciente(nombre,telefono,email,null)) return false;
- const p={id:"p"+Date.now(),nombre,telefono,email,obs,bloqueado:false,motivoBloqueo:""};
- data.pacientes.push(p);
- save();
- ["pacNombre","pacTelefono","pacEmail","pacObs"].forEach(id=>$(id).value="");
- refreshAllSelects();
- try{seleccionarPacienteCita(p.id);}catch(e){}
- renderAll();
- alert("Paciente guardado.");
- return false;
+ const nombre=$("pacNombre").value.trim(); if(!nombre){alert("Escribe el nombre del paciente.");return}
+ const p={id:"p"+Date.now(),nombre,telefono:$("pacTelefono").value,email:$("pacEmail").value,obs:$("pacObs").value};
+ data.pacientes.push(p); save(); ["pacNombre","pacTelefono","pacEmail","pacObs"].forEach(id=>$(id).value=""); refreshAllSelects(); seleccionarPacienteCita(p.id); renderAll(); alert("Paciente guardado.");
 }
 function quickNewCita(fecha,hora){
  $("fechaCita").value=fecha;
@@ -1419,7 +1348,6 @@ function quickNewCita(fecha,hora){
 function addCita(){
  const c={id:Date.now(),fecha:$("fechaCita").value,hora:$("horaCita").value,duracion:$("duracionCita").value,pacienteId:pacienteSeleccionadoParaCita(),profesional:$("profesionalCita").value,consulta:$("consultaCita").value,tipo:$("tipoCita").value,estado:$("estadoCita").value,obs:$("obsCita").value};
  if(!c.fecha||!c.hora||!c.pacienteId){alert("Falta fecha, hora o paciente.");return}
- if(typeof yneaPacienteBloqueado==="function" && yneaPacienteBloqueado(c.pacienteId)) return;
  if(typeof bloqueoImpideCita==="function" && bloqueoImpideCita(c) && !confirm("Ese horario está bloqueado para ese profesional o para todos los profesionales. ¿Quieres guardar la cita igualmente?")) return;
  const solape=overlapsNewCita(c);
  if(solape&&!confirm("Ya existe una cita solapada con ese profesional durante ese intervalo. ¿Quieres guardarla igualmente?"))return;
@@ -1646,13 +1574,7 @@ function quickNewCitaConsulta(fecha,hora,consulta){
 }
 
 function renderPatients(){
- const q=yneaNormNombre($("buscadorPacientes")?$("buscadorPacientes").value:"");
- const arr=(data.pacientes||[]).filter(p=>!q || yneaNormNombre((p.nombre||"")+" "+(p.telefono||"")+" "+(p.email||"")+" "+(p.obs||"")).includes(q));
- $("pacientesTable").innerHTML="<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Bloqueo</th></tr></thead><tbody>"+arr.map(p=>{
-   const estado=p.bloqueado?`<b style="color:#991b1b">BLOQUEADO</b><br><small>${yneaEsc(p.motivoBloqueo||"Sin motivo")}</small>`:`<span style="color:#16a34a">Activo</span>`;
-   const boton=p.bloqueado?`<button type="button" onclick="event.stopPropagation();desbloquearPacienteYnea('${String(p.id).replaceAll("'","\'")}')">Desbloquear</button>`:`<button type="button" class="danger" onclick="event.stopPropagation();bloquearPacienteYnea('${String(p.id).replaceAll("'","\'")}')">Bloquear</button>`;
-   return `<tr onclick="editarPacienteYnea('${String(p.id).replaceAll("'","\'")}')"><td><b>${yneaEsc(p.nombre)}</b></td><td>${yneaEsc(p.telefono||"")}</td><td>${yneaEsc(p.email||"")}</td><td>${yneaEsc(p.obs||"")}</td><td>${estado}<br>${boton}</td></tr>`;
- }).join("")+"</tbody>";
+ $("pacientesTable").innerHTML="<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>"+data.pacientes.map(p=>`<tr><td><b>${p.nombre}</b></td><td>${p.telefono||""}</td><td>${p.email||""}</td><td>${p.obs||""}</td></tr>`).join("")+"</tbody>";
 }
 
 
@@ -2583,18 +2505,13 @@ function guardarNuevoPacienteModal(){
     mostrarErrorNuevoPaciente("Introduce un email válido o deja el campo vacío.");
     return;
   }
-  if(typeof yneaValidarPaciente==="function" && !yneaValidarPaciente(nombre,telefono,email,null)){
-    return;
-  }
 
   const nuevo={
     id:"p"+Date.now(),
     nombre:nombre,
     telefono:telefono,
     email:email,
-    obs:obs,
-    bloqueado:false,
-    motivoBloqueo:""
+    obs:obs
   };
 
   data.pacientes.push(nuevo);
@@ -6692,357 +6609,249 @@ header{padding-right:112px!important;}
 })();
 </script>
 
-
-<!-- ===== YNEA FIX REAL 2026-05-13: móvil, duplicados, borrar cita, nuevo paciente y bloqueo paciente ===== -->
-<style id="ynea-fix-real-20260513-css">
-  .ynea-inline-patient-btn{margin-top:8px!important;width:100%!important;display:block!important;visibility:visible!important;opacity:1!important;}
-  .ynea-paciente-bloqueado{color:#991b1b;font-weight:700;}
-  @media(max-width:700px){
-    button.ynea-inline-patient-btn,
-    #btnNuevoPacienteCitaFinal,
-    #btnNuevoPacienteEditorFinal{display:block!important;width:100%!important;min-height:40px!important;margin:8px 0!important;position:relative!important;z-index:99999!important;}
-  }
-</style>
-<script id="ynea-fix-real-20260513-script">
+<script id="ynea-fix-final-pacientes-duplicados-bloqueo-2026-05-14">
 (function(){
   'use strict';
-  const SUPABASE_URL='https://vadohvwjoxghubceffpn.supabase.co';
-  const SUPABASE_KEY='sb_publishable_PM7HIrRvX8ShKW8yUFvh-w_ucW8ewwY';
-  const TABLE='agenda_online';
-  const ID='main';
 
-  function $(id){return document.getElementById(id);}
-  function d(){try{return data;}catch(e){return window.data||{};}}
-  function setD(x){try{data=x;}catch(e){} window.data=x;}
+  function byId(id){return document.getElementById(id);}
+  function getData(){
+    try{ if(window.data && typeof window.data==='object') return window.data; }catch(e){}
+    try{ if(typeof data!=='undefined' && data && typeof data==='object') return data; }catch(e){}
+    return {pacientes:[], citas:[]};
+  }
+  function ensure(){
+    const d=getData();
+    d.pacientes=Array.isArray(d.pacientes)?d.pacientes:[];
+    d.citas=Array.isArray(d.citas)?d.citas:[];
+    return d;
+  }
   function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function normText(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');}
-  function normPhone(s){return String(s||'').replace(/[^0-9+]/g,'').replace(/^00/,'+');}
+  function normText(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+  function normTel(s){return String(s||'').replace(/[^0-9+]/g,'').trim();}
   function normEmail(s){return String(s||'').trim().toLowerCase();}
-  function getPacientes(){const x=d(); if(!Array.isArray(x.pacientes)) x.pacientes=[]; return x.pacientes;}
-  function getCitas(){const x=d(); if(!Array.isArray(x.citas)) x.citas=[]; return x.citas;}
-  function localSave(){try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(d()));localStorage.setItem('agendaData',JSON.stringify(d()));}catch(e){} try{if(typeof save==='function')save();}catch(e){}}
-  async function cloudSave(){
-    const payload=d();
-    window.yneaLocalPendingUntil=Date.now()+30000;
+  function pacienteLabel(p){return (p&&p.nombre?p.nombre:'Paciente sin nombre')+' · Tel: '+(p&&p.telefono?p.telefono:'sin teléfono')+' · Email: '+(p&&p.email?p.email:'sin email');}
+
+  function findDuplicatePaciente(nuevo, excludeId){
+    const d=ensure();
+    const n=normText(nuevo.nombre);
+    const t=normTel(nuevo.telefono);
+    const e=normEmail(nuevo.email);
+    for(const p of d.pacientes){
+      if(excludeId && String(p.id)===String(excludeId)) continue;
+      if(n && normText(p.nombre)===n) return {campo:'nombre', existente:p};
+      if(t && normTel(p.telefono)===t) return {campo:'teléfono', existente:p};
+      if(e && normEmail(p.email)===e) return {campo:'email', existente:p};
+    }
+    return null;
+  }
+
+  function avisoDuplicado(dup){
+    const msg='No se puede guardar porque el '+dup.campo+' ya existe.\n\nLo tiene este paciente:\n'+pacienteLabel(dup.existente);
     try{
-      const r=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE+'?on_conflict=id',{
-        method:'POST',cache:'no-store',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=representation'},
-        body:JSON.stringify({id:ID,datos:payload,updated_at:new Date().toISOString()})
-      });
-      if(!r.ok) throw new Error(await r.text());
-      try{if(typeof window.yneaForceCloudSave==='function') setTimeout(function(){window.yneaForceCloudSave().catch(function(){});},300);}catch(e){}
-    }catch(e){console.warn('YNEA guardado nube final',e); try{if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave();}catch(e2){}}
-  }
-  function afterChange(){localSave(); cloudSave(); try{if(typeof refreshAllSelects==='function')refreshAllSelects();}catch(e){} try{if(typeof renderPatients==='function')renderPatients();}catch(e){} try{if(typeof renderAll==='function')renderAll();}catch(e){} }
-
-  function findDuplicate(nombre,telefono,email,excludeId){
-    const n=normText(nombre), t=normPhone(telefono), em=normEmail(email);
-    for(const p of getPacientes()){
-      if(excludeId && String(p.id)===String(excludeId)) continue;
-      if(n && normText(p.nombre)===n) return {tipo:'nombre',valor:nombre,p:p};
-      if(t && normPhone(p.telefono)===t) return {tipo:'teléfono',valor:telefono,p:p};
-      if(em && normEmail(p.email)===em) return {tipo:'email',valor:email,p:p};
-    }
-    return null;
-  }
-  function duplicateMessage(x){return 'Ese '+x.tipo+' ya está registrado.\n\nLo tiene: '+(x.p.nombre||'Paciente sin nombre')+'\nTeléfono: '+(x.p.telefono||'')+'\nEmail: '+(x.p.email||'');}
-  window.yneaComprobarDuplicadoPaciente=function(nombre,telefono,email,excludeId){return findDuplicate(nombre,telefono,email,excludeId);};
-
-  // Alta de paciente desde pestaña Pacientes.
-  window.addPaciente=function(){
-    const nombre=($('pacNombre')?.value||'').trim();
-    const telefono=($('pacTelefono')?.value||'').trim();
-    const email=($('pacEmail')?.value||'').trim();
-    const obs=($('pacObs')?.value||'').trim();
-    if(!nombre){alert('Escribe el nombre del paciente.');return;}
-    if(!telefono){alert('El teléfono es obligatorio.');return;}
-    if(!email){alert('El email es obligatorio.');return;}
-    const dup=findDuplicate(nombre,telefono,email,null);
-    if(dup){alert(duplicateMessage(dup));return;}
-    const p={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs,bloqueado:false,motivoBloqueo:''};
-    getPacientes().push(p);
-    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){const el=$(id); if(el)el.value='';});
-    try{if(typeof seleccionarPacienteCita==='function')seleccionarPacienteCita(p.id);}catch(e){}
-    afterChange();
-    alert('Paciente guardado.');
-  };
-
-  // Alta de paciente desde modal Nuevo paciente.
-  window.guardarNuevoPacienteModal=function(){
-    const nombre=($('npNombre')?.value||'').trim();
-    const telefono=($('npTelefono')?.value||'').trim();
-    const email=($('npEmail')?.value||'').trim();
-    const obs=($('npObs')?.value||'').trim();
-    function modalError(msg){try{if(typeof mostrarErrorNuevoPaciente==='function')mostrarErrorNuevoPaciente(msg);else alert(msg);}catch(e){alert(msg);}}
-    if(!nombre){modalError('El nombre del paciente es obligatorio.');return;}
-    if(!telefono){modalError('El teléfono es obligatorio.');return;}
-    if(!email){modalError('El email es obligatorio.');return;}
-    const dup=findDuplicate(nombre,telefono,email,null);
-    if(dup){modalError(duplicateMessage(dup));return;}
-    const p={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs,bloqueado:false,motivoBloqueo:''};
-    getPacientes().push(p);
-    try{if(typeof seleccionarPacienteCita==='function')seleccionarPacienteCita(p.id);}catch(e){}
-    const sel=$('pacienteCita'); if(sel) sel.value=p.id;
-    const editSel=$('editCitaPaciente'); if(editSel){
-      const opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.nombre; editSel.appendChild(opt); editSel.value=p.id;
-    }
-    const ov=$('nuevoPacienteOverlay'); if(ov) ov.style.display='none';
-    ['npNombre','npTelefono','npEmail','npObs'].forEach(function(id){const el=$(id); if(el)el.value='';});
-    afterChange();
-  };
-
-  function pacienteById(id){return getPacientes().find(function(p){return String(p.id)===String(id);});}
-  function blockedMessage(p){return 'Paciente bloqueado: '+(p.nombre||'')+'\nMotivo: '+(p.motivoBloqueo||'Sin motivo indicado');}
-  function citaPacienteBloqueado(id){const p=pacienteById(id); if(p && p.bloqueado){alert(blockedMessage(p)); return true;} return false;}
-
-  // Crear cita con control de paciente bloqueado.
-  const oldAddCita=window.addCita;
-  window.addCita=function(){
-    let pid=''; try{pid=typeof pacienteSeleccionadoParaCita==='function'?pacienteSeleccionadoParaCita():($('pacienteCita')?.value||'');}catch(e){pid=$('pacienteCita')?.value||'';}
-    if(citaPacienteBloqueado(pid)) return;
-    return oldAddCita?oldAddCita.apply(this,arguments):undefined;
-  };
-
-  // Guardar editor con control de paciente bloqueado.
-  const oldGuardarEditor=window.guardarCitaDesdeEditor;
-  window.guardarCitaDesdeEditor=function(){
-    const pid=$('editCitaPaciente')?.value||'';
-    if(citaPacienteBloqueado(pid)) return;
-    return oldGuardarEditor?oldGuardarEditor.apply(this,arguments):undefined;
-  };
-
-  // Borrado definitivo de cita: local + nube directa + repintado. Evita que en móvil reaparezca.
-  window.eliminarCitaDesdeEditor=async function(){
-    const id=$('editCitaId')?.value;
-    const fecha=$('editCitaFecha')?.value;
-    if(!id){alert('No se ha encontrado la cita para eliminar.');return;}
-    if(!confirm('¿Eliminar esta cita?')) return;
-    const x=d();
-    x.citas=(Array.isArray(x.citas)?x.citas:[]).filter(function(c){return String(c.id)!==String(id);});
-    setD(x);
-    window.yneaLocalPendingUntil=Date.now()+30000;
-    localSave();
-    const ov=$('editorCitaOverlay'); if(ov) ov.style.display='none';
-    try{if(fecha && typeof monday==='function'){weekStart=monday(new Date(fecha)); const wp=$('weekPicker'); if(wp)wp.value=fecha;}}catch(e){}
-    try{if(typeof setView==='function')setView('semana');}catch(e){}
-    try{if(typeof renderAll==='function')renderAll();}catch(e){}
-    await cloudSave();
-    setTimeout(function(){try{if(typeof renderAll==='function')renderAll();}catch(e){}},300);
-  };
-  window.eliminarCita=window.eliminarCitaDesdeEditor;
-
-  // Editor de paciente con duplicados y bloqueo con motivo.
-  window.editarPacienteYnea=function(id){
-    const p=pacienteById(id); if(!p)return;
-    const nombre=prompt('Nombre del paciente:',p.nombre||''); if(nombre===null)return;
-    const telefono=prompt('Teléfono obligatorio:',p.telefono||''); if(telefono===null)return;
-    const email=prompt('Email obligatorio:',p.email||''); if(email===null)return;
-    if(!String(nombre).trim()||!String(telefono).trim()||!String(email).trim()){alert('Nombre, teléfono y email son obligatorios.');return;}
-    const dup=findDuplicate(nombre,telefono,email,p.id); if(dup){alert(duplicateMessage(dup));return;}
-    const obs=prompt('Observaciones:',p.obs||''); if(obs===null)return;
-    const bloquear=confirm('¿Quieres BLOQUEAR este paciente?\n\nAceptar = bloquear / mantener bloqueado\nCancelar = dejar sin bloqueo');
-    let motivo='';
-    if(bloquear){motivo=prompt('Motivo del bloqueo:',p.motivoBloqueo||''); if(motivo===null) motivo=p.motivoBloqueo||'';}
-    Object.assign(p,{nombre:String(nombre).trim(),telefono:String(telefono).trim(),email:String(email).trim(),obs:String(obs||'').trim(),bloqueado:!!bloquear,motivoBloqueo:bloquear?String(motivo||'').trim():''});
-    afterChange();
-  };
-
-  // Render pacientes incluyendo estado bloqueado.
-  const oldRenderPatients=window.renderPatients;
-  window.renderPatients=function(){
-    const table=$('pacientesTable');
-    if(!table){return oldRenderPatients?oldRenderPatients.apply(this,arguments):undefined;}
-    const q=normText($('buscadorPacientes')?.value||'');
-    let arr=getPacientes();
-    if(q){arr=arr.filter(function(p){return normText((p.nombre||'')+' '+(p.telefono||'')+' '+(p.email||'')+' '+(p.obs||'')).includes(q);});}
-    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th></tr></thead><tbody>'+arr.map(function(p){
-      const bloqueado=p.bloqueado?' <span class="ynea-paciente-bloqueado">BLOQUEADO: '+esc(p.motivoBloqueo||'Sin motivo')+'</span>':'';
-      return '<tr data-paciente-id="'+esc(p.id)+'" onclick="editarPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')"><td><b>'+esc(p.nombre)+'</b>'+bloqueado+'</td><td>'+esc(p.telefono||'')+'</td><td>'+esc(p.email||'')+'</td><td>'+esc(p.obs||'')+'</td></tr>';
-    }).join('')+'</tbody>';
-  };
-
-  // Añadir botón Nuevo paciente en CREAR cita y MODIFICAR cita, también móvil.
-  function addNuevoPacienteButtons(){
-    const crearBox=$('pacienteBusqueda')?.closest('.pacienteSearchBox') || $('pacienteCita')?.parentElement;
-    if(crearBox && !$('btnNuevoPacienteCitaFinal')){
-      const b=document.createElement('button'); b.type='button'; b.id='btnNuevoPacienteCitaFinal'; b.className='secondary ynea-inline-patient-btn'; b.textContent='➕ Nuevo paciente'; b.onclick=function(){if(typeof abrirNuevoPaciente==='function')abrirNuevoPaciente();}; crearBox.appendChild(b);
-    }
-    const editSel=$('editCitaPaciente');
-    if(editSel && !$('btnNuevoPacienteEditorFinal')){
-      const b=document.createElement('button'); b.type='button'; b.id='btnNuevoPacienteEditorFinal'; b.className='secondary ynea-inline-patient-btn'; b.textContent='➕ Nuevo paciente'; b.onclick=function(){if(typeof abrirNuevoPaciente==='function')abrirNuevoPaciente();}; editSel.insertAdjacentElement('afterend',b);
-    }
-  }
-  const oldAbrirEditor=window.abrirEditorCita;
-  window.abrirEditorCita=function(){const r=oldAbrirEditor?oldAbrirEditor.apply(this,arguments):undefined; setTimeout(addNuevoPacienteButtons,50); return r;};
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){addNuevoPacienteButtons(); try{window.renderPatients();}catch(e){}},500);},true);
-  setInterval(addNuevoPacienteButtons,1500);
-})();
-</script>
-
-
-
-<style id="ynea-pacientes-antiduplicado-visible-20260514">
-.ynea-inline-patient-btn{display:block!important;width:100%!important;margin:8px 0!important;min-height:42px!important;position:relative!important;z-index:999999!important;}
-.ynea-paciente-bloqueado{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:700;}
-#nuevoPacienteError{white-space:pre-line!important;}
-</style>
-<script id="ynea-pacientes-antiduplicado-final-20260514">
-(function(){
-  'use strict';
-  if(window.__YNEA_DUP_FINAL_20260514__) return;
-  window.__YNEA_DUP_FINAL_20260514__=true;
-
-  function $(id){return document.getElementById(id);}
-  function getData(){try{ if(typeof data!=='undefined' && data) return data; }catch(e){} if(window.data) return window.data; window.data={pacientes:[],citas:[]}; return window.data;}
-  function pacientes(){var d=getData(); if(!Array.isArray(d.pacientes)) d.pacientes=[]; return d.pacientes;}
-  function citas(){var d=getData(); if(!Array.isArray(d.citas)) d.citas=[]; return d.citas;}
-  function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function normNombre(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');}
-  function normTel(s){return String(s||'').replace(/[^0-9+]/g,'').replace(/^00/,'+');}
-  function normEmail(s){return String(s||'').trim().toLowerCase();}
-  function datoPaciente(p){return (p&&p.nombre?p.nombre:'Paciente sin nombre')+'\nTeléfono: '+(p&&p.telefono?p.telefono:'')+'\nEmail: '+(p&&p.email?p.email:'');}
-  function findDup(nombre,telefono,email,excludeId){
-    var n=normNombre(nombre), t=normTel(telefono), e=normEmail(email);
-    var arr=pacientes();
-    for(var i=0;i<arr.length;i++){
-      var p=arr[i]||{};
-      if(excludeId && String(p.id)===String(excludeId)) continue;
-      if(n && normNombre(p.nombre)===n) return {campo:'nombre', paciente:p};
-      if(t && normTel(p.telefono)===t) return {campo:'teléfono', paciente:p};
-      if(e && normEmail(p.email)===e) return {campo:'email', paciente:p};
-    }
-    return null;
-  }
-  function msgDup(x){return 'No se puede guardar. Ese '+x.campo+' ya está registrado.\n\nLo tiene:\n'+datoPaciente(x.paciente);}
-  function aviso(msg){alert(msg);}
-  function modalError(msg){var box=$('nuevoPacienteError'); if(box){box.textContent=msg; box.style.display='block';} else alert(msg);}
-  function emailOk(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email||'').trim());}
-  function persistir(){
-    try{localStorage.setItem('agendaClinicaSemanal',JSON.stringify(getData()));}catch(e){}
-    try{localStorage.setItem('agendaData',JSON.stringify(getData()));}catch(e){}
-    try{window.yneaLocalPendingUntil=Date.now()+12000;}catch(e){}
-    try{ if(typeof save==='function') save(); }catch(e){}
-    try{ if(typeof refreshAllSelects==='function') refreshAllSelects(); }catch(e){}
-    try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
-    try{ if(typeof renderAll==='function') renderAll(); }catch(e){}
-    try{ if(typeof window.yneaForceCloudSave==='function') window.yneaForceCloudSave(); }catch(e){}
+      const box=byId('nuevoPacienteError');
+      if(box){box.textContent=msg; box.style.display='block';}
+    }catch(e){}
+    alert(msg);
   }
 
-  function validarPacienteNuevo(nombre,telefono,email,excludeId,modoModal){
-    if(!nombre){(modoModal?modalError:aviso)('El nombre del paciente es obligatorio.'); return false;}
-    if(!telefono){(modoModal?modalError:aviso)('El teléfono es obligatorio.'); return false;}
-    if(!email){(modoModal?modalError:aviso)('El email es obligatorio.'); return false;}
-    if(!emailOk(email)){(modoModal?modalError:aviso)('Introduce un email válido.'); return false;}
-    var dup=findDup(nombre,telefono,email,excludeId);
-    if(dup){(modoModal?modalError:aviso)(msgDup(dup)); return false;}
+  async function persistir(){
+    try{ if(typeof window.save==='function') window.save(); }catch(e){console.warn(e);}
+    try{ if(typeof window.yneaForceCloudSave==='function') await window.yneaForceCloudSave(); }catch(e){console.warn(e);}
+    try{ if(typeof window.refreshAllSelects==='function') window.refreshAllSelects(); }catch(e){}
+    try{ if(typeof window.renderAll==='function') window.renderAll(); }catch(e){}
+    try{ window.renderPatients && window.renderPatients(); }catch(e){}
+  }
+
+  function pacienteBloqueado(p){return !!(p && (p.bloqueado===true || p.bloqueado==='true' || p.bloqueadoPaciente===true));}
+  function motivoBloqueo(p){return String((p&&(p.motivoBloqueo||p.motivo_bloqueo||p.bloqueoMotivo))||'Paciente bloqueado');}
+  function obtenerPaciente(id){return ensure().pacientes.find(p=>String(p.id)===String(id));}
+  function impedirPacienteBloqueado(p){
+    if(!pacienteBloqueado(p)) return false;
+    alert('Paciente bloqueado.\n\nMotivo: '+motivoBloqueo(p));
     return true;
   }
 
-  window.yneaComprobarDuplicadoPaciente=function(nombre,telefono,email,excludeId){return findDup(nombre,telefono,email,excludeId);};
+  function instalarBotonNuevoPacienteCita(){
+    const hidden=byId('pacienteCita');
+    if(!hidden) return;
+    const box=hidden.closest('.pacienteSearchBox') || hidden.parentElement;
+    if(!box) return;
+    if(!byId('btnNuevoPacienteCitaFinal')){
+      const b=document.createElement('button');
+      b.id='btnNuevoPacienteCitaFinal';
+      b.type='button';
+      b.className='secondary';
+      b.style.cssText='display:block!important;width:100%;margin-top:8px;position:relative;z-index:20;';
+      b.textContent='➕ Nuevo paciente';
+      b.onclick=function(){ if(typeof window.abrirNuevoPaciente==='function') window.abrirNuevoPaciente(); else if(typeof window.abrirNuevoPacienteDesdeBusqueda==='function') window.abrirNuevoPacienteDesdeBusqueda(); };
+      box.appendChild(b);
+    }
+  }
 
-  window.addPaciente=function(){
-    var nombre=($('pacNombre')&&$('pacNombre').value||'').trim();
-    var telefono=($('pacTelefono')&&$('pacTelefono').value||'').trim();
-    var email=($('pacEmail')&&$('pacEmail').value||'').trim();
-    var obs=($('pacObs')&&$('pacObs').value||'').trim();
-    if(!validarPacienteNuevo(nombre,telefono,email,null,false)) return false;
-    var p={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs,bloqueado:false,motivoBloqueo:''};
-    pacientes().push(p);
-    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){var el=$(id); if(el) el.value='';});
-    try{ if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(p.id); }catch(e){}
+  function instalarBotonNuevoPacienteEditor(){
+    const sel=byId('editCitaPaciente');
+    if(!sel || byId('btnNuevoPacienteEditorFinal')) return;
+    const b=document.createElement('button');
+    b.id='btnNuevoPacienteEditorFinal';
+    b.type='button';
+    b.className='secondary';
+    b.style.cssText='display:block!important;width:100%;margin-top:8px;';
+    b.textContent='➕ Nuevo paciente';
+    b.onclick=function(){ window.__yneaPacienteDestinoEditor=true; if(typeof window.abrirNuevoPaciente==='function') window.abrirNuevoPaciente(); };
+    sel.insertAdjacentElement('afterend', b);
+  }
+
+  window.yneaEliminarPaciente=function(id){
+    const d=ensure();
+    const p=d.pacientes.find(x=>String(x.id)===String(id));
+    if(!p) return alert('No se ha encontrado el paciente.');
+    const citas=d.citas.filter(c=>String(c.pacienteId)===String(id));
+    let msg='¿Eliminar este paciente?\n\n'+pacienteLabel(p);
+    if(citas.length) msg+='\n\nTiene '+citas.length+' cita(s). Si continúas, también se eliminarán esas citas.';
+    if(!confirm(msg)) return;
+    d.pacientes=d.pacientes.filter(x=>String(x.id)!==String(id));
+    d.citas=d.citas.filter(c=>String(c.pacienteId)!==String(id));
     persistir();
-    alert('Paciente guardado.');
-    return false;
   };
 
-  window.guardarNuevoPacienteModal=function(){
-    var nombre=($('npNombre')&&$('npNombre').value||'').trim();
-    var telefono=($('npTelefono')&&$('npTelefono').value||'').trim();
-    var email=($('npEmail')&&$('npEmail').value||'').trim();
-    var obs=($('npObs')&&$('npObs').value||'').trim();
-    if(!validarPacienteNuevo(nombre,telefono,email,null,true)) return false;
-    var p={id:'p'+Date.now(),nombre:nombre,telefono:telefono,email:email,obs:obs,bloqueado:false,motivoBloqueo:''};
-    pacientes().push(p);
-    var sel=$('pacienteCita'); if(sel){sel.value=p.id; try{ if(typeof seleccionarPacienteCita==='function') seleccionarPacienteCita(p.id); }catch(e){}}
-    var editSel=$('editCitaPaciente'); if(editSel){var opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.nombre; editSel.appendChild(opt); editSel.value=p.id;}
-    ['npNombre','npTelefono','npEmail','npObs'].forEach(function(id){var el=$(id); if(el) el.value='';});
-    var ov=$('nuevoPacienteOverlay'); if(ov) ov.style.display='none';
+  window.yneaBloquearPaciente=function(id){
+    const d=ensure();
+    const p=d.pacientes.find(x=>String(x.id)===String(id));
+    if(!p) return alert('No se ha encontrado el paciente.');
+    const motivo=prompt('Motivo del bloqueo para '+(p.nombre||'este paciente')+':', p.motivoBloqueo||'');
+    if(motivo===null) return;
+    p.bloqueado=true;
+    p.motivoBloqueo=String(motivo||'Paciente bloqueado').trim() || 'Paciente bloqueado';
     persistir();
-    return false;
   };
 
-  window.editarPacienteYnea=function(id){
-    var p=pacientes().find(function(x){return String(x.id)===String(id);}); if(!p) return;
-    var nombre=prompt('Nombre del paciente:',p.nombre||''); if(nombre===null) return;
-    var telefono=prompt('Teléfono obligatorio:',p.telefono||''); if(telefono===null) return;
-    var email=prompt('Email obligatorio:',p.email||''); if(email===null) return;
-    nombre=String(nombre).trim(); telefono=String(telefono).trim(); email=String(email).trim();
-    if(!validarPacienteNuevo(nombre,telefono,email,p.id,false)) return;
-    var obs=prompt('Observaciones:',p.obs||''); if(obs===null) return;
-    var bloquear=confirm('¿Quieres bloquear este paciente?\n\nAceptar = bloquear / mantener bloqueado\nCancelar = dejar sin bloqueo');
-    var motivo='';
-    if(bloquear){motivo=prompt('Motivo del bloqueo:',p.motivoBloqueo||''); if(motivo===null) motivo=p.motivoBloqueo||'';}
-    p.nombre=nombre; p.telefono=telefono; p.email=email; p.obs=String(obs||'').trim(); p.bloqueado=!!bloquear; p.motivoBloqueo=bloquear?String(motivo||'').trim():'';
+  window.yneaDesbloquearPaciente=function(id){
+    const d=ensure();
+    const p=d.pacientes.find(x=>String(x.id)===String(id));
+    if(!p) return alert('No se ha encontrado el paciente.');
+    if(!confirm('¿Desbloquear a '+(p.nombre||'este paciente')+'?')) return;
+    p.bloqueado=false;
+    p.motivoBloqueo='';
     persistir();
   };
 
   window.renderPatients=function(){
-    var table=$('pacientesTable'); if(!table) return;
-    var q=normNombre(($('buscadorPacientes')&&$('buscadorPacientes').value)||'');
-    var arr=pacientes().filter(function(p){return !q || normNombre((p.nombre||'')+' '+(p.telefono||'')+' '+(p.email||'')+' '+(p.obs||'')).includes(q);});
-    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Bloqueo</th></tr></thead><tbody>'+arr.map(function(p){
-      var estado=p.bloqueado?'<b style="color:#991b1b">BLOQUEADO</b><br><small>'+esc(p.motivoBloqueo||'Sin motivo')+'</small>':'<span style="color:#16a34a">Activo</span>';
-      var boton=p.bloqueado?'<button type="button" onclick="event.stopPropagation();desbloquearPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')">Desbloquear</button>':'<button type="button" class="danger" onclick="event.stopPropagation();bloquearPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')">Bloquear</button>';
-      return '<tr data-paciente-id="'+esc(p.id)+'" onclick="editarPacienteYnea(\''+String(p.id).replace(/'/g,"\\'")+'\')"><td><b>'+esc(p.nombre)+'</b></td><td>'+esc(p.telefono||'')+'</td><td>'+esc(p.email||'')+'</td><td>'+esc(p.obs||'')+'</td><td>'+estado+'<br>'+boton+'</td></tr>';
+    const d=ensure();
+    const table=byId('pacientesTable');
+    if(!table) return;
+    const q=normText(byId('buscadorPacientes')?byId('buscadorPacientes').value:'');
+    const rows=d.pacientes.filter(function(p){
+      if(!q) return true;
+      return normText([p.nombre,p.telefono,p.email,p.obs,p.motivoBloqueo].join(' ')).includes(q);
+    });
+    table.innerHTML='<thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Bloqueo</th><th>Acciones</th></tr></thead><tbody>'+rows.map(function(p){
+      const bloqueado=pacienteBloqueado(p);
+      const bloqueoHtml=bloqueado?('<b style="color:#991b1b">Bloqueado</b><br><span class="small">'+esc(motivoBloqueo(p))+'</span><br><button type="button" class="secondary" onclick="yneaDesbloquearPaciente(\''+esc(p.id)+'\')">Desbloquear</button>'):'<button type="button" class="secondary" onclick="yneaBloquearPaciente(\''+esc(p.id)+'\')">Bloquear</button>';
+      return '<tr data-paciente-id="'+esc(p.id)+'">'+
+        '<td><b>'+esc(p.nombre)+'</b></td>'+
+        '<td>'+esc(p.telefono||'')+'</td>'+
+        '<td>'+esc(p.email||'')+'</td>'+
+        '<td>'+esc(p.obs||'')+'</td>'+
+        '<td>'+bloqueoHtml+'</td>'+
+        '<td><button type="button" class="danger" onclick="yneaEliminarPaciente(\''+esc(p.id)+'\')">Eliminar</button></td>'+
+      '</tr>';
     }).join('')+'</tbody>';
+    const info=byId('pacientesSearchInfo');
+    if(info) info.textContent=q?' '+rows.length+' resultado(s)':'';
   };
 
-  function addNuevoPacienteButtons(){
-    var crearBox=($('pacienteBusqueda')&&$('pacienteBusqueda').closest('.pacienteSearchBox')) || ($('pacienteCita')&&$('pacienteCita').parentElement);
-    if(crearBox && !$('btnNuevoPacienteCitaFinal')){var b=document.createElement('button'); b.type='button'; b.id='btnNuevoPacienteCitaFinal'; b.className='secondary ynea-inline-patient-btn'; b.textContent='➕ Nuevo paciente'; b.onclick=function(e){if(e)e.preventDefault(); if(typeof abrirNuevoPaciente==='function') abrirNuevoPaciente(); return false;}; crearBox.appendChild(b);}
-    var editSel=$('editCitaPaciente');
-    if(editSel && !$('btnNuevoPacienteEditorFinal')){var b2=document.createElement('button'); b2.type='button'; b2.id='btnNuevoPacienteEditorFinal'; b2.className='secondary ynea-inline-patient-btn'; b2.textContent='➕ Nuevo paciente'; b2.onclick=function(e){if(e)e.preventDefault(); if(typeof abrirNuevoPaciente==='function') abrirNuevoPaciente(); return false;}; editSel.insertAdjacentElement('afterend',b2);}
-  }
-  window.yneaAddNuevoPacienteButtons=addNuevoPacienteButtons;
+  // Alta de paciente desde pestaña Pacientes / PC.
+  window.addPaciente=function(){
+    const nombre=(byId('pacNombre')?.value||'').trim();
+    const telefono=(byId('pacTelefono')?.value||'').trim();
+    const email=(byId('pacEmail')?.value||'').trim();
+    const obs=(byId('pacObs')?.value||'').trim();
+    if(!nombre){alert('Escribe el nombre del paciente.');return;}
+    if(!telefono){alert('El teléfono es obligatorio.');return;}
+    if(!email){alert('El email es obligatorio.');return;}
+    const dup=findDuplicatePaciente({nombre,telefono,email});
+    if(dup){avisoDuplicado(dup);return;}
+    const d=ensure();
+    const p={id:'p'+Date.now(),nombre,telefono,email,obs,bloqueado:false,motivoBloqueo:''};
+    d.pacientes.push(p);
+    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){const el=byId(id); if(el) el.value='';});
+    try{ if(typeof window.seleccionarPacienteCita==='function') window.seleccionarPacienteCita(p.id); }catch(e){}
+    persistir();
+    alert('Paciente guardado.');
+  };
 
-  function pacienteBloqueado(id){var p=pacientes().find(function(x){return String(x.id)===String(id);}); if(p&&p.bloqueado){alert('Paciente bloqueado: '+(p.nombre||'')+'\nMotivo: '+(p.motivoBloqueo||'Sin motivo indicado')); return true;} return false;}
-  var oldAddCita=window.addCita;
-  window.addCita=function(){var pid=''; try{pid=typeof pacienteSeleccionadoParaCita==='function'?pacienteSeleccionadoParaCita():($('pacienteCita')&&$('pacienteCita').value||'');}catch(e){pid=$('pacienteCita')&&$('pacienteCita').value||'';} if(pacienteBloqueado(pid)) return false; return oldAddCita?oldAddCita.apply(this,arguments):false;};
-  var oldGuardarEditor=window.guardarCitaDesdeEditor;
-  window.guardarCitaDesdeEditor=function(){var pid=$('editCitaPaciente')&&$('editCitaPaciente').value||''; if(pacienteBloqueado(pid)) return false; return oldGuardarEditor?oldGuardarEditor.apply(this,arguments):false;};
+  // Alta de paciente desde modal móvil / cita.
+  window.guardarNuevoPacienteModal=function(){
+    const nombre=(byId('npNombre')?.value||'').trim();
+    const telefono=(byId('npTelefono')?.value||'').trim();
+    const email=(byId('npEmail')?.value||'').trim();
+    const obs=(byId('npObs')?.value||'').trim();
+    const err=byId('nuevoPacienteError');
+    if(err){err.textContent='';err.style.display='none';}
+    if(!nombre){ if(err){err.textContent='El nombre del paciente es obligatorio.';err.style.display='block';} else alert('El nombre del paciente es obligatorio.'); return; }
+    if(!telefono){ if(err){err.textContent='El teléfono es obligatorio.';err.style.display='block';} else alert('El teléfono es obligatorio.'); return; }
+    if(!email){ if(err){err.textContent='El email es obligatorio.';err.style.display='block';} else alert('El email es obligatorio.'); return; }
+    const dup=findDuplicatePaciente({nombre,telefono,email});
+    if(dup){avisoDuplicado(dup);return;}
+    const d=ensure();
+    const p={id:'p'+Date.now(),nombre,telefono,email,obs,bloqueado:false,motivoBloqueo:''};
+    d.pacientes.push(p);
+    try{ if(typeof window.actualizarBuscadorPacienteCita==='function') window.actualizarBuscadorPacienteCita(); }catch(e){}
+    try{ if(typeof window.seleccionarPacienteCita==='function') window.seleccionarPacienteCita(p.id); else { const h=byId('pacienteCita'); if(h) h.value=p.id; } }catch(e){}
+    try{ const sel=byId('editCitaPaciente'); if(window.__yneaPacienteDestinoEditor && sel){ const opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.nombre; sel.appendChild(opt); sel.value=p.id; } }catch(e){}
+    window.__yneaPacienteDestinoEditor=false;
+    try{ const ov=byId('nuevoPacienteOverlay'); if(ov) ov.style.display='none'; }catch(e){}
+    persistir();
+    alert('Paciente guardado.');
+  };
 
-  document.addEventListener('click',function(e){
-    var btn=e.target && e.target.closest && e.target.closest('button'); if(!btn) return;
-    var oc=btn.getAttribute('onclick')||'';
-    if(oc.indexOf('addPaciente')>=0){e.preventDefault(); e.stopImmediatePropagation(); window.addPaciente();}
-    if(oc.indexOf('guardarNuevoPacienteModal')>=0){e.preventDefault(); e.stopImmediatePropagation(); window.guardarNuevoPacienteModal();}
-  },true);
+  // Impedir crear/editar cita con paciente bloqueado.
+  const oldAddCita=window.addCita;
+  window.addCita=function(){
+    const pid=(typeof window.pacienteSeleccionadoParaCita==='function')?window.pacienteSeleccionadoParaCita():(byId('pacienteCita')?.value||'');
+    if(impedirPacienteBloqueado(obtenerPaciente(pid))) return;
+    if(typeof oldAddCita==='function') return oldAddCita.apply(this,arguments);
+  };
 
-  function iniciar(){addNuevoPacienteButtons(); try{renderPatients();}catch(e){}}
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(iniciar,100); setTimeout(iniciar,700);},true);
-  setInterval(iniciar,1500);
-})();
-</script>
+  const oldGuardarEditor=window.guardarCitaDesdeEditor;
+  window.guardarCitaDesdeEditor=function(){
+    const pid=byId('editCitaPaciente')?.value;
+    if(impedirPacienteBloqueado(obtenerPaciente(pid))) return;
+    if(typeof oldGuardarEditor==='function') return oldGuardarEditor.apply(this,arguments);
+  };
 
-
-
-<style id="ynea-pc-duplicados-bloqueo-visible-final-2">
-#pacientesTable th:nth-child(5),#pacientesTable td:nth-child(5){min-width:140px!important;}
-#pacientesView .small{color:#64748b;font-size:12px;margin:4px 0 8px;}
-</style>
-<script id="ynea-pc-duplicados-captura-final-2">
-(function(){
-  document.addEventListener('click',function(e){
-    var btn=e.target&&e.target.closest&&e.target.closest('button'); if(!btn)return;
-    var oc=btn.getAttribute('onclick')||'';
-    if(oc.indexOf('addPaciente')!==-1){
-      e.preventDefault(); e.stopImmediatePropagation();
-      if(typeof window.addPaciente==='function') window.addPaciente();
-      else if(typeof addPaciente==='function') addPaciente();
-      return false;
+  function conectar(){
+    instalarBotonNuevoPacienteCita();
+    instalarBotonNuevoPacienteEditor();
+    const b=byId('buscadorPacientes');
+    if(b && b.dataset.yneaFinalSearch!=='1'){
+      b.dataset.yneaFinalSearch='1';
+      b.addEventListener('input',function(){window.renderPatients();});
+      b.addEventListener('keyup',function(){window.renderPatients();});
+      b.addEventListener('search',function(){window.renderPatients();});
     }
-  },true);
-  setTimeout(function(){try{if(typeof renderPatients==='function')renderPatients();}catch(e){}},500);
+    try{window.renderPatients();}catch(e){}
+  }
+
+  const oldAbrirEditor=window.abrirEditorCita;
+  window.abrirEditorCita=function(){
+    const r=typeof oldAbrirEditor==='function'?oldAbrirEditor.apply(this,arguments):undefined;
+    setTimeout(instalarBotonNuevoPacienteEditor,50);
+    return r;
+  };
+
+  const oldRenderAll=window.renderAll;
+  if(typeof oldRenderAll==='function'){
+    window.renderAll=function(){
+      const r=oldRenderAll.apply(this,arguments);
+      setTimeout(conectar,50);
+      return r;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(conectar,300);setTimeout(conectar,1200);},true);
+  window.addEventListener('load',function(){setTimeout(conectar,300);});
+  setInterval(conectar,2000);
 })();
 </script>
 
