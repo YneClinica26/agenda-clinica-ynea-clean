@@ -8131,6 +8131,7 @@ header{padding-right:112px!important;}
 </script>
 
 
+
 <style id="ynea-anti-duplicados-pacientes-css">
 .yneaDuplicadoAviso{
   margin-top:6px!important;
@@ -8170,13 +8171,8 @@ header{padding-right:112px!important;}
       .trim();
   }
 
-  function soloDigitos(v){
-    return String(v || "").replace(/\D+/g,"").trim();
-  }
-
-  function emailNorm(v){
-    return String(v || "").toLowerCase().trim();
-  }
+  function tel(v){ return String(v || "").replace(/\D+/g,"").trim(); }
+  function mail(v){ return String(v || "").toLowerCase().trim(); }
 
   function esc(v){
     return String(v == null ? "" : v).replace(/[&<>"']/g,function(c){
@@ -8184,176 +8180,122 @@ header{padding-right:112px!important;}
     });
   }
 
-  function nombrePaciente(p){
-    return p.nombre || p.name || "Paciente sin nombre";
-  }
+  function nombrePaciente(p){ return p.nombre || p.name || "Paciente sin nombre"; }
 
-  function valorCampo(campo, valor){
-    if(campo === "nombre") return norm(valor);
-    if(campo === "telefono") return soloDigitos(valor);
-    if(campo === "email") return emailNorm(valor);
-    return norm(valor);
-  }
-
-  function buscarDuplicado(campo, valor, excluirId){
-    var v = valorCampo(campo, valor);
-    if(!v) return null;
-
-    return (ds().pacientes || []).find(function(p){
-      if(excluirId && String(p.id) === String(excluirId)) return false;
-
-      if(campo === "nombre") return norm(p.nombre || p.name) === v;
-      if(campo === "telefono") return soloDigitos(p.telefono) === v;
-      if(campo === "email") return emailNorm(p.email) === v;
-      return false;
-    }) || null;
-  }
-
-  function idPacienteEditando(){
-    var posibles = ["pacienteId","editPacienteId","idPaciente","pacienteEditId"];
-    for(var i=0;i<posibles.length;i++){
-      var el = $(posibles[i]);
-      if(el && el.value) return el.value;
-    }
-
-    // Compatibilidad con variable global habitual si existiera
-    if(window.pacienteEditandoId) return window.pacienteEditandoId;
-    if(window.editandoPacienteId) return window.editandoPacienteId;
-    return "";
-  }
-
-  function camposPaciente(){
+  function getCampos(){
     return {
-      nombre: $("pacienteNombre") || $("nombrePaciente") || document.querySelector('input[id*="paciente"][id*="Nombre"], input[id*="Paciente"][id*="Nombre"], input[placeholder*="Nombre"]'),
-      telefono: $("pacienteTelefono") || $("telefonoPaciente") || document.querySelector('input[id*="paciente"][id*="Telefono"], input[id*="Paciente"][id*="Telefono"], input[placeholder*="Teléfono"], input[placeholder*="Telefono"]'),
-      email: $("pacienteEmail") || $("emailPaciente") || document.querySelector('input[id*="paciente"][id*="Email"], input[id*="Paciente"][id*="Email"], input[placeholder*="Email"]')
+      nombre: $("pacienteNombre") || $("nombrePaciente") || document.querySelector('input[placeholder="Nombre y apellidos"], input[placeholder*="Nombre"]'),
+      telefono: $("pacienteTelefono") || $("telefonoPaciente") || document.querySelector('input[placeholder="Teléfono"], input[placeholder="Telefono"]'),
+      email: $("pacienteEmail") || $("emailPaciente") || document.querySelector('input[placeholder="Email"]')
     };
   }
 
-  function limpiarAviso(input){
-    if(!input) return;
-    input.classList.remove("yneaCampoDuplicado");
-    var aviso = input.parentNode ? input.parentNode.querySelector(".yneaDuplicadoAviso[data-for='"+input.id+"']") : null;
-    if(aviso) aviso.remove();
+  function idEditando(){
+    var ids = ["pacienteId","editPacienteId","idPaciente","pacienteEditId"];
+    for(var i=0;i<ids.length;i++){
+      var el = $(ids[i]);
+      if(el && el.value) return el.value;
+    }
+    return window.pacienteEditandoId || window.editandoPacienteId || "";
   }
 
-  function mostrarAviso(input, campo, duplicado){
-    if(!input || !duplicado) return;
-
-    input.classList.add("yneaCampoDuplicado");
-
-    var avisoId = input.id || ("campo-" + campo);
-    var cont = input.parentNode || input.closest("label") || input;
-    var previo = cont.querySelector(".yneaDuplicadoAviso[data-for='"+avisoId+"']");
-    if(!previo){
-      previo = document.createElement("div");
-      previo.className = "yneaDuplicadoAviso";
-      previo.setAttribute("data-for", avisoId);
-      input.insertAdjacentElement("afterend", previo);
+  function duplicado(campo, valor){
+    var excluir = idEditando();
+    if(campo === "nombre"){
+      var v = norm(valor);
+      if(!v) return null;
+      return (ds().pacientes || []).find(function(p){
+        return (!excluir || String(p.id)!==String(excluir)) && norm(p.nombre || p.name) === v;
+      }) || null;
     }
+    if(campo === "telefono"){
+      var t = tel(valor);
+      if(!t) return null;
+      return (ds().pacientes || []).find(function(p){
+        return (!excluir || String(p.id)!==String(excluir)) && tel(p.telefono) === t;
+      }) || null;
+    }
+    if(campo === "email"){
+      var e = mail(valor);
+      if(!e) return null;
+      return (ds().pacientes || []).find(function(p){
+        return (!excluir || String(p.id)!==String(excluir)) && mail(p.email) === e;
+      }) || null;
+    }
+    return null;
+  }
 
-    var etiqueta = campo === "nombre" ? "nombre" : campo === "telefono" ? "teléfono" : "correo";
-    previo.innerHTML = "Este " + etiqueta + " ya lo tiene otro paciente: <b>" + esc(nombrePaciente(duplicado)) + "</b>.";
+  function limpia(input){
+    if(!input) return;
+    input.classList.remove("yneaCampoDuplicado");
+    var next = input.nextElementSibling;
+    if(next && next.classList && next.classList.contains("yneaDuplicadoAviso")) next.remove();
+  }
+
+  function avisa(input, campo, p){
+    if(!input || !p) return;
+    limpia(input);
+    input.classList.add("yneaCampoDuplicado");
+    var div = document.createElement("div");
+    div.className = "yneaDuplicadoAviso";
+    var etiqueta = campo === "telefono" ? "teléfono" : campo === "email" ? "correo" : "nombre";
+    div.innerHTML = "Este " + etiqueta + " ya lo tiene otro paciente: <b>" + esc(nombrePaciente(p)) + "</b>.";
+    input.insertAdjacentElement("afterend", div);
   }
 
   function validarCampo(campo){
-    var campos = camposPaciente();
+    var campos = getCampos();
     var input = campos[campo];
     if(!input) return true;
-
-    limpiarAviso(input);
-
-    var excluir = idPacienteEditando();
-    var dup = buscarDuplicado(campo, input.value, excluir);
-
-    if(dup){
-      mostrarAviso(input, campo, dup);
-      return false;
-    }
-
+    limpia(input);
+    var d = duplicado(campo, input.value);
+    if(d){ avisa(input, campo, d); return false; }
     return true;
   }
 
-  function validarPacienteCompleto(mostrarAlert){
-    var okNombre = validarCampo("nombre");
-    var okTel = validarCampo("telefono");
-    var okEmail = validarCampo("email");
-
-    var ok = okNombre && okTel && okEmail;
-
-    if(!ok && mostrarAlert){
-      alert("No se puede guardar: hay datos duplicados en otro paciente. Revisa los avisos en rojo.");
-    }
-
-    return ok;
+  function validarTodo(){
+    return validarCampo("nombre") & validarCampo("telefono") & validarCampo("email");
   }
 
-  function bindCampos(){
-    var campos = camposPaciente();
-
-    [["nombre", campos.nombre], ["telefono", campos.telefono], ["email", campos.email]].forEach(function(par){
+  function bind(){
+    var c = getCampos();
+    [["nombre",c.nombre],["telefono",c.telefono],["email",c.email]].forEach(function(par){
       var campo = par[0], input = par[1];
-      if(!input || input.__yneaAntiDupBound) return;
-
-      input.__yneaAntiDupBound = true;
-
-      input.addEventListener("input", function(){
-        validarCampo(campo);
-      });
-
-      input.addEventListener("blur", function(){
-        validarCampo(campo);
-      });
+      if(!input || input.__yneaDupOk) return;
+      input.__yneaDupOk = true;
+      input.addEventListener("input", function(){ validarCampo(campo); });
+      input.addEventListener("blur", function(){ validarCampo(campo); });
     });
   }
 
-  function bloquearBotonSiDuplicado(){
-    var campos = camposPaciente();
-    var boton = Array.from(document.querySelectorAll("button")).find(function(b){
-      return /guardar paciente/i.test(b.textContent || "");
-    });
-
-    if(!boton || boton.__yneaAntiDupClick) return;
-
-    boton.__yneaAntiDupClick = true;
-    boton.addEventListener("click", function(ev){
-      if(!validarPacienteCompleto(true)){
-        ev.preventDefault();
-        ev.stopImmediatePropagation();
-        return false;
-      }
-    }, true);
-  }
-
-  function parchearFuncionesGuardado(){
-    ["guardarPaciente","savePaciente","crearPaciente","guardarNuevoPaciente","guardarPacienteYnea"].forEach(function(fn){
-      if(typeof window[fn] === "function" && !window[fn].__yneaAntiDupPatched){
+  function parchearGuardado(){
+    ["guardarPaciente","guardarPacienteYnea","savePaciente","crearPaciente"].forEach(function(fn){
+      if(typeof window[fn] === "function" && !window[fn].__yneaDupPatch){
         var old = window[fn];
         window[fn] = function(){
-          bindCampos();
-          if(!validarPacienteCompleto(true)) return false;
+          bind();
+          if(!validarTodo()){
+            alert("No se puede guardar: hay un nombre, teléfono o email que ya pertenece a otro paciente.");
+            return false;
+          }
           return old.apply(this, arguments);
         };
-        window[fn].__yneaAntiDupPatched = true;
+        window[fn].__yneaDupPatch = true;
       }
     });
   }
 
   function init(){
-    bindCampos();
-    bloquearBotonSiDuplicado();
-    parchearFuncionesGuardado();
+    bind();
+    parchearGuardado();
   }
 
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", init);
-  }else{
-    init();
-  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 
   window.addEventListener("load", init);
-  document.addEventListener("click", function(){ setTimeout(init, 80); });
-  setInterval(init, 1200);
+  document.addEventListener("click", function(){ setTimeout(init, 100); });
+  setInterval(init, 1500);
 })();
 </script>
 
