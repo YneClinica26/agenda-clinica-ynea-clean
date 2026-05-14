@@ -9589,5 +9589,276 @@ body:not(.ynea-role-admin) .danger[data-ynea-action="delete-paciente"]{
 })();
 </script>
 
+
+<style id="ynea-permisos-pacientes-exactos-css">
+body:not(.ynea-es-admin) button[data-ynea-delete-paciente="1"],
+body:not(.ynea-es-admin) .yneaDeletePacienteBtn{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+.yneaPacienteAcciones{
+  display:flex!important;
+  gap:6px!important;
+  flex-wrap:wrap!important;
+}
+.yneaPacienteAcciones button{
+  font-size:12px!important;
+  padding:6px 8px!important;
+  min-height:28px!important;
+}
+</style>
+
+<script id="ynea-permisos-pacientes-exactos-js">
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+
+  function data(){
+    window.data = window.data || {};
+    if(!Array.isArray(window.data.pacientes)) window.data.pacientes = [];
+    return window.data;
+  }
+
+  function norm(v){
+    return String(v || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .trim();
+  }
+
+  function esc(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g,function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function escJs(v){
+    return String(v == null ? "" : v)
+      .replace(/\\/g,"\\\\")
+      .replace(/'/g,"\\'")
+      .replace(/\n/g," ");
+  }
+
+  function getCurrentUser(){
+    var keys = [
+      "yneaCurrentUser",
+      "currentUser",
+      "usuarioActual",
+      "yneaUsuarioActual",
+      "currentProfessional",
+      "usuario"
+    ];
+
+    for(var i=0;i<keys.length;i++){
+      try{
+        var raw = sessionStorage.getItem(keys[i]) || localStorage.getItem(keys[i]);
+        if(raw){
+          var parsed = JSON.parse(raw);
+          if(parsed && typeof parsed === "object") return parsed;
+        }
+      }catch(e){}
+    }
+
+    return window.yneaCurrentUser || window.currentUser || window.usuarioActual || window.usuario || {};
+  }
+
+  function rolActual(){
+    var u = getCurrentUser();
+    return norm(u.rol || u.role || u.tipo || u.perfil || u.acceso || u.acreditacion || "");
+  }
+
+  function esAdmin(){
+    var r = rolActual();
+    return r === "administrador" || r === "admin";
+  }
+
+  function esMostrador(){
+    var r = rolActual();
+    return r === "mostrador" || r === "recepcion" || r === "recepcionista";
+  }
+
+  function puedeEditarBloquear(){
+    return esAdmin() || esMostrador();
+  }
+
+  function marcarRol(){
+    document.body.classList.toggle("ynea-es-admin", esAdmin());
+    document.body.classList.toggle("ynea-es-mostrador", !esAdmin() && esMostrador());
+  }
+
+  function textoPaciente(p){
+    return [p.nombre,p.telefono,p.email,p.obs,p.observaciones,p.motivoBloqueo]
+      .map(function(x){ return x || ""; }).join(" ");
+  }
+
+  function accionesPaciente(p){
+    var html = "";
+
+    // TODOS: ver ficha
+    html += '<button type="button" class="secondary" onclick="event.stopPropagation(); if(window.yneaAbrirFichaPaciente){yneaAbrirFichaPaciente(\''+escJs(p.id)+'\');}">Ver</button>';
+
+    // ADMINISTRADOR + MOSTRADOR/RECEPCIÓN: editar y bloquear
+    if(puedeEditarBloquear()){
+      html += '<button type="button" class="secondary" onclick="event.stopPropagation(); if(window.editarPacienteYnea){editarPacienteYnea(\''+escJs(p.id)+'\');}">Editar</button>';
+
+      if(p.bloqueado){
+        html += '<button type="button" class="secondary" onclick="event.stopPropagation(); if(window.desbloquearPacienteYnea){desbloquearPacienteYnea(\''+escJs(p.id)+'\');}">Desbloquear</button>';
+      }else{
+        html += '<button type="button" class="secondary" onclick="event.stopPropagation(); if(window.bloquearPacienteYnea){bloquearPacienteYnea(\''+escJs(p.id)+'\');}">Bloquear</button>';
+      }
+    }
+
+    // SOLO ADMINISTRADOR: eliminar
+    if(esAdmin()){
+      html += '<button type="button" class="danger yneaDeletePacienteBtn" data-ynea-delete-paciente="1" onclick="event.stopPropagation(); if(window.eliminarPacienteYnea){eliminarPacienteYnea(\''+escJs(p.id)+'\');}">Eliminar</button>';
+    }
+
+    return html;
+  }
+
+  window.renderPatients = function(){
+    marcarRol();
+
+    var table = $("pacientesTable");
+    if(!table) return;
+
+    var buscador = $("buscadorPacientes");
+    var q = norm(buscador ? buscador.value : "");
+
+    var pacientes = (data().pacientes || []).filter(function(p){
+      return !q || norm(textoPaciente(p)).indexOf(q) >= 0;
+    });
+
+    table.innerHTML =
+      '<thead><tr>' +
+      '<th>Nombre</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th>Estado</th><th>Acciones</th>' +
+      '</tr></thead><tbody>' +
+      pacientes.map(function(p){
+        return '<tr onclick="if(window.yneaAbrirFichaPaciente){yneaAbrirFichaPaciente(\''+escJs(p.id)+'\');}">' +
+          '<td><b>'+esc(p.nombre || p.name || "")+'</b></td>' +
+          '<td>'+esc(p.telefono || "")+'</td>' +
+          '<td>'+esc(p.email || "")+'</td>' +
+          '<td>'+esc(p.obs || p.observaciones || "")+'</td>' +
+          '<td>'+(p.bloqueado ? '<b style="color:#b91c1c">Bloqueado</b><br><small>'+esc(p.motivoBloqueo || "")+'</small>' : 'Activo')+'</td>' +
+          '<td class="yneaPacienteAcciones">'+accionesPaciente(p)+'</td>' +
+        '</tr>';
+      }).join("") +
+      '</tbody>';
+
+    var info = $("pacientesSearchInfo");
+    if(info) info.textContent = q ? " " + pacientes.length + " resultado(s)" : "";
+  };
+
+  function limpiarEliminarNoAdmin(){
+    marcarRol();
+
+    if(esAdmin()) return;
+
+    document.querySelectorAll("#pacientesTable button, #yneaPacienteFichaActions button, .yneaPacienteAcciones button, button").forEach(function(btn){
+      var txt = norm(btn.textContent || "");
+      var onclick = norm(btn.getAttribute("onclick") || "");
+      var dataDelete = btn.getAttribute("data-ynea-delete-paciente");
+
+      var dentroPaciente = !!btn.closest("#pacientesTable, #yneaPacienteFichaActions, .yneaPacienteAcciones, #pacienteFichaOverlay, #fichaPacienteOverlay");
+
+      if(dentroPaciente && (txt.includes("eliminar") || onclick.includes("eliminarpaciente") || dataDelete === "1")){
+        btn.remove();
+      }
+    });
+  }
+
+  // Seguridad funcional: aunque un botón viejo aparezca por caché, no ejecuta borrar si no es admin.
+  function blindarEliminar(){
+    var oldEliminar = window.eliminarPacienteYnea;
+    if(oldEliminar && oldEliminar.__yneaPermisosExactos) return;
+
+    window.eliminarPacienteYnea = function(){
+      if(!esAdmin()){
+        alert("Solo el administrador puede eliminar pacientes.");
+        limpiarEliminarNoAdmin();
+        return false;
+      }
+      if(typeof oldEliminar === "function"){
+        return oldEliminar.apply(this, arguments);
+      }
+      return false;
+    };
+
+    window.eliminarPacienteYnea.__yneaPermisosExactos = true;
+  }
+
+  function blindarEditarBloquear(){
+    ["editarPacienteYnea","bloquearPacienteYnea","desbloquearPacienteYnea"].forEach(function(fn){
+      var old = window[fn];
+      if(old && old.__yneaPermisosExactos) return;
+
+      window[fn] = function(){
+        if(!puedeEditarBloquear()){
+          alert("Solo administrador o mostrador/recepción pueden editar o bloquear pacientes.");
+          return false;
+        }
+        if(typeof old === "function") return old.apply(this, arguments);
+        return false;
+      };
+
+      window[fn].__yneaPermisosExactos = true;
+    });
+  }
+
+  function repararFicha(){
+    var old = window.yneaAbrirFichaPaciente;
+    if(old && old.__yneaPermisosExactos) return;
+
+    window.yneaAbrirFichaPaciente = function(pid){
+      if(typeof old === "function") old.apply(this, arguments);
+
+      setTimeout(function(){
+        limpiarEliminarNoAdmin();
+
+        var actions = $("yneaPacienteFichaActions");
+        var p = (data().pacientes || []).find(function(x){ return String(x.id) === String(pid); });
+
+        if(!actions || !p) return;
+
+        actions.innerHTML = accionesPaciente(p);
+
+        if(!puedeEditarBloquear() && !esAdmin()){
+          actions.innerHTML = '<button type="button" class="secondary" onclick="if(window.yneaCerrarFichaPaciente){yneaCerrarFichaPaciente();}">Cerrar</button>';
+        }
+      }, 60);
+    };
+
+    window.yneaAbrirFichaPaciente.__yneaPermisosExactos = true;
+  }
+
+  function init(){
+    marcarRol();
+    blindarEliminar();
+    blindarEditarBloquear();
+    repararFicha();
+    limpiarEliminarNoAdmin();
+
+    try{ window.renderPatients(); }catch(e){}
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{
+    init();
+  }
+
+  window.addEventListener("load", init);
+  document.addEventListener("click", function(){ setTimeout(init, 40); });
+
+  setInterval(function(){
+    marcarRol();
+    limpiarEliminarNoAdmin();
+  }, 500);
+})();
+</script>
+
 </body>
 </html>
