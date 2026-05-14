@@ -7640,6 +7640,7 @@ header{padding-right:112px!important;}
 </script>
 
 
+
 <style id="ynea-fix-definitivo-pacientes-editor-listado-css">
 #editCitaPaciente{display:none!important;}
 #editCitaPacienteBusqueda{
@@ -7733,6 +7734,30 @@ header{padding-right:112px!important;}
 
   function pacienteNombre(p){
     return (p && (p.nombre || p.name)) || "";
+  }
+
+  function horaNormalizada(h){
+    h = String(h || "").trim();
+    if(!h) return "";
+    var m = h.match(/^(\d{1,2}):(\d{2})/);
+    if(!m) return h;
+    return String(m[1]).padStart(2,"0") + ":" + m[2];
+  }
+
+  function setSelectValueSeguro(sel, value){
+    if(!sel) return;
+    value = String(value || "");
+    sel.value = value;
+    if(sel.value === value) return;
+
+    // Si la hora no existe en el desplegable, se añade para no perderla al modificar.
+    if(value){
+      var opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = value;
+      sel.appendChild(opt);
+      sel.value = value;
+    }
   }
 
   function asegurarInputEditor(){
@@ -7841,6 +7866,11 @@ header{padding-right:112px!important;}
     var p = pacienteById(pid);
     if(!p) return;
 
+    if(p.bloqueado){
+      alert("Paciente bloqueado: " + pacienteNombre(p) + "\nMotivo: " + (p.motivoBloqueo || "Sin motivo"));
+      return;
+    }
+
     if(modo === "edit"){
       asegurarInputEditor();
       var sel = $("editCitaPaciente");
@@ -7900,14 +7930,23 @@ header{padding-right:112px!important;}
   function seleccionarPorTextoEditor(){
     var sel = $("editCitaPaciente");
     var input = $("editCitaPacienteBusqueda");
-    if(sel && sel.value) return sel.value;
     var q = norm(input ? input.value : "");
+
+    if(sel && sel.value){
+      var pSel = pacienteById(sel.value);
+      if(pSel && pSel.bloqueado) return "__BLOQUEADO__";
+      return sel.value;
+    }
+
     if(!q) return "";
+
     var encontrados = (ds().pacientes || []).filter(function(p){
       return norm(p.nombre) === q || norm(p.telefono) === q || norm(p.email) === q;
     });
+
     if(encontrados.length === 1){
-      window.yneaSeleccionarPacienteDefinitivo("edit", encontrados[0].id);
+      if(encontrados[0].bloqueado) return "__BLOQUEADO__";
+      if($("editCitaPaciente")) $("editCitaPaciente").value = encontrados[0].id;
       return encontrados[0].id;
     }
     return "";
@@ -7927,10 +7966,11 @@ header{padding-right:112px!important;}
     asegurarInputEditor();
 
     var p = pacienteById(cita.pacienteId);
+    var horaReal = horaNormalizada(cita.hora);
 
     if($("editCitaId")) $("editCitaId").value = cita.id;
     if($("editCitaFecha")) $("editCitaFecha").value = cita.fecha || "";
-    if($("editCitaHora")) $("editCitaHora").value = cita.hora || "";
+    setSelectValueSeguro($("editCitaHora"), horaReal);
     if($("editCitaDuracion")) $("editCitaDuracion").value = cita.duracion || "10";
     if($("editCitaEstado")) $("editCitaEstado").value = cita.estado || "Pendiente";
     if($("editCitaPaciente")) $("editCitaPaciente").value = cita.pacienteId || "";
@@ -7957,6 +7997,15 @@ header{padding-right:112px!important;}
 
     var pid = seleccionarPorTextoEditor();
 
+    if(pid === "__BLOQUEADO__"){
+      if(typeof mostrarErrorEditorCita === "function"){
+        mostrarErrorEditorCita("No se puede guardar la cita con un paciente bloqueado.");
+      }else{
+        alert("No se puede guardar la cita con un paciente bloqueado.");
+      }
+      return;
+    }
+
     if(!pid){
       if(typeof mostrarErrorEditorCita === "function"){
         mostrarErrorEditorCita("Selecciona un paciente existente desde la lista de resultados.");
@@ -7968,10 +8017,12 @@ header{padding-right:112px!important;}
       return;
     }
 
+    var horaGuardada = horaNormalizada($("editCitaHora") ? $("editCitaHora").value : "");
+
     var actualizada = {
       id: cita.id,
       fecha: $("editCitaFecha") ? $("editCitaFecha").value : "",
-      hora: $("editCitaHora") ? $("editCitaHora").value : "",
+      hora: horaGuardada,
       duracion: $("editCitaDuracion") ? $("editCitaDuracion").value : "10",
       estado: $("editCitaEstado") ? $("editCitaEstado").value : "Pendiente",
       pacienteId: pid,
@@ -7987,18 +8038,19 @@ header{padding-right:112px!important;}
       return;
     }
 
+    var p = pacienteById(pid);
+    if(p && p.bloqueado){
+      if(typeof mostrarErrorEditorCita === "function") mostrarErrorEditorCita("No se puede guardar la cita con paciente bloqueado: " + pacienteNombre(p));
+      else alert("No se puede guardar la cita con paciente bloqueado: " + pacienteNombre(p));
+      return;
+    }
+
     if(typeof bloqueoImpideCita === "function" && bloqueoImpideCita(actualizada)){
       if(!confirm("Ese horario está bloqueado. ¿Quieres guardar la cita igualmente?")) return;
     }
 
     if(typeof citaSolapaEditor === "function" && citaSolapaEditor(actualizada)){
       if(!confirm("Existe otra cita solapada para ese profesional. ¿Guardar igualmente?")) return;
-    }
-
-    var p = pacienteById(pid);
-    if(p && p.bloqueado){
-      alert("Paciente bloqueado: " + pacienteNombre(p) + "\nMotivo: " + (p.motivoBloqueo || "Sin motivo"));
-      return;
     }
 
     Object.assign(cita, actualizada);
@@ -8046,11 +8098,22 @@ header{padding-right:112px!important;}
 
   function init(){
     asegurarInputEditor();
+
     var buscador = $("buscadorPacientes");
     if(buscador && !buscador.__yneaListadoBound){
       buscador.__yneaListadoBound = true;
       buscador.addEventListener("input", function(){ window.renderPatients(); });
       buscador.addEventListener("search", function(){ window.renderPatients(); });
+    }
+
+    // Protección extra: si la función original se ejecuta por algún handler antiguo,
+    // restauramos la hora si queda vacía.
+    var hora = $("editCitaHora");
+    if(hora && !hora.__yneaHoraProtegida){
+      hora.__yneaHoraProtegida = true;
+      hora.addEventListener("change", function(){
+        hora.dataset.ultimaHoraValida = hora.value || hora.dataset.ultimaHoraValida || "";
+      });
     }
   }
 
@@ -8064,6 +8127,233 @@ header{padding-right:112px!important;}
     try{ window.renderPatients(); }catch(e){}
   });
   setTimeout(init, 500);
+})();
+</script>
+
+
+<style id="ynea-anti-duplicados-pacientes-css">
+.yneaDuplicadoAviso{
+  margin-top:6px!important;
+  padding:8px 10px!important;
+  border-radius:10px!important;
+  border:1px solid #fecaca!important;
+  background:#fff1f2!important;
+  color:#991b1b!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  line-height:1.35!important;
+}
+.yneaCampoDuplicado{
+  border-color:#ef4444!important;
+  box-shadow:0 0 0 3px rgba(239,68,68,.15)!important;
+}
+</style>
+
+<script id="ynea-anti-duplicados-pacientes">
+(function(){
+  "use strict";
+
+  function $(id){ return document.getElementById(id); }
+
+  function ds(){
+    window.data = window.data || {};
+    if(!Array.isArray(window.data.pacientes)) window.data.pacientes = [];
+    return window.data;
+  }
+
+  function norm(v){
+    return String(v || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+
+  function soloDigitos(v){
+    return String(v || "").replace(/\D+/g,"").trim();
+  }
+
+  function emailNorm(v){
+    return String(v || "").toLowerCase().trim();
+  }
+
+  function esc(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g,function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function nombrePaciente(p){
+    return p.nombre || p.name || "Paciente sin nombre";
+  }
+
+  function valorCampo(campo, valor){
+    if(campo === "nombre") return norm(valor);
+    if(campo === "telefono") return soloDigitos(valor);
+    if(campo === "email") return emailNorm(valor);
+    return norm(valor);
+  }
+
+  function buscarDuplicado(campo, valor, excluirId){
+    var v = valorCampo(campo, valor);
+    if(!v) return null;
+
+    return (ds().pacientes || []).find(function(p){
+      if(excluirId && String(p.id) === String(excluirId)) return false;
+
+      if(campo === "nombre") return norm(p.nombre || p.name) === v;
+      if(campo === "telefono") return soloDigitos(p.telefono) === v;
+      if(campo === "email") return emailNorm(p.email) === v;
+      return false;
+    }) || null;
+  }
+
+  function idPacienteEditando(){
+    var posibles = ["pacienteId","editPacienteId","idPaciente","pacienteEditId"];
+    for(var i=0;i<posibles.length;i++){
+      var el = $(posibles[i]);
+      if(el && el.value) return el.value;
+    }
+
+    // Compatibilidad con variable global habitual si existiera
+    if(window.pacienteEditandoId) return window.pacienteEditandoId;
+    if(window.editandoPacienteId) return window.editandoPacienteId;
+    return "";
+  }
+
+  function camposPaciente(){
+    return {
+      nombre: $("pacienteNombre") || $("nombrePaciente") || document.querySelector('input[id*="paciente"][id*="Nombre"], input[id*="Paciente"][id*="Nombre"], input[placeholder*="Nombre"]'),
+      telefono: $("pacienteTelefono") || $("telefonoPaciente") || document.querySelector('input[id*="paciente"][id*="Telefono"], input[id*="Paciente"][id*="Telefono"], input[placeholder*="Teléfono"], input[placeholder*="Telefono"]'),
+      email: $("pacienteEmail") || $("emailPaciente") || document.querySelector('input[id*="paciente"][id*="Email"], input[id*="Paciente"][id*="Email"], input[placeholder*="Email"]')
+    };
+  }
+
+  function limpiarAviso(input){
+    if(!input) return;
+    input.classList.remove("yneaCampoDuplicado");
+    var aviso = input.parentNode ? input.parentNode.querySelector(".yneaDuplicadoAviso[data-for='"+input.id+"']") : null;
+    if(aviso) aviso.remove();
+  }
+
+  function mostrarAviso(input, campo, duplicado){
+    if(!input || !duplicado) return;
+
+    input.classList.add("yneaCampoDuplicado");
+
+    var avisoId = input.id || ("campo-" + campo);
+    var cont = input.parentNode || input.closest("label") || input;
+    var previo = cont.querySelector(".yneaDuplicadoAviso[data-for='"+avisoId+"']");
+    if(!previo){
+      previo = document.createElement("div");
+      previo.className = "yneaDuplicadoAviso";
+      previo.setAttribute("data-for", avisoId);
+      input.insertAdjacentElement("afterend", previo);
+    }
+
+    var etiqueta = campo === "nombre" ? "nombre" : campo === "telefono" ? "teléfono" : "correo";
+    previo.innerHTML = "Este " + etiqueta + " ya lo tiene otro paciente: <b>" + esc(nombrePaciente(duplicado)) + "</b>.";
+  }
+
+  function validarCampo(campo){
+    var campos = camposPaciente();
+    var input = campos[campo];
+    if(!input) return true;
+
+    limpiarAviso(input);
+
+    var excluir = idPacienteEditando();
+    var dup = buscarDuplicado(campo, input.value, excluir);
+
+    if(dup){
+      mostrarAviso(input, campo, dup);
+      return false;
+    }
+
+    return true;
+  }
+
+  function validarPacienteCompleto(mostrarAlert){
+    var okNombre = validarCampo("nombre");
+    var okTel = validarCampo("telefono");
+    var okEmail = validarCampo("email");
+
+    var ok = okNombre && okTel && okEmail;
+
+    if(!ok && mostrarAlert){
+      alert("No se puede guardar: hay datos duplicados en otro paciente. Revisa los avisos en rojo.");
+    }
+
+    return ok;
+  }
+
+  function bindCampos(){
+    var campos = camposPaciente();
+
+    [["nombre", campos.nombre], ["telefono", campos.telefono], ["email", campos.email]].forEach(function(par){
+      var campo = par[0], input = par[1];
+      if(!input || input.__yneaAntiDupBound) return;
+
+      input.__yneaAntiDupBound = true;
+
+      input.addEventListener("input", function(){
+        validarCampo(campo);
+      });
+
+      input.addEventListener("blur", function(){
+        validarCampo(campo);
+      });
+    });
+  }
+
+  function bloquearBotonSiDuplicado(){
+    var campos = camposPaciente();
+    var boton = Array.from(document.querySelectorAll("button")).find(function(b){
+      return /guardar paciente/i.test(b.textContent || "");
+    });
+
+    if(!boton || boton.__yneaAntiDupClick) return;
+
+    boton.__yneaAntiDupClick = true;
+    boton.addEventListener("click", function(ev){
+      if(!validarPacienteCompleto(true)){
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        return false;
+      }
+    }, true);
+  }
+
+  function parchearFuncionesGuardado(){
+    ["guardarPaciente","savePaciente","crearPaciente","guardarNuevoPaciente","guardarPacienteYnea"].forEach(function(fn){
+      if(typeof window[fn] === "function" && !window[fn].__yneaAntiDupPatched){
+        var old = window[fn];
+        window[fn] = function(){
+          bindCampos();
+          if(!validarPacienteCompleto(true)) return false;
+          return old.apply(this, arguments);
+        };
+        window[fn].__yneaAntiDupPatched = true;
+      }
+    });
+  }
+
+  function init(){
+    bindCampos();
+    bloquearBotonSiDuplicado();
+    parchearFuncionesGuardado();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{
+    init();
+  }
+
+  window.addEventListener("load", init);
+  document.addEventListener("click", function(){ setTimeout(init, 80); });
+  setInterval(init, 1200);
 })();
 </script>
 
