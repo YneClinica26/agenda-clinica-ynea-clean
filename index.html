@@ -946,7 +946,7 @@ header{position:sticky;}
         
 <label>Paciente</label>
 <div class="pacienteSearchBox">
-  <input id="pacienteBusqueda" placeholder="Buscar por nombre, teléfono o email" autocomplete="off"
+  <input id="pacienteBusqueda" name="ynea_paciente_busqueda_nueva" placeholder="Buscar por nombre, teléfono o email" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
          oninput="buscarPacienteCita()" onfocus="buscarPacienteCita()">
   <input type="hidden" id="pacienteCita">
   <div id="pacienteResultados" class="pacienteResultados"></div>
@@ -993,10 +993,10 @@ header{position:sticky;}
     <div class="grid">
       <div class="card">
         <h2>Nuevo paciente</h2>
-        <label>Nombre</label><input id="pacNombre" placeholder="Nombre y apellidos">
-        <label>Teléfono</label><input id="pacTelefono" placeholder="Teléfono">
-        <label>Email</label><input id="pacEmail" placeholder="Email">
-        <label>Observaciones</label><textarea id="pacObs"></textarea>
+        <label>Nombre</label><input id="pacNombre" name="ynea_pac_nombre_nuevo" placeholder="Nombre y apellidos" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <label>Teléfono</label><input id="pacTelefono" name="ynea_pac_tel_nuevo" placeholder="Teléfono" autocomplete="off" inputmode="tel">
+        <label>Email</label><input id="pacEmail" name="ynea_pac_email_nuevo" placeholder="Email" autocomplete="off" inputmode="email" autocapitalize="off" spellcheck="false">
+        <label>Observaciones</label><textarea id="pacObs" name="ynea_pac_obs_nuevo" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
         <button style="width:100%;margin-top:14px" onclick="addPaciente()">Guardar paciente</button>
       </div>
       <div class="card"><h2>Base de pacientes</h2><div id="pacientesSearchWrap" class="pacientesSearchWrapStatic"><input id="buscadorPacientes" type="search" placeholder="Buscar por nombre, email o teléfono..." autocomplete="off" oninput="window.renderPatients && window.renderPatients()"><span id="pacientesSearchInfo"></span></div><div class="tableWrap"><table id="pacientesTable"></table></div></div>
@@ -2402,22 +2402,22 @@ renderAll();
     <div class="nuevoPacienteGrid">
       <div>
         <label>Nombre y apellidos *</label>
-        <input id="npNombre" placeholder="Ej. María García López">
+        <input id="npNombre" name="ynea_np_nombre_nuevo" placeholder="Ej. María García López" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       </div>
 
       <div>
         <label>Teléfono *</label>
-        <input id="npTelefono" placeholder="Ej. 600123456">
+        <input id="npTelefono" name="ynea_np_tel_nuevo" placeholder="Ej. 600123456" autocomplete="off" inputmode="tel">
       </div>
 
       <div>
         <label>Email</label>
-        <input id="npEmail" placeholder="Ej. paciente@email.com">
+        <input id="npEmail" name="ynea_np_email_nuevo" placeholder="Ej. paciente@email.com" autocomplete="off" inputmode="email" autocapitalize="off" spellcheck="false">
       </div>
 
       <div>
         <label>Observaciones</label>
-        <textarea id="npObs" placeholder="Notas internas, preferencias, etc."></textarea>
+        <textarea id="npObs" name="ynea_np_obs_nuevo" placeholder="Notas internas, preferencias, etc." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
       </div>
     </div>
 
@@ -6909,7 +6909,6 @@ header{padding-right:112px!important;}
           '<td class="yneaPacienteAcciones">'+
             '<button type="button" class="secondary" onclick="event.stopPropagation();editarPacienteYnea(\''+esc(p.id)+'\')">Editar</button> '+
             (bloqueado?'<button type="button" onclick="event.stopPropagation();desbloquearPacienteYnea(\''+esc(p.id)+'\')">Desbloquear</button> ':'<button type="button" onclick="event.stopPropagation();bloquearPacienteYnea(\''+esc(p.id)+'\')">Bloquear</button> ')+
-            '<button type="button" class="danger" onclick="event.stopPropagation();eliminarPacienteYnea(\''+esc(p.id)+'\')">Eliminar</button>'+
           '</td></tr>';
       }).join('')+'</tbody>';
     const info=$('pacientesSearchInfo'); if(info) info.textContent=q?' '+pacientes.length+' resultado(s)':'';
@@ -6969,6 +6968,279 @@ header{padding-right:112px!important;}
   #pacientesTable th,#pacientesTable td{display:table-cell!important;}
 }
 </style>
+
+
+<!-- YNEA FIX FINAL 2026-05-14: formularios limpios, sin duplicar botón Nuevo paciente y sin eliminar paciente -->
+<style id="ynea-fix-formularios-limpios-no-eliminar-css">
+  /* Oculta cualquier botón de eliminar paciente que pudiera venir de parches anteriores */
+  #pacientesTable button[onclick*="eliminarPacienteYnea"],
+  #pacientesTable .danger[onclick*="eliminarPacienteYnea"]{
+    display:none !important;
+  }
+  /* Evita que aparezcan dos botones Nuevo paciente en crear cita */
+  #yneaBtnNuevoPacienteCrear{
+    display:none !important;
+  }
+</style>
+
+<script id="ynea-fix-formularios-limpios-no-eliminar-js">
+(function(){
+  'use strict';
+
+  function byId(id){ return document.getElementById(id); }
+  function exists(el){ return !!el; }
+
+  function setVal(id, value){
+    var el = byId(id);
+    if(el) el.value = value || '';
+  }
+
+  function disableAutocomplete(){
+    var ids = [
+      'pacienteBusqueda','pacNombre','pacTelefono','pacEmail','pacObs',
+      'npNombre','npTelefono','npEmail','npObs',
+      'obsCita','editCitaObs'
+    ];
+    ids.forEach(function(id){
+      var el = byId(id);
+      if(!el) return;
+      el.setAttribute('autocomplete','off');
+      el.setAttribute('autocorrect','off');
+      el.setAttribute('autocapitalize','off');
+      el.setAttribute('spellcheck','false');
+      if(!el.getAttribute('name')){
+        el.setAttribute('name','ynea_'+id+'_sin_autorrelleno_'+Date.now());
+      }
+    });
+  }
+
+  function limpiarSeleccionPacienteCita(){
+    setVal('pacienteBusqueda','');
+    setVal('pacienteCita','');
+    var resultados = byId('pacienteResultados');
+    if(resultados){
+      resultados.innerHTML = '';
+      resultados.style.display = 'none';
+    }
+    document.querySelectorAll('.pacienteSeleccionado').forEach(function(el){
+      el.remove();
+    });
+  }
+
+  function limpiarFormularioNuevaCitaConservandoFechaHora(opts){
+    opts = opts || {};
+    var fecha = opts.fecha || byId('fechaCita')?.value || '';
+    var hora = opts.hora || byId('horaCita')?.value || '';
+    var consulta = opts.consulta || '';
+    var profesional = opts.profesional || '';
+
+    limpiarSeleccionPacienteCita();
+
+    setVal('obsCita','');
+    var estado = byId('estadoCita');
+    if(estado) estado.value = 'Pendiente';
+
+    var crearEnlazada = byId('crearCitaEnlazada');
+    if(crearEnlazada) crearEnlazada.checked = false;
+    var crearPrimero = byId('crearPrimeroSegunda');
+    if(crearPrimero) crearPrimero.checked = false;
+
+    if(fecha) setVal('fechaCita', fecha);
+    if(hora) setVal('horaCita', hora);
+
+    if(profesional && byId('profesionalCita')){
+      byId('profesionalCita').value = profesional;
+      try{ if(typeof window.actualizarTiposNuevaCita === 'function') window.actualizarTiposNuevaCita(); }catch(e){}
+    }
+
+    if(consulta && byId('consultaCita')){
+      byId('consultaCita').value = consulta;
+    }
+
+    try{ if(typeof window.applyTipoDuration === 'function') window.applyTipoDuration(); }catch(e){}
+    disableAutocomplete();
+  }
+
+  function limpiarFormularioPacientePrincipal(){
+    ['pacNombre','pacTelefono','pacEmail','pacObs'].forEach(function(id){ setVal(id,''); });
+    disableAutocomplete();
+  }
+
+  function limpiarModalNuevoPaciente(){
+    ['npNombre','npTelefono','npEmail','npObs'].forEach(function(id){ setVal(id,''); });
+    var err = byId('nuevoPacienteError');
+    if(err){ err.textContent=''; err.style.display='none'; }
+    disableAutocomplete();
+  }
+
+  function eliminarBotonesDuplicadosNuevoPaciente(){
+    var box = byId('pacienteCita') ? byId('pacienteCita').parentElement : null;
+    if(!box) return;
+
+    var botones = Array.prototype.slice.call(box.querySelectorAll('button')).filter(function(b){
+      return /nuevo paciente/i.test((b.textContent || '').trim());
+    });
+
+    // Mantener el primer botón visible y eliminar/ocultar los demás.
+    botones.forEach(function(b, idx){
+      if(idx === 0){
+        b.style.display = '';
+        b.id = b.id || 'yneaBtnNuevoPacienteUnico';
+        b.onclick = function(ev){
+          if(ev) ev.preventDefault();
+          if(typeof window.abrirNuevoPacienteDesdeBusqueda === 'function'){
+            window.abrirNuevoPacienteDesdeBusqueda();
+          }else if(typeof window.abrirNuevoPaciente === 'function'){
+            window.abrirNuevoPaciente();
+          }
+          return false;
+        };
+      }else{
+        b.remove();
+      }
+    });
+  }
+
+  function quitarEliminarPaciente(){
+    document.querySelectorAll('#pacientesTable button, #pacientesTable .danger').forEach(function(b){
+      var txt = (b.textContent || '').trim().toLowerCase();
+      var oc = String(b.getAttribute('onclick') || '');
+      if(txt === 'eliminar' || oc.indexOf('eliminarPacienteYnea') >= 0){
+        b.remove();
+      }
+    });
+  }
+
+  // Desactivar por completo la función de eliminar paciente, por seguridad.
+  window.eliminarPacienteYnea = function(){
+    alert('La eliminación de pacientes está desactivada para evitar borrados accidentales. Puedes bloquear el paciente si no debe citarse.');
+    return false;
+  };
+
+  // Refuerzo sobre renderPatients: repinta y después retira cualquier botón de eliminar.
+  var renderPatientsBase = window.renderPatients;
+  if(typeof renderPatientsBase === 'function' && !renderPatientsBase.__yneaNoEliminarWrapped){
+    window.renderPatients = function(){
+      var r = renderPatientsBase.apply(this, arguments);
+      quitarEliminarPaciente();
+      eliminarBotonesDuplicadosNuevoPaciente();
+      disableAutocomplete();
+      return r;
+    };
+    window.renderPatients.__yneaNoEliminarWrapped = true;
+  }
+
+  // Al abrir una cita desde el calendario, limpiar paciente/teléfono/email/observaciones anteriores.
+  var quickConsultaBase = window.quickNewCitaConsulta;
+  if(typeof quickConsultaBase === 'function' && !quickConsultaBase.__yneaCleanWrapped){
+    window.quickNewCitaConsulta = function(fecha, hora, consulta){
+      var prof = byId('weekProf') ? byId('weekProf').value : '';
+      var r = quickConsultaBase.apply(this, arguments);
+      limpiarFormularioNuevaCitaConservandoFechaHora({fecha:fecha, hora:hora, consulta:consulta, profesional:prof});
+      eliminarBotonesDuplicadosNuevoPaciente();
+      return r;
+    };
+    window.quickNewCitaConsulta.__yneaCleanWrapped = true;
+  }
+
+  var quickBase = window.quickNewCita;
+  if(typeof quickBase === 'function' && !quickBase.__yneaCleanWrapped){
+    window.quickNewCita = function(fecha, hora){
+      var prof = byId('weekProf') ? byId('weekProf').value : '';
+      var r = quickBase.apply(this, arguments);
+      limpiarFormularioNuevaCitaConservandoFechaHora({fecha:fecha, hora:hora, profesional:prof});
+      eliminarBotonesDuplicadosNuevoPaciente();
+      return r;
+    };
+    window.quickNewCita.__yneaCleanWrapped = true;
+  }
+
+  // Al guardar una cita, dejar el formulario limpio para la siguiente.
+  var addCitaBase = window.addCita;
+  if(typeof addCitaBase === 'function' && !addCitaBase.__yneaCleanAfterSaveWrapped){
+    window.addCita = function(){
+      var fecha = byId('fechaCita') ? byId('fechaCita').value : '';
+      var r = addCitaBase.apply(this, arguments);
+      setTimeout(function(){
+        limpiarFormularioNuevaCitaConservandoFechaHora({fecha:fecha});
+        eliminarBotonesDuplicadosNuevoPaciente();
+      }, 150);
+      return r;
+    };
+    window.addCita.__yneaCleanAfterSaveWrapped = true;
+  }
+
+  // Al guardar paciente desde la ficha principal, limpiar siempre.
+  var addPacienteBase = window.addPaciente;
+  if(typeof addPacienteBase === 'function' && !addPacienteBase.__yneaCleanAfterSaveWrapped){
+    window.addPaciente = function(){
+      var r = addPacienteBase.apply(this, arguments);
+      setTimeout(function(){
+        limpiarFormularioPacientePrincipal();
+        eliminarBotonesDuplicadosNuevoPaciente();
+        quitarEliminarPaciente();
+      }, 100);
+      return r;
+    };
+    window.addPaciente.__yneaCleanAfterSaveWrapped = true;
+  }
+
+  // Al abrir el modal de nuevo paciente, limpiar siempre.
+  var abrirNuevoPacienteBase = window.abrirNuevoPaciente;
+  if(typeof abrirNuevoPacienteBase === 'function' && !abrirNuevoPacienteBase.__yneaCleanWrapped){
+    window.abrirNuevoPaciente = function(){
+      limpiarModalNuevoPaciente();
+      var r = abrirNuevoPacienteBase.apply(this, arguments);
+      setTimeout(limpiarModalNuevoPaciente, 30);
+      return r;
+    };
+    window.abrirNuevoPaciente.__yneaCleanWrapped = true;
+  }
+
+  // Al guardar paciente desde modal, no dejar datos retenidos.
+  var guardarModalBase = window.guardarNuevoPacienteModal;
+  if(typeof guardarModalBase === 'function' && !guardarModalBase.__yneaCleanAfterSaveWrapped){
+    window.guardarNuevoPacienteModal = function(){
+      var r = guardarModalBase.apply(this, arguments);
+      setTimeout(function(){
+        limpiarModalNuevoPaciente();
+        disableAutocomplete();
+      }, 100);
+      return r;
+    };
+    window.guardarNuevoPacienteModal.__yneaCleanAfterSaveWrapped = true;
+  }
+
+  // Evitar que el navegador rellene campos al volver a la página.
+  document.addEventListener('DOMContentLoaded', function(){
+    disableAutocomplete();
+    eliminarBotonesDuplicadosNuevoPaciente();
+    quitarEliminarPaciente();
+
+    setTimeout(function(){
+      disableAutocomplete();
+      eliminarBotonesDuplicadosNuevoPaciente();
+      quitarEliminarPaciente();
+    }, 400);
+
+    setTimeout(function(){
+      disableAutocomplete();
+      eliminarBotonesDuplicadosNuevoPaciente();
+      quitarEliminarPaciente();
+    }, 1200);
+  }, true);
+
+  // Refuerzo periódico suave por si otros parches repintan botones.
+  setInterval(function(){
+    eliminarBotonesDuplicadosNuevoPaciente();
+    quitarEliminarPaciente();
+    disableAutocomplete();
+  }, 1500);
+
+  window.yneaLimpiarFormularioNuevaCita = limpiarFormularioNuevaCitaConservandoFechaHora;
+  window.yneaQuitarEliminarPaciente = quitarEliminarPaciente;
+})();
+</script>
 
 </body>
 </html>

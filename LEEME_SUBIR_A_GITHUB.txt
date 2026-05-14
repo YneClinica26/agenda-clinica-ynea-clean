@@ -1,0 +1,21 @@
+AGENDA CLÍNICA YNEA - FORMULARIOS LIMPIOS + SIN ELIMINAR PACIENTE
+
+Este ZIP contiene el index.html completo ya modificado.
+
+Cambios incluidos:
+1. Se elimina la opción visible de "Eliminar paciente".
+2. Se desactiva la función de eliminar pacientes para evitar borrados accidentales.
+3. Los formularios no deben quedarse con el último paciente/teléfono/email/observaciones.
+4. Al crear una cita desde el calendario, se limpia el paciente anterior.
+5. Al guardar una cita, el formulario queda preparado limpio para la siguiente.
+6. Se deja un único botón "+ Nuevo paciente" en crear cita.
+7. Se mantiene la sincronización segura anti-borrado multi-dispositivo que ya funcionaba.
+
+Cómo subirlo:
+1. Abre GitHub.
+2. Entra en tu repositorio de Agenda Clínica YNEA.
+3. Sustituye el index.html anterior por este index.html.
+4. Pulsa Commit changes.
+5. Espera a que Vercel actualice.
+6. En PC abre con Ctrl + F5.
+7. En móvil cierra completamente la app y vuelve a abrirla.
